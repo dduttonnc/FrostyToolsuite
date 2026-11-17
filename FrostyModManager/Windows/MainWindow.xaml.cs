@@ -1310,14 +1310,28 @@ namespace FrostyModManager
         private string DaiOriginalPath(string baseName) => Path.Combine(DaiOriginalsDir, baseName + ".daimod");
         private string DaiSettingsPath(string baseName) => Path.Combine(DaiOriginalsDir, baseName + ".settings.json");
 
+        // most .daimods have no settings, so only offer Reconfigure for ones that do
         private bool DaiCanReconfigure(IFrostyMod mod)
         {
             FrostyMod fm = mod as FrostyMod;
             if (fm == null || fm.NewFormat)
                 return false;
 
-            return File.Exists(DaiOriginalPath(Path.GetFileNameWithoutExtension(fm.Filename)))
-                || (fm.ModDetails.Description ?? "").StartsWith(DaiConvertedPrefix, StringComparison.Ordinal);
+            // settings are only saved for mods that have them
+            string baseName = Path.GetFileNameWithoutExtension(fm.Filename);
+            if (File.Exists(DaiSettingsPath(baseName)))
+            {
+                Dictionary<string, string> saved = DaiLoadSettings(baseName);
+                return saved != null && saved.Count > 0;
+            }
+
+            // imported before that: the description ends with one line per setting, or with a blank
+            // line if there are none
+            string desc = (fm.ModDetails.Description ?? "").Replace("\r\n", "\n");
+            if (!desc.StartsWith(DaiConvertedPrefix, StringComparison.Ordinal))
+                return false;
+
+            return desc.EndsWith("\n", StringComparison.Ordinal) && !desc.EndsWith("\n\n", StringComparison.Ordinal);
         }
 
         private Dictionary<string, string> DaiLoadSettings(string baseName)
@@ -1615,7 +1629,7 @@ namespace FrostyModManager
 
         private void availableModsList_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
-            // the menu only has Reconfigure..., so only open it for converted .daimods
+            // the menu only has Reconfigure..., so only open it for mods with settings
             IFrostyMod mod = availableModsList.SelectedItems.Count == 1 ? availableModsList.SelectedItem as IFrostyMod : null;
             if (mod == null || !DaiCanReconfigure(mod))
                 e.Handled = true;
