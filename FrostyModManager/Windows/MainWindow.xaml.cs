@@ -1339,7 +1339,8 @@ namespace FrostyModManager
         private string DaiSettingsPath(string baseName) => Path.Combine(DaiOriginalsDir, baseName + ".settings.json");
 
         /// <summary>
-        /// [DAI fix] True for a mod that was converted from a .daimod (Reconfigure is offered for these).
+        /// [DAI fix] True for a mod converted from a .daimod that has settings to configure
+        /// (Reconfigure is offered only for these; most .daimod files have no settings).
         /// </summary>
         private bool DaiCanReconfigure(IFrostyMod mod)
         {
@@ -1347,8 +1348,22 @@ namespace FrostyModManager
             if (fm == null || fm.NewFormat)
                 return false;
 
-            return File.Exists(DaiOriginalPath(Path.GetFileNameWithoutExtension(fm.Filename)))
-                || (fm.ModDetails.Description ?? "").StartsWith(DaiConvertedPrefix, StringComparison.Ordinal);
+            // imported with Reconfigure support: settings are only saved for mods that have them
+            string baseName = Path.GetFileNameWithoutExtension(fm.Filename);
+            if (File.Exists(DaiSettingsPath(baseName)))
+            {
+                Dictionary<string, string> saved = DaiLoadSettings(baseName);
+                return saved != null && saved.Count > 0;
+            }
+
+            // imported before that: the converter writes the description as
+            // "(Converted from .daimod)" + blank line + description + blank line + one line per setting,
+            // so a mod without settings ends with a blank line and a configurable one ends with a setting
+            string desc = (fm.ModDetails.Description ?? "").Replace("\r\n", "\n");
+            if (!desc.StartsWith(DaiConvertedPrefix, StringComparison.Ordinal))
+                return false;
+
+            return desc.EndsWith("\n", StringComparison.Ordinal) && !desc.EndsWith("\n\n", StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -1672,7 +1687,7 @@ namespace FrostyModManager
 
         private void availableModsList_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
-            // [DAI fix] the right-click menu only has Reconfigure..., so it only opens on a converted .daimod
+            // [DAI fix] the right-click menu only has Reconfigure..., so it only opens on a converted .daimod with settings
             IFrostyMod mod = availableModsList.SelectedItems.Count == 1 ? availableModsList.SelectedItem as IFrostyMod : null;
             if (mod == null || !DaiCanReconfigure(mod))
                 e.Handled = true;

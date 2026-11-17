@@ -196,8 +196,10 @@ Upstream PR #355 (branch `pr6-daimod-reconfigure`, based on #354).
    Converted mods now have a right-click **Reconfigure...** option, in both the installed mods list
    and the applied mods (load order) list. It reopens the configuration window with the settings
    chosen last time, converts the mod again, and swaps it in where it was: same file name, same
-   load order position and enabled state, in every pack. The right-click menu only appears on mods
-   converted from a `.daimod`.
+   load order position and enabled state, in every pack. The right-click menu only appears on
+   converted mods that have settings: ones with a saved settings file, or (for mods imported before
+   v7) whose description ends with the converter's list of chosen settings. It used to appear on
+   every converted mod, though most `.daimod` files have nothing to configure.
 2. **The original and the chosen settings are kept.** When a configurable `.daimod` is imported, a
    copy of it and its settings are saved in `<mods folder>\DAI originals\` as `<name>.daimod` and
    `<name>.settings.json` (settings by id, culture-independent). Frosty only loads `.fbmod` files
