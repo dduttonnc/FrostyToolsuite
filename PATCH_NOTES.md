@@ -1,10 +1,11 @@
-# Frosty Mod Manager 1.0.6.3, DAI personal build: patch notes
+# Frosty Mod Manager 1.0.6.4, DAI personal build: patch notes
 
-Base: tag `v1.0.6.3` of https://github.com/CadeEvs/FrostyToolsuite
+Base: branch `1.0.6.4` of https://github.com/CadeEvs/FrostyToolsuite (moved up from tag `v1.0.6.3`
+on 2026-11-17; 1.0.6.4 is 1.0.6.3 plus 10 small upstream fixes, #327 to #344, and was tested in game).
 Branch: `dai-fixes` on https://github.com/dduttonnc/FrostyToolsuite (v1 to v6 in one commit,
 "My DAI build"; later versions in their own commits). Every change is marked in the code with a
 `[DAI fix]` comment (34 in MainWindow.xaml.cs, 3 in MainWindow.xaml, 23 in ConfigWindow, 1 in
-FrostyPack, 9 in the executor, 6 in Standard.cs).
+FrostyPack, 8 in the executor, 6 in Standard.cs).
 
 | Version | Change | Summary |
 |---|---|---|
@@ -16,19 +17,20 @@ FrostyPack, 9 in the executor, 6 in Standard.cs).
 | v6 | Clearer load order labels | "List"/"Priority" renamed to "Bottom wins"/"Top wins" |
 | v7 | Reconfigure converted .daimod files | Right-click > Reconfigure... changes a mod's settings in place |
 
-## Pull requests to CadeEvs/FrostyToolsuite (base 1.0.6.3)
+## Pull requests to CadeEvs/FrostyToolsuite (base 1.0.6.4)
 
 | PR | Contents |
 |---|---|
 | #350 | Load order labels (v6) |
 | #351 | Bundle removal order + chunkMeta removal (v1 Standard.cs, v2) |
 | #352 | Empty chunk range (v5) |
-| #353 | Thread safety: archive ref counts + addedBundles (v2) |
+| #353 | Thread safety: archive ref counts (v2) |
 | #354 | .daimod import: converter, config window, texture ranges, game data check (v1, v2, v3, v4); depends on #351 |
 | #355 | Reconfigure for converted .daimod files (v7); depends on #354 |
 
-#350 to #354 merge cleanly together on 1.0.6.3, and #355 sits on top of #354. On the unreleased 1.0.6.4 branch, all but #353 apply
-cleanly (1.0.6.4 already has the #327 part of it).
+All six were moved from 1.0.6.3 to 1.0.6.4 on 2026-11-17, at a contributor's request (1.0.6.3 gets no more
+updates). They merge cleanly on 1.0.6.4, and #355 sits on top of #354. #353 lost its addedBundles part,
+which 1.0.6.4 already has (#327).
 
 ---
 
@@ -115,7 +117,8 @@ The converter lives in `InstallMods`. New helper methods sit just above it:
    `AddArchiveRef` / `ReleaseArchiveRef` do this under a lock. They're used by the ebx, res and
    chunk paths.
 2. **Race on added bundles.** Ported the upstream 1.0.6.4 fix (#327): the per-superbundle
-   `HashSet` of added bundles is now locked when written.
+   `HashSet` of added bundles is now locked when written. Since the move to 1.0.6.4 this is
+   upstream's own code.
 
 ---
 
