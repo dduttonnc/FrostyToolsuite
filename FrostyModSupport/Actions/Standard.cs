@@ -1297,8 +1297,10 @@ namespace Frosty.ModSupport
                                     }
 
                                     // remove ebx
-                                    foreach (int ebxIdx in ebxToRemove)
-                                        sbBundle.GetValue<DbObject>("ebx").RemoveAt(ebxIdx);
+                                    // [DAI fix] remove from the end first; removing in ascending order shifted the
+                                    // remaining indices and deleted the wrong entries when removing more than one
+                                    for (int removeIdx = ebxToRemove.Count - 1; removeIdx >= 0; removeIdx--)
+                                        sbBundle.GetValue<DbObject>("ebx").RemoveAt(ebxToRemove[removeIdx]);
 
                                     // add new ebx
                                     foreach (string name in modBundle.Add.Ebx)
@@ -1368,8 +1370,10 @@ namespace Frosty.ModSupport
                                     }
 
                                     // remove res
-                                    foreach (int resIdx in resToRemove)
-                                        sbBundle.GetValue<DbObject>("res").RemoveAt(resIdx);
+                                    // [DAI fix] remove from the end first; removing in ascending order shifted the
+                                    // remaining indices and deleted the wrong entries when removing more than one
+                                    for (int removeIdx = resToRemove.Count - 1; removeIdx >= 0; removeIdx--)
+                                        sbBundle.GetValue<DbObject>("res").RemoveAt(resToRemove[removeIdx]);
 
                                     // add new res
                                     foreach (string name in modBundle.Add.Res)
@@ -1429,8 +1433,19 @@ namespace Frosty.ModSupport
                                                         if (curMeta.GetValue<int>("h32") == chunkEntry.H32)
                                                             curMeta.GetValue<DbObject>("meta").SetValue("firstMip", chunkEntry.FirstMip);
                                                     }
-                                                    chunk.SetValue("rangeStart", (int)chunkEntry.RangeStart);
-                                                    chunk.SetValue("rangeEnd", (int)chunkEntry.RangeEnd);
+                                                    // [DAI fix] an empty range (start == end) means "no range": DAI Mod
+                                                    // Manager leaves the fields out, and writing 0..0 makes the game wait
+                                                    // forever for texture data that never arrives (infinite load screen)
+                                                    if (ProfilesLibrary.DataVersion == (int)ProfileVersion.DragonAgeInquisition && chunkEntry.RangeStart == chunkEntry.RangeEnd)
+                                                    {
+                                                        chunk.RemoveValue("rangeStart");
+                                                        chunk.RemoveValue("rangeEnd");
+                                                    }
+                                                    else
+                                                    {
+                                                        chunk.SetValue("rangeStart", (int)chunkEntry.RangeStart);
+                                                        chunk.SetValue("rangeEnd", (int)chunkEntry.RangeEnd);
+                                                    }
 
                                                     //chunkMeta.GetValue<DbObject>("meta").RemoveValue("firstMip");
                                                     //chunkMeta.GetValue<DbObject>("meta").RemoveValue("firstMip");
@@ -1474,8 +1489,20 @@ namespace Frosty.ModSupport
                                     }
 
                                     // remove chunks
-                                    foreach (int chunkId in chunksToRemove)
-                                        sbBundle.GetValue<DbObject>("chunks").RemoveAt(chunkId);
+                                    // [DAI fix] remove from the end first; removing in ascending order shifted the
+                                    // remaining indices and deleted the wrong entries when removing more than one
+                                    // [DAI fix] chunks and chunkMeta are parallel lists (new chunks are added to
+                                    // both at the same index), so the matching meta entry must be removed too or
+                                    // every following chunk gets the wrong meta
+                                    DbObject chunksList = sbBundle.GetValue<DbObject>("chunks");
+                                    DbObject chunkMetaList = sbBundle.GetValue<DbObject>("chunkMeta");
+                                    bool metaIsParallel = chunksList != null && chunkMetaList != null && chunkMetaList.Count == chunksList.Count;
+                                    for (int removeIdx = chunksToRemove.Count - 1; removeIdx >= 0; removeIdx--)
+                                    {
+                                        chunksList.RemoveAt(chunksToRemove[removeIdx]);
+                                        if (metaIsParallel)
+                                            chunkMetaList.RemoveAt(chunksToRemove[removeIdx]);
+                                    }
 
                                     // add new chunks
                                     if (modBundle.Add.Chunks.Count != 0 && sbBundle.GetValue<DbObject>("chunks") == null)
@@ -1500,8 +1527,12 @@ namespace Frosty.ModSupport
 
                                         if (entry.FirstMip != -1)
                                         {
-                                            chunk.SetValue("rangeStart", (int)entry.RangeStart);
-                                            chunk.SetValue("rangeEnd", (int)entry.RangeEnd);
+                                            // [DAI fix] leave an empty range out, as DAI Mod Manager does (see above)
+                                            if (!(ProfilesLibrary.DataVersion == (int)ProfileVersion.DragonAgeInquisition && entry.RangeStart == entry.RangeEnd))
+                                            {
+                                                chunk.SetValue("rangeStart", (int)entry.RangeStart);
+                                                chunk.SetValue("rangeEnd", (int)entry.RangeEnd);
+                                            }
 
                                             chunkMeta.GetValue<DbObject>("meta").SetValue("firstMip", entry.FirstMip);
                                             if (ProfilesLibrary.DataVersion == (int)ProfileVersion.MassEffectAndromeda || ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa18 || ProfilesLibrary.DataVersion == (int)ProfileVersion.StarWarsBattlefrontII || ProfilesLibrary.DataVersion == (int)ProfileVersion.Madden19)
