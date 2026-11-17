@@ -1,9 +1,10 @@
 # Frosty Mod Manager 1.0.6.3, DAI personal build: patch notes
 
 Base: tag `v1.0.6.3` of https://github.com/CadeEvs/FrostyToolsuite
-Branch: `dai-fixes` on https://github.com/dduttonnc/FrostyToolsuite (all versions in one commit,
-"My DAI build"). Every change is marked in the code with a `[DAI fix]` comment
-(13 in MainWindow, 12 in ConfigWindow, 9 in the executor, 4 in Standard.cs).
+Branch: `dai-fixes` on https://github.com/dduttonnc/FrostyToolsuite (v1 to v6 in one commit,
+"My DAI build"; later versions in their own commits). Every change is marked in the code with a
+`[DAI fix]` comment (34 in MainWindow.xaml.cs, 3 in MainWindow.xaml, 23 in ConfigWindow, 1 in
+FrostyPack, 9 in the executor, 6 in Standard.cs).
 
 | Version | Change | Summary |
 |---|---|---|
@@ -13,6 +14,7 @@ Branch: `dai-fixes` on https://github.com/dduttonnc/FrostyToolsuite (all version
 | v4 | Load game data for .daimod bundle checks | Add vs modify decided from the real game data |
 | v5 | Leave empty texture ranges out | Infinite load screen with some texture mods |
 | v6 | Clearer load order labels | "List"/"Priority" renamed to "Bottom wins"/"Top wins" |
+| v7 | Reconfigure converted .daimod files | Right-click > Reconfigure... changes a mod's settings in place |
 
 ## Pull requests to CadeEvs/FrostyToolsuite (base 1.0.6.3)
 
@@ -176,6 +178,51 @@ when it removes a chunk (same as the v2 fix), and it doesn't change texture head
    flips the display so the winning mod is on top. Renamed to **Bottom wins** and **Top wins**
    (the existing tooltips stay), and the box is wider to fit. Only the labels changed: the saved
    setting is still stored as List/Priority, so existing configs keep working.
+
+---
+
+## v7: Reconfigure converted .daimod files
+
+Not in any upstream PR yet.
+
+### `FrostyModManager/Windows/MainWindow.xaml` and `MainWindow.xaml.cs`
+
+1. **Configurable mods could only be configured on import.** Changing a setting meant uninstalling
+   the mod and importing the `.daimod` again, which also put it at the bottom of the load order.
+   Converted mods now have a right-click **Reconfigure...** option, in both the installed mods list
+   and the applied mods (load order) list. It reopens the configuration window with the settings
+   chosen last time, converts the mod again, and swaps it in where it was: same file name, same
+   load order position and enabled state, in every pack. The right-click menu only appears on mods
+   converted from a `.daimod`.
+2. **The original and the chosen settings are kept.** When a configurable `.daimod` is imported, a
+   copy of it and its settings are saved in `<mods folder>\DAI originals\` as `<name>.daimod` and
+   `<name>.settings.json` (settings by id, culture-independent). Frosty only loads `.fbmod` files
+   directly in the mods folder, so the subfolder is ignored when mods are loaded. Uninstalling the
+   mod removes them.
+3. **Mods imported before this version.** Frosty has no copy of these, so the first Reconfigure asks
+   for the original `.daimod` (and checks its name matches), then keeps a copy. The window is
+   pre-filled from the settings listed at the end of the mod's description, on a best-effort basis:
+   check the values before pressing Save.
+4. **Nothing changes until Save.** Reconfigure converts into a temporary folder first; closing the
+   window without Save, a script error or a failed conversion leaves the installed mod as it was.
+5. **Re-importing an installed `.daimod`** now starts from the settings chosen last time and replaces
+   the mod in place. It used to appear twice in the list until the Mod Manager was restarted.
+6. The converter moved out of `InstallMods` into `DaiConvertMod` (unchanged apart from the output
+   location, the pre-filled settings and returning instead of `continue`), so import and
+   Reconfigure share it. `DaiImportMod` handles import. `AddMod` is split into `LoadMod` + add.
+7. The `.daimod` is now opened read-only during conversion (it used to ask for write access).
+
+### `FrostyModManager/Windows/ConfigWindow.xaml.cs`
+
+1. The window takes the saved settings and pre-fills every setting type (number, decimal,
+   checkbox, dropdown, text) from them, clamped to the script's min/max. Settings the mod no longer
+   has are ignored; new ones use the mod's default. `GetSettingValues` returns the chosen settings
+   for saving. The window title now names the mod.
+
+### `FrostyModManager/FrostyPack.cs`
+
+1. New `ReplaceMod`: puts the re-converted mod in the old one's place in a pack, keeping its
+   position and enabled state.
 
 ---
 
