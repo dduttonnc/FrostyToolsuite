@@ -760,7 +760,7 @@
                                               SelectionChanged="availableModsList_SelectionChanged"
                                               ContextMenuOpening="availableModsList_ContextMenuOpening"
                                               FocusManager.IsFocusScope="True">
-                                        <!-- [DAI fix] right-click > Reconfigure... for converted .daimod files -->
+                                        <!-- [DAI fix] Reconfigure... -->
                                         <ListView.ContextMenu>
                                             <ContextMenu>
                                                 <MenuItem Header="Reconfigure..."
@@ -1408,7 +1408,7 @@
                                                     <TextBlock Margin="6,0,0,0"
                                                                Text="Load Order:"
                                                                VerticalAlignment="Center" />
-                                                    <!-- [DAI fix] clearer labels; the saved setting is still List/Priority by position -->
+                                                    <!-- [DAI fix] was List/Priority; still saved by index -->
                                                     <ComboBox x:Name="orderComboBox"
                                                               Width="100"
                                                               Height="22"
@@ -1440,7 +1440,7 @@
                                              ContextMenuOpening="appliedModsList_ContextMenuOpening"
                                              SelectionMode="Extended"
                                              VerticalAlignment="Top">
-                                        <!-- [DAI fix] right-click > Reconfigure... for converted .daimod files -->
+                                        <!-- [DAI fix] Reconfigure... -->
                                         <ListBox.ContextMenu>
                                             <ContextMenu>
                                                 <MenuItem Header="Reconfigure..."

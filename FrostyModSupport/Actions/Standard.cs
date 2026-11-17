@@ -1297,8 +1297,7 @@ namespace Frosty.ModSupport
                                     }
 
                                     // remove ebx
-                                    // [DAI fix] remove from the end first; removing in ascending order shifted the
-                                    // remaining indices and deleted the wrong entries when removing more than one
+                                    // [DAI fix] remove back to front so the indices don't shift
                                     for (int removeIdx = ebxToRemove.Count - 1; removeIdx >= 0; removeIdx--)
                                         sbBundle.GetValue<DbObject>("ebx").RemoveAt(ebxToRemove[removeIdx]);
 
@@ -1370,8 +1369,7 @@ namespace Frosty.ModSupport
                                     }
 
                                     // remove res
-                                    // [DAI fix] remove from the end first; removing in ascending order shifted the
-                                    // remaining indices and deleted the wrong entries when removing more than one
+                                    // [DAI fix] remove back to front so the indices don't shift
                                     for (int removeIdx = resToRemove.Count - 1; removeIdx >= 0; removeIdx--)
                                         sbBundle.GetValue<DbObject>("res").RemoveAt(resToRemove[removeIdx]);
 
@@ -1433,9 +1431,7 @@ namespace Frosty.ModSupport
                                                         if (curMeta.GetValue<int>("h32") == chunkEntry.H32)
                                                             curMeta.GetValue<DbObject>("meta").SetValue("firstMip", chunkEntry.FirstMip);
                                                     }
-                                                    // [DAI fix] an empty range (start == end) means "no range": DAI Mod
-                                                    // Manager leaves the fields out, and writing 0..0 makes the game wait
-                                                    // forever for texture data that never arrives (infinite load screen)
+                                                    // [DAI fix] DAI Mod Manager leaves out an empty range; writing 0..0 gives an endless load screen
                                                     if (ProfilesLibrary.DataVersion == (int)ProfileVersion.DragonAgeInquisition && chunkEntry.RangeStart == chunkEntry.RangeEnd)
                                                     {
                                                         chunk.RemoveValue("rangeStart");
@@ -1489,11 +1485,7 @@ namespace Frosty.ModSupport
                                     }
 
                                     // remove chunks
-                                    // [DAI fix] remove from the end first; removing in ascending order shifted the
-                                    // remaining indices and deleted the wrong entries when removing more than one
-                                    // [DAI fix] chunks and chunkMeta are parallel lists (new chunks are added to
-                                    // both at the same index), so the matching meta entry must be removed too or
-                                    // every following chunk gets the wrong meta
+                                    // [DAI fix] remove back to front, and keep chunkMeta (parallel to chunks) in step
                                     DbObject chunksList = sbBundle.GetValue<DbObject>("chunks");
                                     DbObject chunkMetaList = sbBundle.GetValue<DbObject>("chunkMeta");
                                     bool metaIsParallel = chunksList != null && chunkMetaList != null && chunkMetaList.Count == chunksList.Count;
@@ -1527,7 +1519,7 @@ namespace Frosty.ModSupport
 
                                         if (entry.FirstMip != -1)
                                         {
-                                            // [DAI fix] leave an empty range out, as DAI Mod Manager does (see above)
+                                            // [DAI fix] leave out an empty range (see above)
                                             if (!(ProfilesLibrary.DataVersion == (int)ProfileVersion.DragonAgeInquisition && entry.RangeStart == entry.RangeEnd))
                                             {
                                                 chunk.SetValue("rangeStart", (int)entry.RangeStart);
