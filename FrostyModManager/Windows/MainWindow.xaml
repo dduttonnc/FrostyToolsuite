@@ -758,7 +758,16 @@
                                               Grid.Row="2"
                                               MouseDoubleClick="availableModsList_MouseDoubleClick"
                                               SelectionChanged="availableModsList_SelectionChanged"
+                                              ContextMenuOpening="availableModsList_ContextMenuOpening"
                                               FocusManager.IsFocusScope="True">
+                                        <!-- [DAI fix] right-click > Reconfigure... for converted .daimod files -->
+                                        <ListView.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="Reconfigure..."
+                                                          ToolTip="Change this mod's settings. It keeps its place in the load order."
+                                                          Click="availableModsReconfigureMenuItem_Click" />
+                                            </ContextMenu>
+                                        </ListView.ContextMenu>
                                         <ListView.View>
                                             <GridView ScrollViewer.CanContentScroll="False">
 
@@ -1399,16 +1408,17 @@
                                                     <TextBlock Margin="6,0,0,0"
                                                                Text="Load Order:"
                                                                VerticalAlignment="Center" />
+                                                    <!-- [DAI fix] clearer labels; the saved setting is still List/Priority by position -->
                                                     <ComboBox x:Name="orderComboBox"
-                                                              Width="68"
+                                                              Width="100"
                                                               Height="22"
                                                               Margin="4,0,0,0"
                                                               Padding="4,2,4,2"
                                                               SelectionChanged="orderComboBox_SelectionChanged"
                                                               ToolTip="{Binding Path=SelectedItem.ToolTip, RelativeSource={RelativeSource Self}}">
-                                                        <ComboBoxItem Content="List"
+                                                        <ComboBoxItem Content="Bottom wins"
                                                                       ToolTip="Bottom Overrides Top" />
-                                                        <ComboBoxItem Content="Priority"
+                                                        <ComboBoxItem Content="Top wins"
                                                                       ToolTip="Top Overrides Bottom" />
                                                     </ComboBox>
                                                 </StackPanel>
@@ -1427,8 +1437,17 @@
                                              HorizontalContentAlignment="Stretch"
                                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                              SelectionChanged="appliedModsList_SelectionChanged"
+                                             ContextMenuOpening="appliedModsList_ContextMenuOpening"
                                              SelectionMode="Extended"
                                              VerticalAlignment="Top">
+                                        <!-- [DAI fix] right-click > Reconfigure... for converted .daimod files -->
+                                        <ListBox.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="Reconfigure..."
+                                                          ToolTip="Change this mod's settings. It keeps its place in the load order."
+                                                          Click="appliedModsReconfigureMenuItem_Click" />
+                                            </ContextMenu>
+                                        </ListBox.ContextMenu>
                                         <ListBox.ItemTemplate>
                                             <DataTemplate>
                                                 <Grid>
