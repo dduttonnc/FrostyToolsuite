@@ -25,8 +25,9 @@ FrostyPack, 9 in the executor, 6 in Standard.cs).
 | #352 | Empty chunk range (v5) |
 | #353 | Thread safety: archive ref counts + addedBundles (v2) |
 | #354 | .daimod import: converter, config window, texture ranges, game data check (v1, v2, v3, v4); depends on #351 |
+| #355 | Reconfigure for converted .daimod files (v7); depends on #354 |
 
-All five merge cleanly together on 1.0.6.3. On the unreleased 1.0.6.4 branch, all but #353 apply
+#350 to #354 merge cleanly together on 1.0.6.3, and #355 sits on top of #354. On the unreleased 1.0.6.4 branch, all but #353 apply
 cleanly (1.0.6.4 already has the #327 part of it).
 
 ---
@@ -183,7 +184,7 @@ when it removes a chunk (same as the v2 fix), and it doesn't change texture head
 
 ## v7: Reconfigure converted .daimod files
 
-Not in any upstream PR yet.
+Upstream PR #355 (branch `pr6-daimod-reconfigure`, based on #354).
 
 ### `FrostyModManager/Windows/MainWindow.xaml` and `MainWindow.xaml.cs`
 
