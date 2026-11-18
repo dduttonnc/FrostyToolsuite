@@ -2272,6 +2272,7 @@ namespace FrostySdk.Managers
             if (!Directory.Exists(fi.DirectoryName))
                 Directory.CreateDirectory(fi.DirectoryName);
 
+            int lastPercent = -1;
             using (NativeWriter writer = new NativeWriter(new FileStream(fi.FullName, FileMode.Create)))
             {
                 writer.Write(CacheMagic);
@@ -2291,11 +2292,12 @@ namespace FrostySdk.Managers
                     for (int i = 0; i < superBundles.Count; i++)
                     {
                         writer.WriteNullTerminatedString(superBundles[i].Name);
-                        WriteToLog(string.Format("progress:{0}", (double)i / (double)superBundles.Count * 100.0));
+                        WriteProgress(i, superBundles.Count, ref lastPercent);
                     }
                 }
 
                 WriteToLog("Writing to cache (Bundles)");
+                lastPercent = -1;
 
                 writer.Write(bundles.Count);
                 for (int i = 0; i < bundles.Count; i++)
@@ -2303,16 +2305,17 @@ namespace FrostySdk.Managers
                     writer.WriteNullTerminatedString(bundles[i].Name);
                     writer.Write(bundles[i].SuperBundleId);
 
-                    WriteToLog(string.Format("progress:{0}", (double)i / (double)bundles.Count * 100.0));
+                    WriteProgress(i, bundles.Count, ref lastPercent);
                 }
 
                 WriteToLog("Writing to cache (EBX)");
 
                 writer.Write(ebxList.Values.Count);
-                for (int i = 0; i < ebxList.Count; i++)
+                // [DAI fix] was ElementAt(i), which rescans the dictionary each time (quadratic)
+                lastPercent = -1;
+                int ebxIndex = 0;
+                foreach (EbxAssetEntry ebx in ebxList.Values)
                 {
-                    EbxAssetEntry ebx = ebxList.Values.ElementAt(i);
-
                     writer.WriteNullTerminatedString(ebx.Name);
                     writer.Write(ebx.Sha1);
                     writer.Write(ebx.Size);
@@ -2342,16 +2345,16 @@ namespace FrostySdk.Managers
                         writer.Write(dependencyGuid);
                     }
 
-                    WriteToLog(string.Format("progress:{0}", (double)i / (double)ebxList.Count * 100.0));
+                    WriteProgress(ebxIndex++, ebxList.Count, ref lastPercent);
                 }
 
                 WriteToLog("Writing to cache (RES)");
 
                 writer.Write(resList.Values.Count);
-                for (int i = 0; i < resList.Count; i++)
+                lastPercent = -1;
+                int resIndex = 0;
+                foreach (ResAssetEntry res in resList.Values)
                 {
-                    ResAssetEntry res = resList.Values.ElementAt(i);
-
                     writer.WriteNullTerminatedString(res.Name);
                     writer.Write(res.Sha1);
                     writer.Write(res.Size);
@@ -2378,16 +2381,16 @@ namespace FrostySdk.Managers
                         writer.Write(baseBundleId);
                     }
 
-                    WriteToLog(string.Format("progress:{0}", (double)i / (double)resList.Count * 100.0));
+                    WriteProgress(resIndex++, resList.Count, ref lastPercent);
                 }
 
                 WriteToLog("Writing to cache (CHUNK)");
 
                 writer.Write(chunkList.Count);
-                for (int i = 0; i < chunkList.Count; i++)
+                lastPercent = -1;
+                int chunkIndex = 0;
+                foreach (ChunkAssetEntry chunk in chunkList.Values)
                 {
-                    ChunkAssetEntry chunk = chunkList.Values.ElementAt(i);
-
                     writer.Write(chunk.Id);
                     writer.Write(chunk.Sha1);
                     writer.Write(chunk.Size);
@@ -2416,9 +2419,20 @@ namespace FrostySdk.Managers
                         writer.Write(baseBundleId);
                     }
 
-                    WriteToLog(string.Format("progress:{0}", (double)i / (double)chunkList.Count * 100.0));
+                    WriteProgress(chunkIndex++, chunkList.Count, ref lastPercent);
                 }
             }
+        }
+
+        // [DAI fix] report whole-percent steps only; one update per entry flooded the UI thread
+        private void WriteProgress(int index, int count, ref int lastPercent)
+        {
+            int percent = (int)((long)index * 100 / count);
+            if (percent == lastPercent)
+                return;
+
+            lastPercent = percent;
+            WriteToLog(string.Format("progress:{0}", (double)index / count * 100.0));
         }
 
         private void WriteToLog(string text, params object[] vars) => logger?.Log(text, vars);

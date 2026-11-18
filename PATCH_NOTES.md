@@ -5,7 +5,7 @@ on 2026-11-17; 1.0.6.4 is 1.0.6.3 plus 10 small upstream fixes, #327 to #344, an
 Branch: `dai-fixes` on https://github.com/dduttonnc/FrostyToolsuite (v1 to v6 in one commit,
 "My DAI build"; later versions in their own commits). Every change is marked in the code with a
 `[DAI fix]` comment (34 in MainWindow.xaml.cs, 3 in MainWindow.xaml, 23 in ConfigWindow, 1 in
-FrostyPack, 8 in the executor, 6 in Standard.cs, 1 in App.xaml.cs, 1 in AssemblyInfo.cs).
+FrostyPack, 8 in the executor, 8 in Standard.cs, 2 in AssetManager.cs, 1 in App.xaml.cs, 1 in AssemblyInfo.cs).
 
 ## Build version
 
@@ -30,6 +30,7 @@ version is the upstream base plus a fork suffix (`-dai.1`, `-dai.2`, ... one per
 | v5 | Leave empty texture ranges out | Infinite load screen with some texture mods |
 | v6 | Clearer load order labels | "List"/"Priority" renamed to "Bottom wins"/"Top wins" |
 | v7 | Reconfigure converted .daimod files | Right-click > Reconfigure... changes a mod's settings in place |
+| v8 | Faster cache build and mod apply | Branch `perf/cache-build-and-apply`, not yet tested |
 
 ## Pull requests to CadeEvs/FrostyToolsuite (base 1.0.6.4)
 
@@ -243,6 +244,30 @@ Upstream PR #355 (branch `pr6-daimod-reconfigure`, based on #354).
 
 1. New `ReplaceMod`: puts the re-converted mod in the old one's place in a pack, keeping its
    position and enabled state.
+
+---
+
+## v8: Faster cache build and mod apply
+
+Branch `perf/cache-build-and-apply`. No change to what gets written, only how fast.
+
+### `FrostySdk/Managers/AssetManager.cs` (cache build)
+
+1. **Writing the cache was quadratic.** The EBX, RES and chunk loops fetched entry *i* with
+   `Values.ElementAt(i)`, which walks the dictionary from the start every time, so the "Writing to
+   cache" bar slowed down as it went. They now loop over the values once. The cache file is
+   identical (same order).
+2. **Progress updates are throttled.** The splash screen (and taskbar) got one update per entry,
+   hundreds of thousands in all. It now gets one per whole percent.
+
+### `FrostyModSupport/Actions/Standard.cs` (Applying Mods)
+
+1. **Unmodified DAI base bundles are no longer parsed.** Every bundle in a superbundle that a mod
+   touches was read, but base bundles no mod changes are never written back (the toc keeps
+   pointing at the game's copy), so reading them was wasted.
+2. **Each `.sb` file is opened once per superbundle** instead of once per bundle.
+3. **Duplicate checks on written data use a set** instead of scanning a list, which compared every
+   entry each time.
 
 ---
 

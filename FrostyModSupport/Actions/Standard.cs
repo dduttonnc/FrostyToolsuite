@@ -47,11 +47,14 @@ namespace Frosty.ModSupport
             private FrostyModExecutor parent;
 
             private List<Sha1> casRefs = new List<Sha1>();
+            private HashSet<Sha1> casRefSet = new HashSet<Sha1>();
             private List<ChunkAssetEntry> chunkEntries = new List<ChunkAssetEntry>();
             private Exception errorException;
 
             private string modPath;
             private CancellationToken cancelToken;
+            private DbReader baseSbReader;
+            private DbReader patchSbReader;
 
             public SuperBundleAction(string inSuperBundle, ManualResetEvent inDoneEvent, FrostyModExecutor inParent, string inModPath, CancellationToken inCancelToken)
             {
@@ -305,7 +308,8 @@ namespace Frosty.ModSupport
 
                                                 if (entry.IsTocChunk)
                                                 {
-                                                    if (!casRefs.Contains(entry.Sha1))
+                                                    // [DAI fix] set lookup; List.Contains boxed every Sha1 compare
+                                                    if (casRefSet.Add(entry.Sha1))
                                                     {
                                                         casRefs.Add(entry.Sha1);
                                                         chunkEntries.Add(entry);
@@ -333,7 +337,7 @@ namespace Frosty.ModSupport
 
                                             if (entry.IsTocChunk)
                                             {
-                                                if (!casRefs.Contains(entry.Sha1))
+                                                if (casRefSet.Add(entry.Sha1))
                                                 {
                                                     casRefs.Add(entry.Sha1);
                                                     chunkEntries.Add(entry);
@@ -370,7 +374,7 @@ namespace Frosty.ModSupport
 
                                             if (entry.IsTocChunk)
                                             {
-                                                if (!casRefs.Contains(entry.Sha1))
+                                                if (casRefSet.Add(entry.Sha1))
                                                 {
                                                     casRefs.Add(entry.Sha1);
                                                     chunkEntries.Add(entry);
@@ -396,7 +400,7 @@ namespace Frosty.ModSupport
 
                                             if (entry.IsTocChunk)
                                             {
-                                                if (!casRefs.Contains(entry.Sha1))
+                                                if (casRefSet.Add(entry.Sha1))
                                                 {
                                                     casRefs.Add(entry.Sha1);
                                                     chunkEntries.Add(entry);
@@ -1178,7 +1182,6 @@ namespace Frosty.ModSupport
                             List<long> bundleSizes = new List<long>();
 
                             // modify bundles
-                            Stream sbStream = null;
                             foreach (DbObject bundle in toc.GetValue<DbObject>("bundles"))
                             {
                                 cancelToken.ThrowIfCancellationRequested();
@@ -1186,6 +1189,9 @@ namespace Frosty.ModSupport
                                 bool baseBundle = false;
                                 if (ProfilesLibrary.DataVersion == (int)ProfileVersion.DragonAgeInquisition || ProfilesLibrary.DataVersion == (int)ProfileVersion.Battlefield4 || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeed || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedRivals)
                                     baseBundle = !(bundle.GetValue<bool>("delta"));
+
+                                bool modified = false;
+                                int bundleName = Fnv1.HashString(bundle.GetValue<string>("id").ToLower());
 
                                 DbObject sbBundle = null;
                                 if (bundle.GetValue<long>("offset") == 0xDEADBEEF)
@@ -1211,31 +1217,18 @@ namespace Frosty.ModSupport
                                     if (ProfilesLibrary.DataVersion != (int)ProfileVersion.DragonAgeInquisition && ProfilesLibrary.DataVersion != (int)ProfileVersion.Battlefield4 && ProfilesLibrary.DataVersion != (int)ProfileVersion.NeedForSpeed && ProfilesLibrary.DataVersion != (int)ProfileVersion.NeedForSpeedRivals)
                                         sbBundle.SetValue("dbxTotalSize", 0);
                                 }
-                                else
+                                // [DAI fix] unmodified base bundles are never written back, so skip parsing them
+                                else if (!baseBundle || parent.modifiedBundles.ContainsKey(bundleName))
                                 {
-                                    sbStream = null;
-                                    if (baseBundle)
-                                    {
-                                        // In DAI/NFS a toc may reference either a base or delta bundle for each individual entry
-                                        sbStream = new FileStream(parent.fs.ResolvePath("native_data/" + superBundle + ".sb"), FileMode.Open, FileAccess.Read);
-                                    }
-                                    else
-                                    {
-                                        // Other games tocs only specify all base or all delta
-                                        sbStream = new FileStream((isBase)
-                                            ? parent.fs.ResolvePath("native_data/" + superBundle + ".sb")
-                                            : parent.fs.ResolvePath("native_patch/" + superBundle + ".sb"),
-                                            FileMode.Open, FileAccess.Read);
-                                    }
-                                    using (DbReader reader = new DbReader(sbStream, parent.fs.CreateDeobfuscator()))
-                                    {
-                                        sbStream.Position = bundle.GetValue<long>("offset");
-                                        sbBundle = reader.ReadDbObject();
-                                    }
-                                }
+                                    // In DAI/NFS a toc may reference either a base or delta bundle for each individual entry;
+                                    // other games tocs only specify all base or all delta
+                                    DbReader reader = (baseBundle || isBase)
+                                        ? baseSbReader ?? (baseSbReader = OpenSbReader("native_data/"))
+                                        : patchSbReader ?? (patchSbReader = OpenSbReader("native_patch/"));
 
-                                bool modified = false;
-                                int bundleName = Fnv1.HashString(bundle.GetValue<string>("id").ToLower());
+                                    reader.BaseStream.Position = bundle.GetValue<long>("offset");
+                                    sbBundle = reader.ReadDbObject();
+                                }
 
                                 if (parent.modifiedBundles.ContainsKey(bundleName))
                                 {
@@ -1286,7 +1279,7 @@ namespace Frosty.ModSupport
                                                 ebx.RemoveValue("deltaSha1");
                                             }
 
-                                            if (!casRefs.Contains(ebxEntry.Sha1))
+                                            if (casRefSet.Add(ebxEntry.Sha1))
                                             {
                                                 casRefs.Add(ebxEntry.Sha1);
                                                 chunkEntries.Add(null);
@@ -1313,7 +1306,7 @@ namespace Frosty.ModSupport
                                         ebx.SetValue("size", entry.Size);
                                         ebx.SetValue("originalSize", entry.OriginalSize);
 
-                                        if (!casRefs.Contains(entry.Sha1))
+                                        if (casRefSet.Add(entry.Sha1))
                                         {
                                             casRefs.Add(entry.Sha1);
                                             chunkEntries.Add(null);
@@ -1358,7 +1351,7 @@ namespace Frosty.ModSupport
                                                 res.RemoveValue("deltaSha1");
                                             }
 
-                                            if (!casRefs.Contains(resEntry.Sha1))
+                                            if (casRefSet.Add(resEntry.Sha1))
                                             {
                                                 casRefs.Add(resEntry.Sha1);
                                                 chunkEntries.Add(null);
@@ -1390,7 +1383,7 @@ namespace Frosty.ModSupport
                                         if (entry.IsInline)
                                             res.SetValue("idata", parent.archiveData[entry.Sha1].Data);
 
-                                        if (!casRefs.Contains(entry.Sha1))
+                                        if (casRefSet.Add(entry.Sha1))
                                         {
                                             casRefs.Add(entry.Sha1);
                                             chunkEntries.Add(null);
@@ -1471,7 +1464,7 @@ namespace Frosty.ModSupport
                                                 if (ProfilesLibrary.DataVersion == (int)ProfileVersion.DragonAgeInquisition || ProfilesLibrary.DataVersion == (int)ProfileVersion.Battlefield4 || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeed || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedRivals)
                                                     chunk.SetValue("casPatchType", 1);
 
-                                                if (!casRefs.Contains(chunkEntry.Sha1))
+                                                if (casRefSet.Add(chunkEntry.Sha1))
                                                 {
                                                     casRefs.Add(chunkEntry.Sha1);
                                                     chunkEntries.Add(chunkEntry);
@@ -1542,7 +1535,7 @@ namespace Frosty.ModSupport
                                         if (entry.IsInline)
                                             chunk.SetValue("idata", parent.archiveData[entry.Sha1].Data);
 
-                                        if (!casRefs.Contains(entry.Sha1))
+                                        if (casRefSet.Add(entry.Sha1))
                                         {
                                             casRefs.Add(entry.Sha1);
                                             chunkEntries.Add(entry);
@@ -1654,6 +1647,18 @@ namespace Frosty.ModSupport
                     // thread exception caught
                     errorException = e;
                 }
+                finally
+                {
+                    baseSbReader?.Dispose();
+                    patchSbReader?.Dispose();
+                }
+            }
+
+            // [DAI fix] one reader per .sb file instead of reopening it for every bundle
+            private DbReader OpenSbReader(string root)
+            {
+                string path = parent.fs.ResolvePath(root + superBundle + ".sb");
+                return new DbReader(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 16), parent.fs.CreateDeobfuscator());
             }
 
             public void ThreadPoolCallback(object threadContext)
