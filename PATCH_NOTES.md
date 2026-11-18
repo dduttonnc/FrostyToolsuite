@@ -5,7 +5,7 @@ on 2026-11-17; 1.0.6.4 is 1.0.6.3 plus 10 small upstream fixes, #327 to #344, an
 Branch: `dai-fixes` on https://github.com/dduttonnc/FrostyToolsuite (v1 to v6 in one commit,
 "My DAI build"; later versions in their own commits). Every change is marked in the code with a
 `[DAI fix]` comment (34 in MainWindow.xaml.cs, 3 in MainWindow.xaml, 23 in ConfigWindow, 1 in
-FrostyPack, 8 in the executor, 8 in Standard.cs, 2 in AssetManager.cs, 1 in App.xaml.cs, 1 in AssemblyInfo.cs).
+FrostyPack, 8 in the executor, 8 in Standard.cs, 2 in AssetManager.cs, 1 in LegacyAssetLoader.cs, 1 in App.xaml.cs, 1 in AssemblyInfo.cs).
 
 ## Build version
 
@@ -30,7 +30,7 @@ version is the upstream base plus a fork suffix (`-dai.1`, `-dai.2`, ... one per
 | v5 | Leave empty texture ranges out | Infinite load screen with some texture mods |
 | v6 | Clearer load order labels | "List"/"Priority" renamed to "Bottom wins"/"Top wins" |
 | v7 | Reconfigure converted .daimod files | Right-click > Reconfigure... changes a mod's settings in place |
-| v8 | Faster cache build and mod apply | Branch `perf/cache-build-and-apply`, not yet tested |
+| v8 | Faster cache build and mod apply | Branches `perf/cache-build-and-apply` (cache rebuild ~15 to ~7 min) and `perf/parallel-load` (multi-core loading, on top) |
 
 ## Pull requests to CadeEvs/FrostyToolsuite (base 1.0.6.4)
 
@@ -249,7 +249,8 @@ Upstream PR #355 (branch `pr6-daimod-reconfigure`, based on #354).
 
 ## v8: Faster cache build and mod apply
 
-Branch `perf/cache-build-and-apply`. No change to what gets written, only how fast.
+Branch `perf/cache-build-and-apply`; `perf/parallel-load` adds the multi-core loading below on top
+of it. No change to what gets written, only how fast.
 
 ### `FrostySdk/Managers/AssetManager.cs` (cache build)
 
@@ -259,6 +260,14 @@ Branch `perf/cache-build-and-apply`. No change to what gets written, only how fa
    identical (same order).
 2. **Progress updates are throttled.** The splash screen (and taskbar) got one update per entry,
    hundreds of thousands in all. It now gets one per whole percent.
+
+### `FrostySdk/Managers/Loaders/LegacyAssetLoader.cs` (cache build, `perf/parallel-load` only)
+
+1. **Bundles are parsed on several cores.** "Loading Data" read and parsed each bundle of a
+   superbundle one after another on one core. Bundles are now read from disk in batches of 256,
+   parsed in parallel, and added to the asset lists one at a time in the original toc order while
+   the next batch parses, so the cache comes out the same. Binary superbundles (not used by DAI)
+   still load the old way.
 
 ### `FrostyModSupport/Actions/Standard.cs` (Applying Mods)
 

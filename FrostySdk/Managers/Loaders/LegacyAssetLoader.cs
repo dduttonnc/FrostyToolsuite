@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace FrostySdk.Managers
 {
@@ -65,6 +66,14 @@ namespace FrostySdk.Managers
 
                     if (patchFileExists)
                         patchMf = new NativeReader(new FileStream(parent.fs.ResolvePath(string.Format("native_patch/{0}.sb", superBundleName)), FileMode.Open, FileAccess.Read));
+
+                    if (!isBinarySuperBundle)
+                    {
+                        LoadCasBundles(parent, helper, patchBundleList, baseMf, patchMf);
+                        baseMf.Dispose();
+                        patchMf.Dispose();
+                        continue;
+                    }
 
                     // iterate bundles in superbundle
                     foreach (DbObject bundle in patchBundleList)
@@ -135,6 +144,67 @@ namespace FrostySdk.Managers
 
                     if (isBinarySuperBundle)
                         GC.Collect();
+                }
+            }
+
+            // [DAI fix] bundles are parsed on several cores, then added one at a time in toc order
+            private static void LoadCasBundles(AssetManager parent, BinarySbDataHelper helper, DbObject bundleList, NativeReader baseMf, NativeReader patchMf)
+            {
+                const int batchSize = 256;
+
+                List<DbObject> tocBundles = new List<DbObject>();
+                foreach (DbObject bundle in bundleList)
+                    tocBundles.Add(bundle);
+
+                Task<DbObject[]> parsing = null;
+                int parsingStart = 0;
+
+                for (int start = 0; start < tocBundles.Count; start += batchSize)
+                {
+                    Stream[] streams = new Stream[Math.Min(batchSize, tocBundles.Count - start)];
+                    for (int i = 0; i < streams.Length; i++)
+                    {
+                        DbObject bundle = tocBundles[start + i];
+                        NativeReader mf = bundle.GetValue<bool>("base") ? baseMf : patchMf;
+                        streams[i] = mf.CreateViewStream(bundle.GetValue<long>("offset"), bundle.GetValue<long>("size"));
+                    }
+
+                    // the next batch parses while this thread adds the previous one
+                    Task<DbObject[]> next = Task.Run(() => ParseBundles(parent, streams));
+                    if (parsing != null)
+                        AddBundles(parent, helper, tocBundles, parsingStart, parsing.GetAwaiter().GetResult());
+
+                    parsing = next;
+                    parsingStart = start;
+                }
+
+                if (parsing != null)
+                    AddBundles(parent, helper, tocBundles, parsingStart, parsing.GetAwaiter().GetResult());
+            }
+
+            private static DbObject[] ParseBundles(AssetManager parent, Stream[] streams)
+            {
+                DbObject[] result = new DbObject[streams.Length];
+                Parallel.For(0, streams.Length, i =>
+                {
+                    using (DbReader reader = new DbReader(streams[i], parent.fs.CreateDeobfuscator()))
+                        result[i] = reader.ReadDbObject();
+                });
+                return result;
+            }
+
+            private static void AddBundles(AssetManager parent, BinarySbDataHelper helper, List<DbObject> tocBundles, int start, DbObject[] sbs)
+            {
+                for (int i = 0; i < sbs.Length; i++)
+                {
+                    string bundleName = tocBundles[start + i].GetValue<string>("id").ToLower();
+
+                    parent.bundles.Add(new BundleEntry() { Name = bundleName, SuperBundleId = parent.superBundles.Count - 1 });
+                    int bundleId = parent.bundles.Count - 1;
+
+                    parent.ProcessBundleEbx(sbs[i], bundleId, helper);
+                    parent.ProcessBundleRes(sbs[i], bundleId, helper);
+                    parent.ProcessBundleChunks(sbs[i], bundleId, helper);
                 }
             }
         }
