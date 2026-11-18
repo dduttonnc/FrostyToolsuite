@@ -607,19 +607,35 @@ namespace FrostySdk.Managers
             {
                 BinarySbDataHelper helper = new BinarySbDataHelper(this);
 
+                // TIMING BUILD ONLY
+                System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
+
                 // load in assets from specified loader
                 IAssetLoader loader = (IAssetLoader)Activator.CreateInstance(ProfilesLibrary.AssetLoader);
                 loader.Load(this, helper);
+                long loadMs = sw.ElapsedMilliseconds;
 
                 // write any patched sb data to cache
                 helper.WriteToCache(this);
+                long sbDataMs = sw.ElapsedMilliseconds - loadMs;
 
                 GC.Collect();
+                long gcMs = sw.ElapsedMilliseconds - loadMs - sbDataMs;
 
                 // if there is not additional startup or the ebxGuidList has items, write the cache
                 if (!additionalStartup || ebxGuidList.Count > 0)
                 {
                     WriteToCache();
+                }
+                long writeMs = sw.ElapsedMilliseconds - loadMs - sbDataMs - gcMs;
+
+                try
+                {
+                    File.AppendAllText(fs.CacheName + "_loadtimes.txt", string.Format("{0}Initialize: loader {1} ms, sbdata {2} ms, GC.Collect {3} ms, write cache {4} ms; ebx {5}, res {6}, chunks {7}, bundles {8}{0}",
+                        Environment.NewLine, loadMs, sbDataMs, gcMs, writeMs, ebxList.Count, resList.Count, chunkList.Count, bundles.Count));
+                }
+                catch (Exception)
+                {
                 }
             }
 

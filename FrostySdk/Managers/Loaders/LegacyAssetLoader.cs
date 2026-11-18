@@ -1,7 +1,11 @@
 ﻿using FrostySdk.IO;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Runtime;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace FrostySdk.Managers
@@ -20,6 +24,22 @@ namespace FrostySdk.Managers
                 public DbObject PatchToc;
                 public List<DbObject> BundleList;
                 public DbObject[] Bundles;
+                public long PreloadMs;
+                public int Refs;
+            }
+
+            // TIMING BUILD ONLY
+            private class LoadTiming
+            {
+                public string Name;
+                public long PreloadMs;
+                public long WaitMs;
+                public long TocMs;
+                public long RestMs;
+                public int Bundles;
+                public int TocChunks;
+                public int Refs;
+                public string Path = "none";
             }
 
             public void Load(AssetManager parent, BinarySbDataHelper helper)
@@ -33,11 +53,34 @@ namespace FrostySdk.Managers
                 for (int i = 0; i < Math.Min(window, superBundleNames.Count); i++)
                     preloads[i] = StartPreload(parent, superBundleNames[i]);
 
+                Stopwatch total = Stopwatch.StartNew();
+                List<LoadTiming> timings = new List<LoadTiming>();
+                LoadTiming timing = null;
+                long restStart = 0;
+                int gen0 = GC.CollectionCount(0), gen1 = GC.CollectionCount(1), gen2 = GC.CollectionCount(2);
+
                 for (int sbIndex = 0; sbIndex < superBundleNames.Count; sbIndex++)
                 {
+                    if (timing != null)
+                        timing.RestMs = total.ElapsedMilliseconds - restStart;
+
                     string superBundleName = superBundleNames[sbIndex];
+                    long waitStart = total.ElapsedMilliseconds;
                     PreloadedSuperBundle preload = preloads[sbIndex].GetAwaiter().GetResult();
                     preloads[sbIndex] = null;
+
+                    timing = new LoadTiming
+                    {
+                        Name = superBundleName,
+                        PreloadMs = preload.PreloadMs,
+                        WaitMs = total.ElapsedMilliseconds - waitStart,
+                        Bundles = preload.BundleList?.Count ?? 0,
+                        TocChunks = (preload.BaseToc?.GetValue<DbObject>("chunks")?.Count ?? 0) + (preload.PatchToc?.GetValue<DbObject>("chunks")?.Count ?? 0),
+                        Refs = preload.Refs
+                    };
+                    timings.Add(timing);
+                    long tocStart = total.ElapsedMilliseconds;
+                    restStart = tocStart;
 
                     if (sbIndex + window < superBundleNames.Count)
                         preloads[sbIndex + window] = StartPreload(parent, superBundleNames[sbIndex + window]);
@@ -57,6 +100,9 @@ namespace FrostySdk.Managers
                     DbObject patchToc = (preload.PatchTocFound)
                         ? parent.ProcessTocChunks(preload.PatchToc, string.Format("native_patch/{0}.toc", superBundleName), helper, false)
                         : null;
+
+                    timing.TocMs = total.ElapsedMilliseconds - tocStart;
+                    restStart = total.ElapsedMilliseconds;
 
                     // default to base bundles first
                     DbObject baseBundleList = baseToc.GetValue<DbObject>("bundles");
@@ -91,9 +137,13 @@ namespace FrostySdk.Managers
 
                     if (preload.Bundles != null)
                     {
+                        timing.Path = "preloaded";
                         AddBundles(parent, helper, preload.BundleList, 0, preload.Bundles);
                         continue;
                     }
+
+                    timing.Path = isBinarySuperBundle ? "binary" : "batched";
+                    timing.Bundles = patchBundleList.Count;
 
                     // open superbundles for processing
                     NativeReader baseMf = new NativeReader(new FileStream(parent.fs.ResolvePath(string.Format("native_data/{0}.sb", superBundleName)), FileMode.Open, FileAccess.Read));
@@ -180,11 +230,53 @@ namespace FrostySdk.Managers
                     if (isBinarySuperBundle)
                         GC.Collect();
                 }
+
+                if (timing != null)
+                    timing.RestMs = total.ElapsedMilliseconds - restStart;
+                WriteTimings(parent, timings, total.ElapsedMilliseconds, GC.CollectionCount(0) - gen0, GC.CollectionCount(1) - gen1, GC.CollectionCount(2) - gen2);
+            }
+
+            private static void WriteTimings(AssetManager parent, List<LoadTiming> timings, long totalMs, int gen0, int gen1, int gen2)
+            {
+                try
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.AppendLine("Loader total: " + totalMs + " ms, superbundles: " + timings.Count);
+                    sb.AppendLine("Cores: " + Environment.ProcessorCount + ", server GC: " + GCSettings.IsServerGC + ", GCs gen0/1/2: " + gen0 + "/" + gen1 + "/" + gen2);
+                    sb.AppendLine("Main thread waiting for read-ahead: " + timings.Sum(t => t.WaitMs) + " ms");
+                    sb.AppendLine("Main thread toc chunks: " + timings.Sum(t => t.TocMs) + " ms");
+                    sb.AppendLine("Main thread bundles: " + timings.Sum(t => t.RestMs) + " ms");
+                    sb.AppendLine("Read-ahead work (all threads): " + timings.Sum(t => t.PreloadMs) + " ms");
+                    sb.AppendLine("Bundles: " + timings.Sum(t => t.Bundles) + ", asset refs (read-ahead only): " + timings.Sum(t => (long)t.Refs) + ", toc chunks: " + timings.Sum(t => (long)t.TocChunks));
+                    foreach (string path in new[] { "preloaded", "batched", "binary", "none" })
+                        sb.AppendLine("  " + path + ": " + timings.Count(t => t.Path == path) + " superbundles, " + timings.Where(t => t.Path == path).Sum(t => t.WaitMs + t.TocMs + t.RestMs) + " ms main thread");
+                    sb.AppendLine();
+                    sb.AppendLine("Slowest on the main thread (wait / toc / bundles / read-ahead ms, path, bundles, refs, toc chunks):");
+                    foreach (LoadTiming t in timings.OrderByDescending(t => t.WaitMs + t.TocMs + t.RestMs).Take(40))
+                        sb.AppendLine(string.Format("  {0} / {1} / {2} / {3}  {4}  {5}  {6}  {7}  {8}", t.WaitMs, t.TocMs, t.RestMs, t.PreloadMs, t.Path, t.Bundles, t.Refs, t.TocChunks, t.Name));
+                    sb.AppendLine();
+                    sb.AppendLine("Slowest read-ahead:");
+                    foreach (LoadTiming t in timings.OrderByDescending(t => t.PreloadMs).Take(20))
+                        sb.AppendLine(string.Format("  {0} ms  {1}  {2}  {3}  {4}", t.PreloadMs, t.Path, t.Bundles, t.TocChunks, t.Name));
+
+                    string file = parent.fs.CacheName + "_loadtimes.txt";
+                    Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(file)));
+                    File.WriteAllText(file, sb.ToString());
+                }
+                catch (Exception)
+                {
+                }
             }
 
             private static Task<PreloadedSuperBundle> StartPreload(AssetManager parent, string superBundleName)
             {
-                return Task.Run(() => Preload(parent, superBundleName));
+                return Task.Run(() =>
+                {
+                    Stopwatch sw = Stopwatch.StartNew();
+                    PreloadedSuperBundle result = Preload(parent, superBundleName);
+                    result.PreloadMs = sw.ElapsedMilliseconds;
+                    return result;
+                });
             }
 
             // reads only; anything that changes the asset lists happens on the loading thread
@@ -240,6 +332,8 @@ namespace FrostySdk.Managers
 
                 result.BundleList = bundleList;
                 result.Bundles = bundles;
+                foreach (DbObject b in bundles)
+                    result.Refs += (b.GetValue<DbObject>("ebx")?.Count ?? 0) + (b.GetValue<DbObject>("res")?.Count ?? 0) + (b.GetValue<DbObject>("chunks")?.Count ?? 0);
                 return result;
             }
 
