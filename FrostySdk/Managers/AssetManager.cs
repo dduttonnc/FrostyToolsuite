@@ -1776,6 +1776,12 @@ namespace FrostySdk.Managers
             using (DbReader reader = new DbReader(new FileStream(filename, FileMode.Open, FileAccess.Read), fs.CreateDeobfuscator()))
                 toc = reader.ReadDbObject();
 
+            return ProcessTocChunks(toc, superBundleName, helper, isBase);
+        }
+
+        // [DAI fix] split from the above so the loader can read tocs on other threads
+        private DbObject ProcessTocChunks(DbObject toc, string superBundleName, BinarySbDataHelper helper, bool isBase)
+        {
             if (isBase && !(ProfilesLibrary.DataVersion == (int)ProfileVersion.DragonAgeInquisition || ProfilesLibrary.DataVersion == (int)ProfileVersion.Battlefield4 || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeed || ProfilesLibrary.DataVersion == (int)ProfileVersion.PlantsVsZombiesGardenWarfare2 || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedRivals ||
                 ProfilesLibrary.DataVersion == (int)ProfileVersion.PlantsVsZombiesGardenWarfare))
             {

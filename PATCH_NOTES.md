@@ -5,7 +5,7 @@ on 2026-11-17; 1.0.6.4 is 1.0.6.3 plus 10 small upstream fixes, #327 to #344, an
 Branch: `dai-fixes` on https://github.com/dduttonnc/FrostyToolsuite (v1 to v6 in one commit,
 "My DAI build"; later versions in their own commits). Every change is marked in the code with a
 `[DAI fix]` comment (34 in MainWindow.xaml.cs, 3 in MainWindow.xaml, 23 in ConfigWindow, 1 in
-FrostyPack, 8 in the executor, 8 in Standard.cs, 2 in AssetManager.cs, 1 in LegacyAssetLoader.cs, 1 in App.xaml.cs, 1 in AssemblyInfo.cs).
+FrostyPack, 8 in the executor, 8 in Standard.cs, 3 in AssetManager.cs, 2 in LegacyAssetLoader.cs, 1 in App.xaml.cs, 1 in AssemblyInfo.cs).
 
 ## Build version
 
@@ -263,11 +263,13 @@ of it. No change to what gets written, only how fast.
 
 ### `FrostySdk/Managers/Loaders/LegacyAssetLoader.cs` (cache build, `perf/parallel-load` only)
 
-1. **Bundles are parsed on several cores.** "Loading Data" read and parsed each bundle of a
-   superbundle one after another on one core. Bundles are now read from disk in batches of 256,
-   parsed in parallel, and added to the asset lists one at a time in the original toc order while
-   the next batch parses, so the cache comes out the same. Binary superbundles (not used by DAI)
-   still load the old way.
+1. **Superbundles are read ahead on several cores.** DAI has hundreds of small superbundles (one
+   per level layout), and "Loading Data" read and parsed them one after another on one core. Up to
+   one superbundle per core is now read and parsed ahead (tocs and, for those with up to 256
+   bundles, every bundle) while the loading thread adds the finished ones to the asset lists in the
+   original order, so the cache comes out the same. Larger superbundles are read in batches of 256
+   bundles, parsed in parallel. Binary superbundles (not used by DAI) still load their bundles the
+   old way. `AssetManager.ProcessTocChunks` is split so a toc read elsewhere can be processed.
 
 ### `FrostyModSupport/Actions/Standard.cs` (Applying Mods)
 

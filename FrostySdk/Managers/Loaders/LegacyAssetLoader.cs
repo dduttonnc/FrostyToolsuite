@@ -10,24 +10,53 @@ namespace FrostySdk.Managers
     {
         internal class LegacyAssetLoader : IAssetLoader
         {
+            private const int PreloadMaxBundles = 256;
+
+            private class PreloadedSuperBundle
+            {
+                public bool BaseTocFound;
+                public DbObject BaseToc;
+                public bool PatchTocFound;
+                public DbObject PatchToc;
+                public List<DbObject> BundleList;
+                public DbObject[] Bundles;
+            }
+
             public void Load(AssetManager parent, BinarySbDataHelper helper)
             {
-                // all other games read from superbundles
-                foreach (string superBundleName in parent.fs.SuperBundles)
+                // [DAI fix] DAI has hundreds of small superbundles: read and parse several ahead on other
+                // threads, then add them here one at a time in the original order
+                List<string> superBundleNames = new List<string>(parent.fs.SuperBundles);
+                Task<PreloadedSuperBundle>[] preloads = new Task<PreloadedSuperBundle>[superBundleNames.Count];
+                int window = Math.Max(2, Environment.ProcessorCount);
+
+                for (int i = 0; i < Math.Min(window, superBundleNames.Count); i++)
+                    preloads[i] = StartPreload(parent, superBundleNames[i]);
+
+                for (int sbIndex = 0; sbIndex < superBundleNames.Count; sbIndex++)
                 {
+                    string superBundleName = superBundleNames[sbIndex];
+                    PreloadedSuperBundle preload = preloads[sbIndex].GetAwaiter().GetResult();
+                    preloads[sbIndex] = null;
+
+                    if (sbIndex + window < superBundleNames.Count)
+                        preloads[sbIndex + window] = StartPreload(parent, superBundleNames[sbIndex + window]);
+
                     parent.superBundles.Add(new SuperBundleEntry() { Name = superBundleName });
                     bool patchFileExists = false;
 
                     // process base toc, bail out if it doesnt exist
-                    DbObject baseToc = parent.ProcessTocChunks(string.Format("native_data/{0}.toc", superBundleName), helper, true);
-                    if (baseToc == null)
+                    if (!preload.BaseTocFound)
                         continue;
+                    DbObject baseToc = parent.ProcessTocChunks(preload.BaseToc, string.Format("native_data/{0}.toc", superBundleName), helper, true);
                     bool isBinarySuperBundle = !baseToc.GetValue<bool>("cas");
 
                     parent.WriteToLog("Loading Data ({0})", superBundleName);
 
                     // process patch toc
-                    DbObject patchToc = parent.ProcessTocChunks(string.Format("native_patch/{0}.toc", superBundleName), helper);
+                    DbObject patchToc = (preload.PatchTocFound)
+                        ? parent.ProcessTocChunks(preload.PatchToc, string.Format("native_patch/{0}.toc", superBundleName), helper, false)
+                        : null;
 
                     // default to base bundles first
                     DbObject baseBundleList = baseToc.GetValue<DbObject>("bundles");
@@ -58,6 +87,12 @@ namespace FrostySdk.Managers
                         // use patch bundle list instead
                         patchBundleList = patchToc.GetValue<DbObject>("bundles");
                         patchFileExists = true;
+                    }
+
+                    if (preload.Bundles != null)
+                    {
+                        AddBundles(parent, helper, preload.BundleList, 0, preload.Bundles);
+                        continue;
                     }
 
                     // open superbundles for processing
@@ -147,7 +182,74 @@ namespace FrostySdk.Managers
                 }
             }
 
-            // [DAI fix] bundles are parsed on several cores, then added one at a time in toc order
+            private static Task<PreloadedSuperBundle> StartPreload(AssetManager parent, string superBundleName)
+            {
+                return Task.Run(() => Preload(parent, superBundleName));
+            }
+
+            // reads only; anything that changes the asset lists happens on the loading thread
+            private static PreloadedSuperBundle Preload(AssetManager parent, string superBundleName)
+            {
+                PreloadedSuperBundle result = new PreloadedSuperBundle();
+
+                string baseTocPath = parent.fs.ResolvePath(string.Format("native_data/{0}.toc", superBundleName));
+                if (baseTocPath == "")
+                    return result;
+
+                result.BaseTocFound = true;
+                result.BaseToc = ReadToc(parent, baseTocPath);
+
+                string patchTocPath = parent.fs.ResolvePath(string.Format("native_patch/{0}.toc", superBundleName));
+                if (patchTocPath != "")
+                {
+                    result.PatchTocFound = true;
+                    result.PatchToc = ReadToc(parent, patchTocPath);
+                }
+
+                // bundles of small cas superbundles are parsed here too; larger ones load in batches later
+                DbObject baseBundleList = result.BaseToc?.GetValue<DbObject>("bundles");
+                if (result.BaseToc == null || !result.BaseToc.GetValue<bool>("cas") || baseBundleList == null || baseBundleList.Count == 0)
+                    return result;
+
+                DbObject patchBundleList = (result.PatchToc != null) ? result.PatchToc.GetValue<DbObject>("bundles") : baseBundleList;
+                if (patchBundleList == null || patchBundleList.Count > PreloadMaxBundles)
+                    return result;
+
+                List<DbObject> bundleList = new List<DbObject>();
+                foreach (DbObject bundle in patchBundleList)
+                    bundleList.Add(bundle);
+
+                Stream[] streams = new Stream[bundleList.Count];
+                using (NativeReader baseMf = new NativeReader(new FileStream(parent.fs.ResolvePath(string.Format("native_data/{0}.sb", superBundleName)), FileMode.Open, FileAccess.Read)))
+                using (NativeReader patchMf = (result.PatchToc != null) ? new NativeReader(new FileStream(parent.fs.ResolvePath(string.Format("native_patch/{0}.sb", superBundleName)), FileMode.Open, FileAccess.Read)) : null)
+                {
+                    for (int i = 0; i < bundleList.Count; i++)
+                    {
+                        DbObject bundle = bundleList[i];
+                        NativeReader mf = (bundle.GetValue<bool>("base") || patchMf == null) ? baseMf : patchMf;
+                        streams[i] = mf.CreateViewStream(bundle.GetValue<long>("offset"), bundle.GetValue<long>("size"));
+                    }
+                }
+
+                DbObject[] bundles = new DbObject[streams.Length];
+                for (int i = 0; i < streams.Length; i++)
+                {
+                    using (DbReader reader = new DbReader(streams[i], parent.fs.CreateDeobfuscator()))
+                        bundles[i] = reader.ReadDbObject();
+                }
+
+                result.BundleList = bundleList;
+                result.Bundles = bundles;
+                return result;
+            }
+
+            private static DbObject ReadToc(AssetManager parent, string path)
+            {
+                using (DbReader reader = new DbReader(new FileStream(path, FileMode.Open, FileAccess.Read), parent.fs.CreateDeobfuscator()))
+                    return reader.ReadDbObject();
+            }
+
+            // [DAI fix] bundles of large superbundles are parsed on several cores, then added one at a time in toc order
             private static void LoadCasBundles(AssetManager parent, BinarySbDataHelper helper, DbObject bundleList, NativeReader baseMf, NativeReader patchMf)
             {
                 const int batchSize = 256;
