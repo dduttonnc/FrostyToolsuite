@@ -33,14 +33,21 @@ namespace FrostySdk.Managers
                 for (int i = 0; i < Math.Min(window, superBundleNames.Count); i++)
                     preloads[i] = StartPreload(parent, superBundleNames[i]);
 
+                BinaryPipeline binary = new BinaryPipeline(parent, superBundleNames, preloads, 2 * window);
+
                 for (int sbIndex = 0; sbIndex < superBundleNames.Count; sbIndex++)
                 {
                     string superBundleName = superBundleNames[sbIndex];
                     PreloadedSuperBundle preload = preloads[sbIndex].GetAwaiter().GetResult();
+
+                    binary.Close(sbIndex - 1);
+                    binary.Open(sbIndex, preload);
                     preloads[sbIndex] = null;
 
                     if (sbIndex + window < superBundleNames.Count)
                         preloads[sbIndex + window] = StartPreload(parent, superBundleNames[sbIndex + window]);
+
+                    binary.Fill(sbIndex);
 
                     parent.superBundles.Add(new SuperBundleEntry() { Name = superBundleName });
                     bool patchFileExists = false;
@@ -68,22 +75,6 @@ namespace FrostySdk.Managers
                     if (baseBundleList.Count == 0)
                         continue;
 
-                    // create base bundle list if binary superbundle
-                    Dictionary<string, BaseBundleInfo> baseBundles = new Dictionary<string, BaseBundleInfo>();
-                    if (isBinarySuperBundle)
-                    {
-                        foreach (DbObject bundle in baseBundleList)
-                        {
-                            BaseBundleInfo bi = new BaseBundleInfo
-                            {
-                                Name = bundle.GetValue<string>("id"),
-                                Offset = bundle.GetValue<long>("offset"),
-                                Size = bundle.GetValue<long>("size")
-                            };
-                            baseBundles.Add(bi.Name.ToLower(), bi);
-                        }
-                    }
-
                     if (patchToc != null)
                     {
                         // use patch bundle list instead
@@ -97,6 +88,12 @@ namespace FrostySdk.Managers
                         continue;
                     }
 
+                    if (isBinarySuperBundle)
+                    {
+                        LoadBinaryBundles(parent, helper, binary, sbIndex);
+                        continue;
+                    }
+
                     // open superbundles for processing
                     NativeReader baseMf = new NativeReader(new FileStream(parent.fs.ResolvePath(string.Format("native_data/{0}.sb", superBundleName)), FileMode.Open, FileAccess.Read));
                     NativeReader patchMf = baseMf;
@@ -104,19 +101,12 @@ namespace FrostySdk.Managers
                     if (patchFileExists)
                         patchMf = new NativeReader(new FileStream(parent.fs.ResolvePath(string.Format("native_patch/{0}.sb", superBundleName)), FileMode.Open, FileAccess.Read));
 
-                    if (!isBinarySuperBundle)
-                    {
-                        LoadCasBundles(parent, helper, patchBundleList, baseMf, patchMf);
-                        baseMf.Dispose();
-                        patchMf.Dispose();
-                        continue;
-                    }
-
-                    LoadBinaryBundles(parent, helper, patchBundleList, baseBundles, baseMf, patchMf);
-
+                    LoadCasBundles(parent, helper, patchBundleList, baseMf, patchMf);
                     baseMf.Dispose();
                     patchMf.Dispose();
                 }
+
+                binary.Dispose();
             }
 
             private class BinaryBundleWork
@@ -125,27 +115,162 @@ namespace FrostySdk.Managers
                 public PreparedBundleData Prepared;
             }
 
-            // [DAI fix] binary superbundles: about one bundle per core is unpacked and matched against the
-            // base game at a time, then added here in toc order (each bundle used to take ~0.3 s on one core)
-            private static void LoadBinaryBundles(AssetManager parent, BinarySbDataHelper helper, DbObject bundleList, Dictionary<string, BaseBundleInfo> baseBundles, NativeReader baseMf, NativeReader patchMf)
+            private class BinarySuperBundle
             {
-                List<DbObject> tocBundles = new List<DbObject>();
-                foreach (DbObject bundle in bundleList)
-                    tocBundles.Add(bundle);
+                public NativeReader BaseMf;
+                public NativeReader PatchMf;
+                public List<DbObject> Bundles;
+                public Dictionary<string, BaseBundleInfo> BaseBundles;
+                public Task<BinaryBundleWork>[] Work;
+                public int Started;
+            }
 
-                int window = Math.Max(2, Environment.ProcessorCount);
-                Task<BinaryBundleWork>[] work = new Task<BinaryBundleWork>[tocBundles.Count];
-                int started = 0;
+            // [DAI fix] binary bundles are unpacked and matched against the base game on the thread pool, in toc
+            // order and across superbundle boundaries, so the cores don't sit idle at the end of each superbundle
+            private class BinaryPipeline : IDisposable
+            {
+                private readonly AssetManager parent;
+                private readonly List<string> superBundleNames;
+                private readonly Task<PreloadedSuperBundle>[] preloads;
+                private readonly int maxInFlight;
+                private readonly Dictionary<int, BinarySuperBundle> opened = new Dictionary<int, BinarySuperBundle>();
+                private int feedIndex;
+                private int inFlight;
 
-                for (int i = 0; i < tocBundles.Count; i++)
+                public BinaryPipeline(AssetManager inParent, List<string> inSuperBundleNames, Task<PreloadedSuperBundle>[] inPreloads, int inMaxInFlight)
                 {
-                    for (; started < tocBundles.Count && started < i + window; started++)
-                        work[started] = StartBinaryBundle(parent, tocBundles[started], baseBundles, baseMf, patchMf);
+                    parent = inParent;
+                    superBundleNames = inSuperBundleNames;
+                    preloads = inPreloads;
+                    maxInFlight = inMaxInFlight;
+                }
 
-                    BinaryBundleWork result = work[i].GetAwaiter().GetResult();
-                    work[i] = null;
+                public void Open(int sbIndex, PreloadedSuperBundle preload)
+                {
+                    if (!opened.ContainsKey(sbIndex))
+                        opened[sbIndex] = Create(sbIndex, preload);
+                }
 
-                    string bundleName = tocBundles[i].GetValue<string>("id").ToLower();
+                public BinarySuperBundle Get(int sbIndex) => opened[sbIndex];
+
+                // only superbundles whose tocs were already read ahead are started, so this never waits
+                public void Fill(int currentIndex)
+                {
+                    if (feedIndex < currentIndex)
+                        feedIndex = currentIndex;
+
+                    while (inFlight < maxInFlight && feedIndex < superBundleNames.Count)
+                    {
+                        if (!opened.TryGetValue(feedIndex, out BinarySuperBundle sb))
+                        {
+                            Task<PreloadedSuperBundle> preload = preloads[feedIndex];
+                            if (preload == null || preload.Status != TaskStatus.RanToCompletion)
+                                return;
+
+                            sb = Create(feedIndex, preload.Result);
+                            opened[feedIndex] = sb;
+                        }
+
+                        if (sb == null || sb.Started == sb.Bundles.Count)
+                        {
+                            feedIndex++;
+                            continue;
+                        }
+
+                        StartNext(sb);
+                    }
+                }
+
+                public BinaryBundleWork Take(BinarySuperBundle sb, int index)
+                {
+                    while (sb.Started <= index)
+                        StartNext(sb);
+
+                    BinaryBundleWork result = sb.Work[index].GetAwaiter().GetResult();
+                    sb.Work[index] = null;
+                    inFlight--;
+                    return result;
+                }
+
+                public void Close(int sbIndex)
+                {
+                    if (!opened.TryGetValue(sbIndex, out BinarySuperBundle sb))
+                        return;
+
+                    opened.Remove(sbIndex);
+                    if (sb != null)
+                    {
+                        if (sb.PatchMf != sb.BaseMf)
+                            sb.PatchMf.Dispose();
+                        sb.BaseMf.Dispose();
+                    }
+                }
+
+                public void Dispose()
+                {
+                    foreach (int sbIndex in new List<int>(opened.Keys))
+                        Close(sbIndex);
+                }
+
+                private void StartNext(BinarySuperBundle sb)
+                {
+                    sb.Work[sb.Started] = StartBinaryBundle(parent, sb.Bundles[sb.Started], sb.BaseBundles, sb.BaseMf, sb.PatchMf);
+                    sb.Started++;
+                    inFlight++;
+                }
+
+                // same choices as the loading thread makes: null for anything that isn't a binary superbundle with bundles
+                private BinarySuperBundle Create(int sbIndex, PreloadedSuperBundle preload)
+                {
+                    if (!preload.BaseTocFound || preload.BaseToc == null || preload.BaseToc.GetValue<bool>("cas"))
+                        return null;
+
+                    DbObject baseBundleList = preload.BaseToc.GetValue<DbObject>("bundles");
+                    if (baseBundleList == null || baseBundleList.Count == 0)
+                        return null;
+
+                    BinarySuperBundle sb = new BinarySuperBundle
+                    {
+                        Bundles = new List<DbObject>(),
+                        BaseBundles = new Dictionary<string, BaseBundleInfo>()
+                    };
+
+                    foreach (DbObject bundle in baseBundleList)
+                    {
+                        BaseBundleInfo bi = new BaseBundleInfo
+                        {
+                            Name = bundle.GetValue<string>("id"),
+                            Offset = bundle.GetValue<long>("offset"),
+                            Size = bundle.GetValue<long>("size")
+                        };
+                        sb.BaseBundles.Add(bi.Name.ToLower(), bi);
+                    }
+
+                    bool patchFileExists = preload.PatchTocFound && preload.PatchToc != null;
+                    DbObject bundleList = patchFileExists ? preload.PatchToc.GetValue<DbObject>("bundles") : baseBundleList;
+                    foreach (DbObject bundle in bundleList)
+                        sb.Bundles.Add(bundle);
+                    sb.Work = new Task<BinaryBundleWork>[sb.Bundles.Count];
+
+                    string superBundleName = superBundleNames[sbIndex];
+                    sb.BaseMf = new NativeReader(new FileStream(parent.fs.ResolvePath(string.Format("native_data/{0}.sb", superBundleName)), FileMode.Open, FileAccess.Read));
+                    sb.PatchMf = patchFileExists
+                        ? new NativeReader(new FileStream(parent.fs.ResolvePath(string.Format("native_patch/{0}.sb", superBundleName)), FileMode.Open, FileAccess.Read))
+                        : sb.BaseMf;
+                    return sb;
+                }
+            }
+
+            private static void LoadBinaryBundles(AssetManager parent, BinarySbDataHelper helper, BinaryPipeline binary, int sbIndex)
+            {
+                BinarySuperBundle sb = binary.Get(sbIndex);
+
+                for (int i = 0; i < sb.Bundles.Count; i++)
+                {
+                    BinaryBundleWork result = binary.Take(sb, i);
+                    binary.Fill(sbIndex);
+
+                    string bundleName = sb.Bundles[i].GetValue<string>("id").ToLower();
                     parent.bundles.Add(new BundleEntry() { Name = bundleName, SuperBundleId = parent.superBundles.Count - 1 });
                     int bundleId = parent.bundles.Count - 1;
 
@@ -156,6 +281,8 @@ namespace FrostySdk.Managers
                     parent.ProcessBundleRes(result.Sb, bundleId, helper);
                     parent.ProcessBundleChunks(result.Sb, bundleId, helper);
                 }
+
+                binary.Close(sbIndex);
             }
 
             // the superbundle files are read here, on the loading thread; the rest runs on the thread pool

@@ -276,6 +276,10 @@ of it. No change to what gets written, only how fast.
    "Loading Data", at about 0.3 s per bundle on one core. About one bundle per core is now unpacked
    and compared at a time, and the results are added in toc order. The forced garbage collection
    after each binary superbundle is gone.
+   The unpacking also runs across superbundle boundaries (branch `perf/binary-overlap`): bundles of
+   the next binary superbundles start while the current one is still being added, so the cores no
+   longer wait for the largest bundle at the end of each superbundle. Up to two bundles per core
+   are in flight.
 3. **The splash screen shows the count and progress** (branch `perf/splash-progress`, on top of
    `perf/parallel-load`): "Loading Data 112/254 (up to 16 at once): <superbundle>", and the
    progress bar fills as superbundles finish. It used to show only the superbundle name, with no
