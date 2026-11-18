@@ -284,6 +284,11 @@ of it. No change to what gets written, only how fast.
    `perf/parallel-load`): "Loading Data 112/254 (up to 16 at once): <superbundle>", and the
    progress bar fills as superbundles finish. It used to show only the superbundle name, with no
    progress, which looked stuck now that several load at once. One update per superbundle.
+   Branch `perf/splash-files` (on top of `perf/binary-overlap`) also makes the Mod Manager's splash
+   screen taller while data loads and lists every superbundle in flight with what is happening to
+   it (adding, adding bundle n/m, unpacking, reading, ready). The list updates at most ten times a
+   second and goes away when loading is done. The loader only sends it to a logger that implements
+   the new `ILoadingListLogger` (`FrostySdk/Interfaces/ILogger.cs`), so the Editor is unchanged.
 
 ### `FrostySdk/Managers/AssetManager.cs` (binary superbundles, `perf/parallel-load` only)
 

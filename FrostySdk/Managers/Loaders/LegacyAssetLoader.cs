@@ -1,7 +1,10 @@
-﻿using FrostySdk.IO;
+﻿using FrostySdk.Interfaces;
+using FrostySdk.IO;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace FrostySdk.Managers
@@ -34,6 +37,7 @@ namespace FrostySdk.Managers
                     preloads[i] = StartPreload(parent, superBundleNames[i]);
 
                 BinaryPipeline binary = new BinaryPipeline(parent, superBundleNames, preloads, 2 * window);
+                LoadingList loadingList = new LoadingList(parent, superBundleNames, preloads, binary, window);
 
                 for (int sbIndex = 0; sbIndex < superBundleNames.Count; sbIndex++)
                 {
@@ -61,6 +65,7 @@ namespace FrostySdk.Managers
                     // [DAI fix] show the count and progress, since several superbundles are in flight at once
                     parent.WriteToLog("Loading Data {0}/{1} (up to {2} at once): {3}", sbIndex + 1, superBundleNames.Count, window, superBundleName);
                     parent.WriteToLog("progress:{0}", (sbIndex + 1) * 100.0 / superBundleNames.Count);
+                    loadingList.Update(sbIndex, "adding");
 
                     // process patch toc
                     DbObject patchToc = (preload.PatchTocFound)
@@ -90,7 +95,7 @@ namespace FrostySdk.Managers
 
                     if (isBinarySuperBundle)
                     {
-                        LoadBinaryBundles(parent, helper, binary, sbIndex);
+                        LoadBinaryBundles(parent, helper, binary, loadingList, sbIndex);
                         continue;
                     }
 
@@ -107,6 +112,67 @@ namespace FrostySdk.Managers
                 }
 
                 binary.Dispose();
+                loadingList.Clear();
+            }
+
+            // [DAI fix] lists the superbundles in flight on the splash screen, at most ten times a second
+            private class LoadingList
+            {
+                private const int MaxLines = 32;
+
+                private readonly ILoadingListLogger logger;
+                private readonly List<string> superBundleNames;
+                private readonly Task<PreloadedSuperBundle>[] preloads;
+                private readonly BinaryPipeline binary;
+                private readonly int window;
+                private readonly Stopwatch timer = Stopwatch.StartNew();
+                private long lastUpdate = -1000;
+
+                public LoadingList(AssetManager parent, List<string> inSuperBundleNames, Task<PreloadedSuperBundle>[] inPreloads, BinaryPipeline inBinary, int inWindow)
+                {
+                    logger = parent.logger as ILoadingListLogger;
+                    superBundleNames = inSuperBundleNames;
+                    preloads = inPreloads;
+                    binary = inBinary;
+                    window = inWindow;
+                }
+
+                public void Update(int sbIndex, string currentState)
+                {
+                    if (logger == null || timer.ElapsedMilliseconds - lastUpdate < 100)
+                        return;
+                    lastUpdate = timer.ElapsedMilliseconds;
+
+                    StringBuilder text = new StringBuilder();
+                    int end = Math.Min(sbIndex + window, superBundleNames.Count);
+                    for (int i = sbIndex; i < end; i++)
+                    {
+                        if (i - sbIndex == MaxLines)
+                        {
+                            text.AppendFormat("\n... and {0} more", end - i);
+                            break;
+                        }
+
+                        string state = currentState;
+                        if (i != sbIndex)
+                        {
+                            if (binary.IsStarted(i))
+                                state = "unpacking";
+                            else if (preloads[i] == null || !preloads[i].IsCompleted)
+                                state = "reading";
+                            else
+                                state = "ready";
+                        }
+
+                        if (i != sbIndex)
+                            text.Append('\n');
+                        text.Append(superBundleNames[i]).Append("  (").Append(state).Append(')');
+                    }
+
+                    logger.LogLoadingList(text.ToString());
+                }
+
+                public void Clear() => logger?.LogLoadingList("");
             }
 
             private class BinaryBundleWork
@@ -152,6 +218,8 @@ namespace FrostySdk.Managers
                 }
 
                 public BinarySuperBundle Get(int sbIndex) => opened[sbIndex];
+
+                public bool IsStarted(int sbIndex) => opened.TryGetValue(sbIndex, out BinarySuperBundle sb) && sb != null && sb.Started > 0;
 
                 // only superbundles whose tocs were already read ahead are started, so this never waits
                 public void Fill(int currentIndex)
@@ -261,7 +329,7 @@ namespace FrostySdk.Managers
                 }
             }
 
-            private static void LoadBinaryBundles(AssetManager parent, BinarySbDataHelper helper, BinaryPipeline binary, int sbIndex)
+            private static void LoadBinaryBundles(AssetManager parent, BinarySbDataHelper helper, BinaryPipeline binary, LoadingList loadingList, int sbIndex)
             {
                 BinarySuperBundle sb = binary.Get(sbIndex);
 
@@ -269,6 +337,7 @@ namespace FrostySdk.Managers
                 {
                     BinaryBundleWork result = binary.Take(sb, i);
                     binary.Fill(sbIndex);
+                    loadingList.Update(sbIndex, string.Format("adding bundle {0}/{1}", i + 1, sb.Bundles.Count));
 
                     string bundleName = sb.Bundles[i].GetValue<string>("id").ToLower();
                     parent.bundles.Add(new BundleEntry() { Name = bundleName, SuperBundleId = parent.superBundles.Count - 1 });
