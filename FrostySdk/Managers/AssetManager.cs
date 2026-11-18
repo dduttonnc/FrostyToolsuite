@@ -535,6 +535,7 @@ namespace FrostySdk.Managers
                 }
 
                 List<PreparedEntry> prepared = new List<PreparedEntry>();
+                List<PreparedEntry> toCompress = new List<PreparedEntry>();
                 foreach (DbObject entry in deltaList.GetValue<DbObject>(listName))
                 {
                     string name = entry.GetValue<string>("name");
@@ -543,10 +544,12 @@ namespace FrostySdk.Managers
 
                     PreparedEntry p = new PreparedEntry { Name = name, Entry = entry };
                     if (!baseBySha1.TryGetValue(entry.GetValue<Sha1>("sha1"), out p.BaseEntry) && entry.HasValue("data"))
-                        p.CompressedData = Utils.CompressFile(entry.GetValue<byte[]>("data"));
+                        toCompress.Add(p);
 
                     prepared.Add(p);
                 }
+
+                System.Threading.Tasks.Parallel.ForEach(toCompress, p => p.CompressedData = Utils.CompressFileForCache(p.Entry.GetValue<byte[]>("data")));
                 return prepared;
             }
 
@@ -567,7 +570,7 @@ namespace FrostySdk.Managers
                     }
                     else
                     {
-                        byte[] data = p.CompressedData ?? Utils.CompressFile(entry.GetValue<byte[]>("data"));
+                        byte[] data = p.CompressedData ?? Utils.CompressFileForCache(entry.GetValue<byte[]>("data"));
                         dataFiles.Add(p.Name, data);
 
                         entry.SetValue("size", data.Length);

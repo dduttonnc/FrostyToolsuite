@@ -5,7 +5,7 @@ on 2026-11-17; 1.0.6.4 is 1.0.6.3 plus 10 small upstream fixes, #327 to #344, an
 Branch: `dai-fixes` on https://github.com/dduttonnc/FrostyToolsuite (v1 to v6 in one commit,
 "My DAI build"; later versions in their own commits). Every change is marked in the code with a
 `[DAI fix]` comment (34 in MainWindow.xaml.cs, 3 in MainWindow.xaml, 23 in ConfigWindow, 1 in
-FrostyPack, 8 in the executor, 8 in Standard.cs, 5 in AssetManager.cs, 3 in LegacyAssetLoader.cs, 1 in App.xaml.cs, 1 in App.config, 1 in AssemblyInfo.cs).
+FrostyPack, 8 in the executor, 8 in Standard.cs, 5 in AssetManager.cs, 3 in LegacyAssetLoader.cs, 1 in Utils.cs, 1 in App.xaml.cs, 1 in App.config, 1 in AssemblyInfo.cs).
 
 ## Build version
 
@@ -285,6 +285,11 @@ of it. No change to what gets written, only how fast.
 2. The matching and the recompression of changed data (`PrepareBundleData`) are split from the
    step that records them in the cache (`AddPreparedBundleData`), so the first can run on any
    thread while the second still runs in order.
+3. **Changed data is recompressed for the cache at zlib level 1 instead of 9**, and the entries of
+   a bundle are compressed in parallel. Level 9 was most of the remaining time; the data reads back
+   the same, but `_sbdata.cas` comes out somewhat larger and no longer byte-identical to older
+   caches. New `Utils.CompressFileForCache`; `Utils.CompressFile` is unchanged (level 9) for
+   everything written into the game's files.
 
 ### `FrostyModManager/App.config` (`perf/parallel-load` only)
 
