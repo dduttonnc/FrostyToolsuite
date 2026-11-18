@@ -110,76 +110,93 @@ namespace FrostySdk.Managers
                         continue;
                     }
 
-                    // iterate bundles in superbundle
-                    foreach (DbObject bundle in patchBundleList)
-                    {
-                        string bundleName = bundle.GetValue<string>("id").ToLower();
-                        long offset = bundle.GetValue<long>("offset");
-                        long size = bundle.GetValue<long>("size");
-                        bool isDeltaBundle = bundle.GetValue<bool>("delta");
-                        bool isBaseBundle = bundle.GetValue<bool>("base");
-
-                        // add new bundle entry
-                        parent.bundles.Add(new BundleEntry() { Name = bundleName, SuperBundleId = parent.superBundles.Count - 1 });
-                        int bundleId = parent.bundles.Count - 1;
-
-                        // obtain view of appropriate stream
-                        Stream stream = (isBaseBundle)
-                            ? baseMf.CreateViewStream(offset, size)
-                            : patchMf.CreateViewStream(offset, size);
-
-                        DbObject sb = null;
-                        if (isBinarySuperBundle)
-                        {
-                            if (isDeltaBundle)
-                            {
-                                // get base stream
-                                BaseBundleInfo bi = (baseBundles.ContainsKey(bundleName)) ? baseBundles[bundleName] : null;
-                                Stream baseStream = (bi != null) ? baseMf.CreateViewStream(bi.Offset, bi.Size) : null;
-
-                                //if (bi == null)
-                                //    Console.WriteLine("TEST");
-
-                                // patched binary super bundle
-                                using (BinarySbReader reader = new BinarySbReader(baseStream, stream, parent.fs.CreateDeobfuscator()))
-                                    sb = reader.ReadDbObject();
-
-                                DbObject baseSb = null;
-                                if (bi != null)
-                                {
-                                    using (BinarySbReader reader = new BinarySbReader(baseMf.CreateViewStream(bi.Offset, bi.Size), bi.Offset, parent.fs.CreateDeobfuscator()))
-                                        baseSb = reader.ReadDbObject();
-                                }
-
-                                // compare with base superbundle and process patched data
-                                helper.FilterAndAddBundleData(baseSb, sb);
-                            }
-                            else
-                            {
-                                // binary super bundle
-                                using (BinarySbReader reader = new BinarySbReader(stream, offset, parent.fs.CreateDeobfuscator()))
-                                    sb = reader.ReadDbObject();
-                            }
-                        }
-                        else
-                        {
-                            // normal superbundle
-                            using (DbReader reader = new DbReader(stream, parent.fs.CreateDeobfuscator()))
-                                sb = reader.ReadDbObject();
-                        }
-
-                        // process assets
-                        parent.ProcessBundleEbx(sb, bundleId, helper);
-                        parent.ProcessBundleRes(sb, bundleId, helper);
-                        parent.ProcessBundleChunks(sb, bundleId, helper);
-                    }
+                    LoadBinaryBundles(parent, helper, patchBundleList, baseBundles, baseMf, patchMf);
 
                     baseMf.Dispose();
                     patchMf.Dispose();
-
-                    if (isBinarySuperBundle)
-                        GC.Collect();
                 }
+            }
+
+            private class BinaryBundleWork
+            {
+                public DbObject Sb;
+                public PreparedBundleData Prepared;
+            }
+
+            // [DAI fix] binary superbundles: about one bundle per core is unpacked and matched against the
+            // base game at a time, then added here in toc order (each bundle used to take ~0.3 s on one core)
+            private static void LoadBinaryBundles(AssetManager parent, BinarySbDataHelper helper, DbObject bundleList, Dictionary<string, BaseBundleInfo> baseBundles, NativeReader baseMf, NativeReader patchMf)
+            {
+                List<DbObject> tocBundles = new List<DbObject>();
+                foreach (DbObject bundle in bundleList)
+                    tocBundles.Add(bundle);
+
+                int window = Math.Max(2, Environment.ProcessorCount);
+                Task<BinaryBundleWork>[] work = new Task<BinaryBundleWork>[tocBundles.Count];
+                int started = 0;
+
+                for (int i = 0; i < tocBundles.Count; i++)
+                {
+                    for (; started < tocBundles.Count && started < i + window; started++)
+                        work[started] = StartBinaryBundle(parent, tocBundles[started], baseBundles, baseMf, patchMf);
+
+                    BinaryBundleWork result = work[i].GetAwaiter().GetResult();
+                    work[i] = null;
+
+                    string bundleName = tocBundles[i].GetValue<string>("id").ToLower();
+                    parent.bundles.Add(new BundleEntry() { Name = bundleName, SuperBundleId = parent.superBundles.Count - 1 });
+                    int bundleId = parent.bundles.Count - 1;
+
+                    if (result.Prepared != null)
+                        helper.AddPreparedBundleData(result.Prepared);
+
+                    parent.ProcessBundleEbx(result.Sb, bundleId, helper);
+                    parent.ProcessBundleRes(result.Sb, bundleId, helper);
+                    parent.ProcessBundleChunks(result.Sb, bundleId, helper);
+                }
+            }
+
+            // the superbundle files are read here, on the loading thread; the rest runs on the thread pool
+            private static Task<BinaryBundleWork> StartBinaryBundle(AssetManager parent, DbObject bundle, Dictionary<string, BaseBundleInfo> baseBundles, NativeReader baseMf, NativeReader patchMf)
+            {
+                string bundleName = bundle.GetValue<string>("id").ToLower();
+                long offset = bundle.GetValue<long>("offset");
+                long size = bundle.GetValue<long>("size");
+                bool isDeltaBundle = bundle.GetValue<bool>("delta");
+                bool isBaseBundle = bundle.GetValue<bool>("base");
+
+                Stream stream = (isBaseBundle)
+                    ? baseMf.CreateViewStream(offset, size)
+                    : patchMf.CreateViewStream(offset, size);
+
+                if (!isDeltaBundle)
+                {
+                    return Task.Run(() =>
+                    {
+                        using (BinarySbReader reader = new BinarySbReader(stream, offset, parent.fs.CreateDeobfuscator()))
+                            return new BinaryBundleWork { Sb = reader.ReadDbObject() };
+                    });
+                }
+
+                BaseBundleInfo bi = (baseBundles.ContainsKey(bundleName)) ? baseBundles[bundleName] : null;
+                Stream baseStream = (bi != null) ? baseMf.CreateViewStream(bi.Offset, bi.Size) : null;
+                Stream baseSbStream = (bi != null) ? baseMf.CreateViewStream(bi.Offset, bi.Size) : null;
+
+                return Task.Run(() =>
+                {
+                    DbObject sb;
+                    using (BinarySbReader reader = new BinarySbReader(baseStream, stream, parent.fs.CreateDeobfuscator()))
+                        sb = reader.ReadDbObject();
+
+                    DbObject baseSb = null;
+                    if (bi != null)
+                    {
+                        using (BinarySbReader reader = new BinarySbReader(baseSbStream, bi.Offset, parent.fs.CreateDeobfuscator()))
+                            baseSb = reader.ReadDbObject();
+                    }
+
+                    return new BinaryBundleWork { Sb = sb, Prepared = BinarySbDataHelper.PrepareBundleData(baseSb, sb) };
+                });
             }
 
             private static Task<PreloadedSuperBundle> StartPreload(AssetManager parent, string superBundleName)
