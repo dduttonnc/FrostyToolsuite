@@ -51,7 +51,9 @@ namespace FrostySdk.Managers
                     DbObject baseToc = parent.ProcessTocChunks(preload.BaseToc, string.Format("native_data/{0}.toc", superBundleName), helper, true);
                     bool isBinarySuperBundle = !baseToc.GetValue<bool>("cas");
 
-                    parent.WriteToLog("Loading Data ({0})", superBundleName);
+                    // [DAI fix] show the count and progress, since several superbundles are in flight at once
+                    parent.WriteToLog("Loading Data {0}/{1} (up to {2} at once): {3}", sbIndex + 1, superBundleNames.Count, window, superBundleName);
+                    parent.WriteToLog("progress:{0}", (sbIndex + 1) * 100.0 / superBundleNames.Count);
 
                     // process patch toc
                     DbObject patchToc = (preload.PatchTocFound)

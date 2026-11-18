@@ -5,7 +5,7 @@ on 2026-11-17; 1.0.6.4 is 1.0.6.3 plus 10 small upstream fixes, #327 to #344, an
 Branch: `dai-fixes` on https://github.com/dduttonnc/FrostyToolsuite (v1 to v6 in one commit,
 "My DAI build"; later versions in their own commits). Every change is marked in the code with a
 `[DAI fix]` comment (34 in MainWindow.xaml.cs, 3 in MainWindow.xaml, 23 in ConfigWindow, 1 in
-FrostyPack, 8 in the executor, 8 in Standard.cs, 5 in AssetManager.cs, 3 in LegacyAssetLoader.cs, 1 in Utils.cs, 1 in App.xaml.cs, 1 in App.config, 1 in AssemblyInfo.cs).
+FrostyPack, 8 in the executor, 8 in Standard.cs, 5 in AssetManager.cs, 4 in LegacyAssetLoader.cs, 1 in Utils.cs, 1 in App.xaml.cs, 1 in App.config, 1 in AssemblyInfo.cs).
 
 ## Build version
 
@@ -276,6 +276,10 @@ of it. No change to what gets written, only how fast.
    "Loading Data", at about 0.3 s per bundle on one core. About one bundle per core is now unpacked
    and compared at a time, and the results are added in toc order. The forced garbage collection
    after each binary superbundle is gone.
+3. **The splash screen shows the count and progress** (branch `perf/splash-progress`, on top of
+   `perf/parallel-load`): "Loading Data 112/254 (up to 16 at once): <superbundle>", and the
+   progress bar fills as superbundles finish. It used to show only the superbundle name, with no
+   progress, which looked stuck now that several load at once. One update per superbundle.
 
 ### `FrostySdk/Managers/AssetManager.cs` (binary superbundles, `perf/parallel-load` only)
 
