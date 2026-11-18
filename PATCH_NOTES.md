@@ -5,7 +5,7 @@ on 2026-11-17; 1.0.6.4 is 1.0.6.3 plus 10 small upstream fixes, #327 to #344, an
 Branch: `dai-fixes` on https://github.com/dduttonnc/FrostyToolsuite (v1 to v6 in one commit,
 "My DAI build"; later versions in their own commits). Every change is marked in the code with a
 `[DAI fix]` comment (34 in MainWindow.xaml.cs, 3 in MainWindow.xaml, 23 in ConfigWindow, 1 in
-FrostyPack, 8 in the executor, 8 in Standard.cs, 3 in AssetManager.cs, 2 in LegacyAssetLoader.cs, 1 in App.xaml.cs, 1 in AssemblyInfo.cs).
+FrostyPack, 8 in the executor, 8 in Standard.cs, 5 in AssetManager.cs, 3 in LegacyAssetLoader.cs, 1 in App.xaml.cs, 1 in App.config, 1 in AssemblyInfo.cs).
 
 ## Build version
 
@@ -268,8 +268,28 @@ of it. No change to what gets written, only how fast.
    one superbundle per core is now read and parsed ahead (tocs and, for those with up to 256
    bundles, every bundle) while the loading thread adds the finished ones to the asset lists in the
    original order, so the cache comes out the same. Larger superbundles are read in batches of 256
-   bundles, parsed in parallel. Binary superbundles (not used by DAI) still load their bundles the
-   old way. `AssetManager.ProcessTocChunks` is split so a toc read elsewhere can be processed.
+   bundles, parsed in parallel. `AssetManager.ProcessTocChunks` is split so a toc read elsewhere
+   can be processed.
+2. **Binary superbundles load on several cores.** 109 of DAI's superbundles (mostly multiplayer
+   and DLC layouts) use the older binary format, where each patched bundle is unpacked in full and
+   compared with the base game's copy. A timing build showed they took 325 of the 329 seconds of
+   "Loading Data", at about 0.3 s per bundle on one core. About one bundle per core is now unpacked
+   and compared at a time, and the results are added in toc order. The forced garbage collection
+   after each binary superbundle is gone.
+
+### `FrostySdk/Managers/AssetManager.cs` (binary superbundles, `perf/parallel-load` only)
+
+1. **Patched assets are matched to the base game with a lookup.** Each patched entry was compared
+   with every base entry in turn (and each comparison boxed two Sha1 values). The base entries are
+   now put in a dictionary by Sha1 first; the first match still wins, as before.
+2. The matching and the recompression of changed data (`PrepareBundleData`) are split from the
+   step that records them in the cache (`AddPreparedBundleData`), so the first can run on any
+   thread while the second still runs in order.
+
+### `FrostyModManager/App.config` (`perf/parallel-load` only)
+
+1. **Server garbage collection.** Loading creates millions of objects, and the default collector
+   pauses every thread and works on one core. `gcServer` makes it use all cores. Uses more memory.
 
 ### `FrostyModSupport/Actions/Standard.cs` (Applying Mods)
 
