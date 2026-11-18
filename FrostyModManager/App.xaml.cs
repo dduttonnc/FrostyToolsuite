@@ -48,7 +48,9 @@ namespace FrostyModManager
         public App()
         {
             Assembly entryAssembly = Assembly.GetEntryAssembly();
-            Version = entryAssembly.GetName().Version.ToString();
+            // [DAI fix] Show the fork version (e.g. 1.0.6.4-dai.1) when one is set.
+            Version = entryAssembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+                ?? entryAssembly.GetName().Version.ToString();
 
             Logger = new FrostyLogger();
             Logger.Log("Frosty Mod Manager v{0}", Version);

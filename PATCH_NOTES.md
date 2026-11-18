@@ -5,7 +5,21 @@ on 2026-11-17; 1.0.6.4 is 1.0.6.3 plus 10 small upstream fixes, #327 to #344, an
 Branch: `dai-fixes` on https://github.com/dduttonnc/FrostyToolsuite (v1 to v6 in one commit,
 "My DAI build"; later versions in their own commits). Every change is marked in the code with a
 `[DAI fix]` comment (34 in MainWindow.xaml.cs, 3 in MainWindow.xaml, 23 in ConfigWindow, 1 in
-FrostyPack, 8 in the executor, 6 in Standard.cs).
+FrostyPack, 8 in the executor, 6 in Standard.cs, 1 in App.xaml.cs, 1 in AssemblyInfo.cs).
+
+## Build version
+
+This build shows as **1.0.6.4-dai.1** in the title bar, splash screen, About window and log. The
+version is the upstream base plus a fork suffix (`-dai.1`, `-dai.2`, ... one per release).
+
+* `FrostyModManager/Properties/AssemblyInfo.cs`: `AssemblyVersion` and `AssemblyFileVersion` stay
+  4-part (now 1.0.6.4; upstream's 1.0.6.4 branch still says 1.0.6.3). The suffix lives only in
+  `AssemblyInformationalVersion`. To release, bump that one string.
+* `FrostyModManager/App.xaml.cs`: the displayed version reads the informational version, falling
+  back to the 4-part one. The Developer build still adds " (Developer)".
+* Mods aren't affected: the .fbmod format version and the game version written into converted
+  mods are separate numbers. Exported packs record the displayed version in their manifest, which
+  nothing reads.
 
 | Version | Change | Summary |
 |---|---|---|

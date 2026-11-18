@@ -49,5 +49,7 @@ using System.Windows;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.6.3")]
-[assembly: AssemblyFileVersion("1.0.6.3")]
+[assembly: AssemblyVersion("1.0.6.4")]
+[assembly: AssemblyFileVersion("1.0.6.4")]
+// [DAI fix] Fork version shown to users; keep the two above 4-part.
+[assembly: AssemblyInformationalVersion("1.0.6.4-dai.1")]
