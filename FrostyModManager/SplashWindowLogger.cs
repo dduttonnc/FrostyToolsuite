@@ -14,13 +14,15 @@ using System.Windows.Shell;
 
 namespace FrostyModManager
 {
-    internal class SplashWindowLogger : ILogger, INotifyPropertyChanged
+    internal class SplashWindowLogger : ILogger, ILoadingListLogger, INotifyPropertyChanged
     {
         private SplashWindow parent;
 
         private double progress;
 
         private string status;
+
+        private string loadingList = "";
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -62,12 +64,32 @@ namespace FrostyModManager
             }
         }
 
+        public string LoadingList
+        {
+            get
+            {
+                return loadingList;
+            }
+            set
+            {
+                if (value != loadingList)
+                {
+                    loadingList = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+
         public SplashWindowLogger(SplashWindow inParent)
         {
             parent = inParent;
 
             // Utilize DataBindings to eliminate need for Dispatcher
             BindingOperations.SetBinding(parent.logTextBox, TextBlock.TextProperty, new Binding("Status")
+            {
+                Source = this
+            });
+            BindingOperations.SetBinding(parent.loadingListTextBlock, TextBlock.TextProperty, new Binding("LoadingList")
             {
                 Source = this
             });
@@ -108,6 +130,8 @@ namespace FrostyModManager
                 Status = fullText;
             }
         }
+
+        public void LogLoadingList(string text) => LoadingList = text;
 
         public void LogError(string text, params object[] vars)
         {

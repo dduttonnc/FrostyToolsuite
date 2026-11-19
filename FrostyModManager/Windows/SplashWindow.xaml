@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:FrostyModManager.Windows"
         xmlns:ctrl2="clr-namespace:Frosty.Controls;assembly=FrostyControls"
         mc:Ignorable="d"
-        Title="Frosty Editor" Height="200" Width="600" WindowStyle="None" AllowsTransparency="True"
+        Title="Frosty Editor" SizeToContent="Height" Width="600" WindowStyle="None" AllowsTransparency="True"
         WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Background="Transparent"
         Loaded="Window_Loaded" Icon="/FrostyModManager;component/AppIcon.ico">
     <Grid>
@@ -14,7 +14,8 @@
         <Border Background="{StaticResource WindowBackground}" BorderThickness="1" BorderBrush="{StaticResource ListBackground}">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="175"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="23"/>
                 </Grid.RowDefinitions>
 
@@ -58,7 +59,20 @@
                     </Grid>
                 </Border>
 
-                <Grid Grid.Row="1">
+                <!-- [DAI fix] every superbundle being loaded; collapsed when empty -->
+                <TextBlock x:Name="loadingListTextBlock" Grid.Row="1" Text="" Padding="30,4,4,4" FontSize="11" Foreground="#C0C0C0" FontFamily="Global User Interface" TextTrimming="CharacterEllipsis">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                            <Style.Triggers>
+                                <Trigger Property="Text" Value="">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <Grid Grid.Row="2">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="26"/>
                         <ColumnDefinition/>
