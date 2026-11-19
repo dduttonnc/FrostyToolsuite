@@ -149,6 +149,7 @@
     <Compile Include="TypeLibrary.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="Utils\HuffmanDecoder.cs" />
+    <Compile Include="WorkerPool.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Profiles.bin" />

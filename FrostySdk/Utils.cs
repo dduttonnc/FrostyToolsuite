@@ -996,6 +996,12 @@ namespace FrostySdk
         }
 
         public static byte[] CompressFile(byte[] inData, Texture texture = null, ResourceType resType = ResourceType.Invalid, CompressionType compressionOverride = CompressionType.Default, uint offset = 0)
+            => CompressFile(inData, texture, resType, compressionOverride, offset, 9);
+
+        // [DAI fix] for Frosty's own cache: zlib level 1 is many times faster than 9 and reads back the same
+        public static byte[] CompressFileForCache(byte[] inData) => CompressFile(inData, null, ResourceType.Invalid, CompressionType.Default, 0, 1);
+
+        private static byte[] CompressFile(byte[] inData, Texture texture, ResourceType resType, CompressionType compressionOverride, uint offset, int zlibLevel)
         {
             CompressionType compressionType = compressionOverride;
 
@@ -1058,7 +1064,7 @@ namespace FrostySdk
                     }
                     else if (compressionType == CompressionType.ZLib)
                     {
-                        compressSize = CompressZlib(buffer, out compBuffer, out compressCode, ref uncompressed);
+                        compressSize = CompressZlib(buffer, out compBuffer, out compressCode, ref uncompressed, zlibLevel);
                     }
                     else if (compressionType == CompressionType.LZ4)
                     {
@@ -1164,7 +1170,7 @@ namespace FrostySdk
             return size;
         }
 
-        private static ulong CompressZlib(byte[] buffer, out byte[] compBuffer, out ushort compressCode, ref bool uncompressed)
+        private static ulong CompressZlib(byte[] buffer, out byte[] compBuffer, out ushort compressCode, ref bool uncompressed, int level)
         {
             ulong size = 0;
             compBuffer = new byte[buffer.Length * 2];
@@ -1182,7 +1188,7 @@ namespace FrostySdk
             stream.next_out = ptr2.AddrOfPinnedObject();
             Marshal.StructureToPtr(stream, streamPtr, true);
 
-            int retCode = ZLib.DeflateInit(streamPtr, 9, "1.2.11", Marshal.SizeOf<ZLib.ZStream>());
+            int retCode = ZLib.DeflateInit(streamPtr, level, "1.2.11", Marshal.SizeOf<ZLib.ZStream>());
             retCode = ZLib.Deflate(streamPtr, ZLib.Z_FINISH);
 
             // copy out size
