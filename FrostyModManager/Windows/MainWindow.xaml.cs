@@ -364,41 +364,56 @@ namespace FrostyModManager
                 // load mods
                 Parallel.ForEach(modsDir.EnumerateFiles(), fi =>
                 {
-                    if (fi.Extension == ".fbmod")
+                    // [DAI fix] a file that fails to load is logged and skipped instead of closing the Mod Manager
+                    try
                     {
-                        int retCode = 0;
-                        using (FileStream stream = new FileStream(fi.FullName, FileMode.Open, FileAccess.Read))
-                            retCode = VerifyMod(stream);
-
-                        if (retCode >= 0)
+                        if (fi.Extension == ".fbmod")
                         {
-                            try
+                            int retCode = 0;
+                            using (FileStream stream = new FileStream(fi.FullName, FileMode.Open, FileAccess.Read))
+                                retCode = VerifyMod(stream);
+
+                            if (retCode >= 0)
                             {
-                                // all good
-                                AddMod(fi.FullName, (retCode & 0x8000) != 0 ? 1 : 0);
+                                try
+                                {
+                                    // all good
+                                    AddMod(fi.FullName, (retCode & 0x8000) != 0 ? 1 : 0);
+                                }
+                                catch (FrostyModLoadException)
+                                {
+                                    // failed to load for whatever reason
+                                    File.Delete(fi.FullName);
+                                    File.Delete(fi.FullName.Replace(".fbmod", "_01.archive"));
+                                }
                             }
-                            catch (FrostyModLoadException)
+                            else if (retCode == -3)
                             {
-                                // failed to load for whatever reason
+                                // bad mod. delete it
                                 File.Delete(fi.FullName);
                                 File.Delete(fi.FullName.Replace(".fbmod", "_01.archive"));
                             }
                         }
-                        else if (retCode == -3)
-                        {
-                            // bad mod. delete it
-                            File.Delete(fi.FullName);
-                            File.Delete(fi.FullName.Replace(".fbmod", "_01.archive"));
-                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        App.Logger.LogError("Could not load {0}: {1}", fi.Name, ex.GetBaseException().Message);
                     }
                     task.TaskLogger.Log("progress:" + currentMod++ / (float)totalMods * 100d);
                 });
                 // load collections
                 Parallel.ForEach(modsDir.EnumerateFiles(), fi =>
                 {
-                    if (fi.Extension == ".fbcollection")
+                    try
                     {
-                        AddCollection(fi.FullName, 0);
+                        if (fi.Extension == ".fbcollection")
+                        {
+                            AddCollection(fi.FullName, 0);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        App.Logger.LogError("Could not load {0}: {1}", fi.Name, ex.GetBaseException().Message);
                     }
                     task.TaskLogger.Log("progress:" + currentMod++ / (float)totalMods * 100d);
                 });
@@ -1076,7 +1091,14 @@ namespace FrostyModManager
             }
             catch (Exception e)
             {
-                FrostyMessageBox.Show(e.Message);
+                // [DAI fix] this runs on a worker thread, where a message box throws
+                App.Logger.LogError("Could not load {0}: {1}", Path.GetFileName(collectionFilename), e.Message);
+                return null;
+            }
+
+            if (collection.Mods == null)
+            {
+                App.Logger.LogError("Could not load {0}: not a mod collection", Path.GetFileName(collectionFilename));
                 return null;
             }
 

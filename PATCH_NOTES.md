@@ -21,6 +21,7 @@ Shows as **1.0.7-dai.1-dav-experimental**. Commits on top of J-Lyt's branch:
 | v1-v7 Mod Manager changes, splash loading list, CPU Threads / CPU Priority options, server GC, version suffix | `FrostyModManager/Windows/MainWindow.xaml(.cs)`, `ConfigWindow.xaml.cs`, `FrostyPack.cs`, `SplashWindow.xaml(.cs)`, `App.xaml.cs`, `App.config`, `Properties/AssemblyInfo.cs`, `FrostyPlugin/Windows/OptionsWindow.xaml.cs` |
 | Veilguard cache build: bundles parsed in batches on the worker pool and added in their original order; removed an unused search of all bundles for every bundle, and the per-name list search when reading tocs | `FrostySdk/Managers/Loaders/CasAssetLoader.cs` |
 | All 33 game SDKs in `FrostySdk/Profiles` are copied into the build again, as upstream 1.0.7 did. J-Lyt's project only copied the Veilguard SDK, so DAI asked to regenerate its SDK, and that fails on 1.0.7 ("Unable to find the first type info offset"). Every SDK loads against this FrostySdk | `FrostySdk/FrostySdk.csproj` |
+| A mod or collection file that fails to load at startup is logged ("Could not load ...") and skipped, instead of closing the Mod Manager with an AggregateException. Collections no longer show a message box from a worker thread | `FrostyModManager/Windows/MainWindow.xaml.cs` |
 
 Differences from the 1.0.6.4 DAI build that need an in-game check:
 
