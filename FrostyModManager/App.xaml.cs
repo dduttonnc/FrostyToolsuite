@@ -47,7 +47,10 @@ namespace FrostyModManager
         public App()
         {
             Assembly entryAssembly = Assembly.GetEntryAssembly();
-            Frosty.Core.App.Version = entryAssembly.GetName().Version + " - " + Frosty.Core.App.BuildVersion;
+            // [DAI fix] Show the fork version (e.g. 1.0.7-dai.1) when one is set.
+            string version = entryAssembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+                ?? entryAssembly.GetName().Version.ToString();
+            Frosty.Core.App.Version = version + " - " + Frosty.Core.App.BuildVersion;
 
             Frosty.Core.App.IsEditor = false;
             Frosty.Core.App.Title = "Frosty Mod Manager";
@@ -121,6 +124,8 @@ namespace FrostyModManager
             }
 
             Config.Load();
+            // [DAI fix] CPU Threads and CPU Priority options
+            Frosty.Core.Windows.ModManagerOptionsData.ApplyPerformanceSettings();
 
             StringBuilder sb = new StringBuilder();
             if (e.Args.Length > 0)

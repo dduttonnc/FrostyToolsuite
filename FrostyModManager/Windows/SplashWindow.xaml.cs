@@ -27,12 +27,13 @@ namespace FrostyModManager.Windows
     /// </summary>
     public partial class SplashWindow
     {
-        private class SplashWindowLogger : ILogger, INotifyPropertyChanged
+        private class SplashWindowLogger : ILogger, ILoadingListLogger, INotifyPropertyChanged
         {
             private SplashWindow parent;
 
             private double progress;
             private string status;
+            private string loadingList = "";
 
             public event PropertyChangedEventHandler PropertyChanged;
 
@@ -68,12 +69,29 @@ namespace FrostyModManager.Windows
                 }
             }
 
+            public string LoadingList {
+                get {
+                    return loadingList;
+                }
+                set {
+                    if (value != loadingList)
+                    {
+                        loadingList = value;
+                        NotifyPropertyChanged();
+                    }
+                }
+            }
+
             public SplashWindowLogger(SplashWindow inParent)
             {
                 parent = inParent;
 
                 // Utilize DataBindings to eliminate need for Dispatcher
                 BindingOperations.SetBinding(parent.logTextBox, TextBlock.TextProperty, new Binding("Status")
+                {
+                    Source = this
+                });
+                BindingOperations.SetBinding(parent.loadingListTextBlock, TextBlock.TextProperty, new Binding("LoadingList")
                 {
                     Source = this
                 });
@@ -114,6 +132,8 @@ namespace FrostyModManager.Windows
                 }
             }
 
+            public void LogLoadingList(string text) => LoadingList = text;
+
             public void LogError(string text, params object[] vars)
             {
             }
@@ -128,6 +148,14 @@ namespace FrostyModManager.Windows
             InitializeComponent();
 
             versionTextBlock.Text = Frosty.Core.App.Version;
+
+            // [DAI fix] the window grows while data loads; keep it centered
+            SizeChanged += (s, e) =>
+            {
+                if (e.HeightChanged && e.PreviousSize.Height > 0)
+                    Top -= (e.NewSize.Height - e.PreviousSize.Height) / 2;
+            };
+
             TaskbarItemInfo = new System.Windows.Shell.TaskbarItemInfo();
         }
 
