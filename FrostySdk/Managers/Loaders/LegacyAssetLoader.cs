@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace FrostySdk.Managers
@@ -25,13 +26,29 @@ namespace FrostySdk.Managers
                 public DbObject[] Bundles;
             }
 
+            // [DAI fix] the loading thread runs at the CPU priority option too
             public void Load(AssetManager parent, BinarySbDataHelper helper)
+            {
+                Thread thread = Thread.CurrentThread;
+                ThreadPriority oldPriority = thread.Priority;
+                thread.Priority = WorkerPool.Priority;
+                try
+                {
+                    LoadSuperBundles(parent, helper);
+                }
+                finally
+                {
+                    thread.Priority = oldPriority;
+                }
+            }
+
+            private void LoadSuperBundles(AssetManager parent, BinarySbDataHelper helper)
             {
                 // [DAI fix] DAI has hundreds of small superbundles: read and parse several ahead on other
                 // threads, then add them here one at a time in the original order
                 List<string> superBundleNames = new List<string>(parent.fs.SuperBundles);
                 Task<PreloadedSuperBundle>[] preloads = new Task<PreloadedSuperBundle>[superBundleNames.Count];
-                int window = Math.Max(2, Environment.ProcessorCount);
+                int window = Math.Max(2, WorkerPool.MaxThreads);
 
                 for (int i = 0; i < Math.Min(window, superBundleNames.Count); i++)
                     preloads[i] = StartPreload(parent, superBundleNames[i]);
@@ -63,7 +80,7 @@ namespace FrostySdk.Managers
                     bool isBinarySuperBundle = !baseToc.GetValue<bool>("cas");
 
                     // [DAI fix] show the count and progress, since several superbundles are in flight at once
-                    parent.WriteToLog("Loading Data {0}/{1} (up to {2} at once): {3}", sbIndex + 1, superBundleNames.Count, window, superBundleName);
+                    parent.WriteToLog("Loading Data {0}/{1} (up to {2} at once): {3}", sbIndex + 1, superBundleNames.Count, WorkerPool.MaxThreads, superBundleName);
                     parent.WriteToLog("progress:{0}", (sbIndex + 1) * 100.0 / superBundleNames.Count);
                     loadingList.Update(sbIndex, "adding");
 
@@ -369,7 +386,7 @@ namespace FrostySdk.Managers
 
                 if (!isDeltaBundle)
                 {
-                    return Task.Run(() =>
+                    return WorkerPool.Run(() =>
                     {
                         using (BinarySbReader reader = new BinarySbReader(stream, offset, parent.fs.CreateDeobfuscator()))
                             return new BinaryBundleWork { Sb = reader.ReadDbObject() };
@@ -380,7 +397,7 @@ namespace FrostySdk.Managers
                 Stream baseStream = (bi != null) ? baseMf.CreateViewStream(bi.Offset, bi.Size) : null;
                 Stream baseSbStream = (bi != null) ? baseMf.CreateViewStream(bi.Offset, bi.Size) : null;
 
-                return Task.Run(() =>
+                return WorkerPool.Run(() =>
                 {
                     DbObject sb;
                     using (BinarySbReader reader = new BinarySbReader(baseStream, stream, parent.fs.CreateDeobfuscator()))
@@ -399,7 +416,7 @@ namespace FrostySdk.Managers
 
             private static Task<PreloadedSuperBundle> StartPreload(AssetManager parent, string superBundleName)
             {
-                return Task.Run(() => Preload(parent, superBundleName));
+                return WorkerPool.Run(() => Preload(parent, superBundleName));
             }
 
             // reads only; anything that changes the asset lists happens on the loading thread
@@ -487,7 +504,7 @@ namespace FrostySdk.Managers
                     }
 
                     // the next batch parses while this thread adds the previous one
-                    Task<DbObject[]> next = Task.Run(() => ParseBundles(parent, streams));
+                    Task<DbObject[]> next = WorkerPool.Run(() => ParseBundles(parent, streams));
                     if (parsing != null)
                         AddBundles(parent, helper, tocBundles, parsingStart, parsing.GetAwaiter().GetResult());
 
@@ -502,7 +519,7 @@ namespace FrostySdk.Managers
             private static DbObject[] ParseBundles(AssetManager parent, Stream[] streams)
             {
                 DbObject[] result = new DbObject[streams.Length];
-                Parallel.For(0, streams.Length, i =>
+                WorkerPool.For(streams.Length, i =>
                 {
                     using (DbReader reader = new DbReader(streams[i], parent.fs.CreateDeobfuscator()))
                         result[i] = reader.ReadDbObject();

@@ -549,7 +549,7 @@ namespace FrostySdk.Managers
                     prepared.Add(p);
                 }
 
-                System.Threading.Tasks.Parallel.ForEach(toCompress, p => p.CompressedData = Utils.CompressFileForCache(p.Entry.GetValue<byte[]>("data")));
+                WorkerPool.ForEach(toCompress, p => p.CompressedData = Utils.CompressFileForCache(p.Entry.GetValue<byte[]>("data")));
                 return prepared;
             }
 
