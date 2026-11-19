@@ -452,11 +452,25 @@ namespace FrostySdk.Managers
                 am = inParent;
             }
 
-            public void FilterAndAddBundleData(DbObject baseList, DbObject deltaList)
+            public void FilterAndAddBundleData(DbObject baseList, DbObject deltaList) => AddPreparedBundleData(PrepareBundleData(baseList, deltaList));
+
+            // [DAI fix] the slow part (base matching, recompressing changed data) runs on any thread;
+            // AddPreparedBundleData then applies it in order, exactly as the old single pass did
+            public static PreparedBundleData PrepareBundleData(DbObject baseList, DbObject deltaList)
             {
-                FilterBinaryBundleData(baseList, deltaList, "ebx", ebxDataFiles);
-                FilterBinaryBundleData(baseList, deltaList, "res", resDataFiles);
-                FilterBinaryBundleData(baseList, deltaList, "chunks", chunkDataFiles);
+                return new PreparedBundleData
+                {
+                    Ebx = PrepareList(baseList, deltaList, "ebx"),
+                    Res = PrepareList(baseList, deltaList, "res"),
+                    Chunks = PrepareList(baseList, deltaList, "chunks")
+                };
+            }
+
+            public void AddPreparedBundleData(PreparedBundleData data)
+            {
+                AddPreparedList(data.Ebx, ebxDataFiles);
+                AddPreparedList(data.Res, resDataFiles);
+                AddPreparedList(data.Chunks, chunkDataFiles);
             }
 
             public void RemoveEbxData(string name) => ebxDataFiles.Remove(name);
@@ -506,40 +520,58 @@ namespace FrostySdk.Managers
                 chunkDataFiles.Clear();
             }
 
-            private void FilterBinaryBundleData(DbObject baseList, DbObject deltaList, string listName, Dictionary<string, byte[]> dataFiles)
+            private static List<PreparedEntry> PrepareList(DbObject baseList, DbObject deltaList, string listName)
             {
+                // [DAI fix] was a scan of the whole base list for every patched entry
+                Dictionary<Sha1, DbObject> baseBySha1 = new Dictionary<Sha1, DbObject>();
+                if (baseList != null)
+                {
+                    foreach (DbObject baseEntry in baseList.GetValue<DbObject>(listName))
+                    {
+                        Sha1 baseSha1 = baseEntry.GetValue<Sha1>("sha1");
+                        if (!baseBySha1.ContainsKey(baseSha1))
+                            baseBySha1.Add(baseSha1, baseEntry);
+                    }
+                }
+
+                List<PreparedEntry> prepared = new List<PreparedEntry>();
+                List<PreparedEntry> toCompress = new List<PreparedEntry>();
                 foreach (DbObject entry in deltaList.GetValue<DbObject>(listName))
                 {
-                    Sha1 sha1 = entry.GetValue<Sha1>("sha1");
                     string name = entry.GetValue<string>("name");
                     if (name == null)
                         name = entry.GetValue<Guid>("id").ToString();
 
-                    if (dataFiles.ContainsKey(name))
+                    PreparedEntry p = new PreparedEntry { Name = name, Entry = entry };
+                    if (!baseBySha1.TryGetValue(entry.GetValue<Sha1>("sha1"), out p.BaseEntry) && entry.HasValue("data"))
+                        toCompress.Add(p);
+
+                    prepared.Add(p);
+                }
+
+                System.Threading.Tasks.Parallel.ForEach(toCompress, p => p.CompressedData = Utils.CompressFileForCache(p.Entry.GetValue<byte[]>("data")));
+                return prepared;
+            }
+
+            private static void AddPreparedList(List<PreparedEntry> prepared, Dictionary<string, byte[]> dataFiles)
+            {
+                foreach (PreparedEntry p in prepared)
+                {
+                    if (dataFiles.ContainsKey(p.Name))
                         continue;
 
-                    bool bFound = false;
-                    if (baseList != null)
+                    DbObject entry = p.Entry;
+                    if (p.BaseEntry != null)
                     {
-                        foreach (DbObject baseEntry in baseList.GetValue<DbObject>(listName))
-                        {
-                            if (baseEntry.GetValue<Sha1>("sha1") == sha1)
-                            {
-                                entry.SetValue("size", baseEntry.GetValue<long>("size"));
-                                entry.SetValue("originalSize", baseEntry.GetValue<long>("originalSize"));
-                                entry.SetValue("offset", baseEntry.GetValue<long>("offset"));
-                                entry.RemoveValue("data");
-
-                                bFound = true;
-                                break;
-                            }
-                        }
+                        entry.SetValue("size", p.BaseEntry.GetValue<long>("size"));
+                        entry.SetValue("originalSize", p.BaseEntry.GetValue<long>("originalSize"));
+                        entry.SetValue("offset", p.BaseEntry.GetValue<long>("offset"));
+                        entry.RemoveValue("data");
                     }
-
-                    if (!bFound)
+                    else
                     {
-                        byte[] data = Utils.CompressFile(entry.GetValue<byte[]>("data"));
-                        dataFiles.Add(name, data);
+                        byte[] data = p.CompressedData ?? Utils.CompressFileForCache(entry.GetValue<byte[]>("data"));
+                        dataFiles.Add(p.Name, data);
 
                         entry.SetValue("size", data.Length);
                         entry.AddValue("cache", true);
@@ -547,6 +579,21 @@ namespace FrostySdk.Managers
                     }
                 }
             }
+        }
+
+        internal class PreparedEntry
+        {
+            public string Name;
+            public DbObject Entry;
+            public DbObject BaseEntry;
+            public byte[] CompressedData;
+        }
+
+        internal class PreparedBundleData
+        {
+            public List<PreparedEntry> Ebx;
+            public List<PreparedEntry> Res;
+            public List<PreparedEntry> Chunks;
         }
 
         internal class BaseBundleInfo
@@ -1776,6 +1823,12 @@ namespace FrostySdk.Managers
             using (DbReader reader = new DbReader(new FileStream(filename, FileMode.Open, FileAccess.Read), fs.CreateDeobfuscator()))
                 toc = reader.ReadDbObject();
 
+            return ProcessTocChunks(toc, superBundleName, helper, isBase);
+        }
+
+        // [DAI fix] split from the above so the loader can read tocs on other threads
+        private DbObject ProcessTocChunks(DbObject toc, string superBundleName, BinarySbDataHelper helper, bool isBase)
+        {
             if (isBase && !(ProfilesLibrary.DataVersion == (int)ProfileVersion.DragonAgeInquisition || ProfilesLibrary.DataVersion == (int)ProfileVersion.Battlefield4 || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeed || ProfilesLibrary.DataVersion == (int)ProfileVersion.PlantsVsZombiesGardenWarfare2 || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedRivals ||
                 ProfilesLibrary.DataVersion == (int)ProfileVersion.PlantsVsZombiesGardenWarfare))
             {
@@ -2272,6 +2325,7 @@ namespace FrostySdk.Managers
             if (!Directory.Exists(fi.DirectoryName))
                 Directory.CreateDirectory(fi.DirectoryName);
 
+            int lastPercent = -1;
             using (NativeWriter writer = new NativeWriter(new FileStream(fi.FullName, FileMode.Create)))
             {
                 writer.Write(CacheMagic);
@@ -2291,11 +2345,12 @@ namespace FrostySdk.Managers
                     for (int i = 0; i < superBundles.Count; i++)
                     {
                         writer.WriteNullTerminatedString(superBundles[i].Name);
-                        WriteToLog(string.Format("progress:{0}", (double)i / (double)superBundles.Count * 100.0));
+                        WriteProgress(i, superBundles.Count, ref lastPercent);
                     }
                 }
 
                 WriteToLog("Writing to cache (Bundles)");
+                lastPercent = -1;
 
                 writer.Write(bundles.Count);
                 for (int i = 0; i < bundles.Count; i++)
@@ -2303,16 +2358,17 @@ namespace FrostySdk.Managers
                     writer.WriteNullTerminatedString(bundles[i].Name);
                     writer.Write(bundles[i].SuperBundleId);
 
-                    WriteToLog(string.Format("progress:{0}", (double)i / (double)bundles.Count * 100.0));
+                    WriteProgress(i, bundles.Count, ref lastPercent);
                 }
 
                 WriteToLog("Writing to cache (EBX)");
 
                 writer.Write(ebxList.Values.Count);
-                for (int i = 0; i < ebxList.Count; i++)
+                // [DAI fix] was ElementAt(i), which rescans the dictionary each time (quadratic)
+                lastPercent = -1;
+                int ebxIndex = 0;
+                foreach (EbxAssetEntry ebx in ebxList.Values)
                 {
-                    EbxAssetEntry ebx = ebxList.Values.ElementAt(i);
-
                     writer.WriteNullTerminatedString(ebx.Name);
                     writer.Write(ebx.Sha1);
                     writer.Write(ebx.Size);
@@ -2342,16 +2398,16 @@ namespace FrostySdk.Managers
                         writer.Write(dependencyGuid);
                     }
 
-                    WriteToLog(string.Format("progress:{0}", (double)i / (double)ebxList.Count * 100.0));
+                    WriteProgress(ebxIndex++, ebxList.Count, ref lastPercent);
                 }
 
                 WriteToLog("Writing to cache (RES)");
 
                 writer.Write(resList.Values.Count);
-                for (int i = 0; i < resList.Count; i++)
+                lastPercent = -1;
+                int resIndex = 0;
+                foreach (ResAssetEntry res in resList.Values)
                 {
-                    ResAssetEntry res = resList.Values.ElementAt(i);
-
                     writer.WriteNullTerminatedString(res.Name);
                     writer.Write(res.Sha1);
                     writer.Write(res.Size);
@@ -2378,16 +2434,16 @@ namespace FrostySdk.Managers
                         writer.Write(baseBundleId);
                     }
 
-                    WriteToLog(string.Format("progress:{0}", (double)i / (double)resList.Count * 100.0));
+                    WriteProgress(resIndex++, resList.Count, ref lastPercent);
                 }
 
                 WriteToLog("Writing to cache (CHUNK)");
 
                 writer.Write(chunkList.Count);
-                for (int i = 0; i < chunkList.Count; i++)
+                lastPercent = -1;
+                int chunkIndex = 0;
+                foreach (ChunkAssetEntry chunk in chunkList.Values)
                 {
-                    ChunkAssetEntry chunk = chunkList.Values.ElementAt(i);
-
                     writer.Write(chunk.Id);
                     writer.Write(chunk.Sha1);
                     writer.Write(chunk.Size);
@@ -2416,9 +2472,20 @@ namespace FrostySdk.Managers
                         writer.Write(baseBundleId);
                     }
 
-                    WriteToLog(string.Format("progress:{0}", (double)i / (double)chunkList.Count * 100.0));
+                    WriteProgress(chunkIndex++, chunkList.Count, ref lastPercent);
                 }
             }
+        }
+
+        // [DAI fix] report whole-percent steps only; one update per entry flooded the UI thread
+        private void WriteProgress(int index, int count, ref int lastPercent)
+        {
+            int percent = (int)((long)index * 100 / count);
+            if (percent == lastPercent)
+                return;
+
+            lastPercent = percent;
+            WriteToLog(string.Format("progress:{0}", (double)index / count * 100.0));
         }
 
         private void WriteToLog(string text, params object[] vars) => logger?.Log(text, vars);

@@ -24,6 +24,14 @@ namespace FrostyModManager.Windows
         {
             InitializeComponent();
             versionTextBlock.Text = App.Version;
+
+            // [DAI fix] the window grows while data loads; keep it centered
+            SizeChanged += (s, e) =>
+            {
+                if (e.HeightChanged && e.PreviousSize.Height > 0)
+                    Top -= (e.NewSize.Height - e.PreviousSize.Height) / 2;
+            };
+
             TaskbarItemInfo = new System.Windows.Shell.TaskbarItemInfo();
         }
 

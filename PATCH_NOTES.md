@@ -5,7 +5,7 @@ on 2026-11-17; 1.0.6.4 is 1.0.6.3 plus 10 small upstream fixes, #327 to #344, an
 Branch: `dai-fixes` on https://github.com/dduttonnc/FrostyToolsuite (v1 to v6 in one commit,
 "My DAI build"; later versions in their own commits). Every change is marked in the code with a
 `[DAI fix]` comment (34 in MainWindow.xaml.cs, 3 in MainWindow.xaml, 23 in ConfigWindow, 1 in
-FrostyPack, 8 in the executor, 6 in Standard.cs, 1 in App.xaml.cs, 1 in AssemblyInfo.cs).
+FrostyPack, 8 in the executor, 8 in Standard.cs, 5 in AssetManager.cs, 4 in LegacyAssetLoader.cs, 1 in Utils.cs, 1 in App.xaml.cs, 1 in App.config, 1 in AssemblyInfo.cs).
 
 ## Build version
 
@@ -30,6 +30,7 @@ version is the upstream base plus a fork suffix (`-dai.1`, `-dai.2`, ... one per
 | v5 | Leave empty texture ranges out | Infinite load screen with some texture mods |
 | v6 | Clearer load order labels | "List"/"Priority" renamed to "Bottom wins"/"Top wins" |
 | v7 | Reconfigure converted .daimod files | Right-click > Reconfigure... changes a mod's settings in place |
+| v8 | Faster cache build and mod apply | Branches `perf/cache-build-and-apply` (cache rebuild ~15 to ~7 min), then on top `perf/parallel-load` (~45 s), `perf/splash-progress`, `perf/binary-overlap` and `perf/splash-files` (~32 s) |
 
 ## Pull requests to CadeEvs/FrostyToolsuite (base 1.0.6.4)
 
@@ -243,6 +244,83 @@ Upstream PR #355 (branch `pr6-daimod-reconfigure`, based on #354).
 
 1. New `ReplaceMod`: puts the re-converted mod in the old one's place in a pack, keeping its
    position and enabled state.
+
+---
+
+## v8: Faster cache build and mod apply
+
+Branch `perf/cache-build-and-apply`; `perf/parallel-load` adds the multi-core loading below on top
+of it. No change to what gets written, only how fast.
+
+Cache build on a 16-thread CPU: originally 10-15 min, ~7 min with the safe fixes, 45 s with
+`perf/parallel-load`, about 32 s with `perf/splash-files` (cache identical to the 45 s build).
+Each step was checked in game (romances, textures, voice packs, item mods). Applying mods: 1m 24s.
+
+### `FrostySdk/Managers/AssetManager.cs` (cache build)
+
+1. **Writing the cache was quadratic.** The EBX, RES and chunk loops fetched entry *i* with
+   `Values.ElementAt(i)`, which walks the dictionary from the start every time, so the "Writing to
+   cache" bar slowed down as it went. They now loop over the values once. The cache file is
+   identical (same order).
+2. **Progress updates are throttled.** The splash screen (and taskbar) got one update per entry,
+   hundreds of thousands in all. It now gets one per whole percent.
+
+### `FrostySdk/Managers/Loaders/LegacyAssetLoader.cs` (cache build, `perf/parallel-load` only)
+
+1. **Superbundles are read ahead on several cores.** DAI has hundreds of small superbundles (one
+   per level layout), and "Loading Data" read and parsed them one after another on one core. Up to
+   one superbundle per core is now read and parsed ahead (tocs and, for those with up to 256
+   bundles, every bundle) while the loading thread adds the finished ones to the asset lists in the
+   original order, so the cache comes out the same. Larger superbundles are read in batches of 256
+   bundles, parsed in parallel. `AssetManager.ProcessTocChunks` is split so a toc read elsewhere
+   can be processed.
+2. **Binary superbundles load on several cores.** 109 of DAI's superbundles (mostly multiplayer
+   and DLC layouts) use the older binary format, where each patched bundle is unpacked in full and
+   compared with the base game's copy. A timing build showed they took 325 of the 329 seconds of
+   "Loading Data", at about 0.3 s per bundle on one core. About one bundle per core is now unpacked
+   and compared at a time, and the results are added in toc order. The forced garbage collection
+   after each binary superbundle is gone.
+   The unpacking also runs across superbundle boundaries (branch `perf/binary-overlap`): bundles of
+   the next binary superbundles start while the current one is still being added, so the cores no
+   longer wait for the largest bundle at the end of each superbundle. Up to two bundles per core
+   are in flight.
+3. **The splash screen shows the count and progress** (branch `perf/splash-progress`, on top of
+   `perf/parallel-load`): "Loading Data 112/254 (up to 16 at once): <superbundle>", and the
+   progress bar fills as superbundles finish. It used to show only the superbundle name, with no
+   progress, which looked stuck now that several load at once. One update per superbundle.
+   Branch `perf/splash-files` (on top of `perf/binary-overlap`) also makes the Mod Manager's splash
+   screen taller while data loads and lists every superbundle in flight with what is happening to
+   it (adding, adding bundle n/m, unpacking, reading, ready). The list updates at most ten times a
+   second and goes away when loading is done. The loader only sends it to a logger that implements
+   the new `ILoadingListLogger` (`FrostySdk/Interfaces/ILogger.cs`), so the Editor is unchanged.
+
+### `FrostySdk/Managers/AssetManager.cs` (binary superbundles, `perf/parallel-load` only)
+
+1. **Patched assets are matched to the base game with a lookup.** Each patched entry was compared
+   with every base entry in turn (and each comparison boxed two Sha1 values). The base entries are
+   now put in a dictionary by Sha1 first; the first match still wins, as before.
+2. The matching and the recompression of changed data (`PrepareBundleData`) are split from the
+   step that records them in the cache (`AddPreparedBundleData`), so the first can run on any
+   thread while the second still runs in order.
+3. **Changed data is recompressed for the cache at zlib level 1 instead of 9**, and the entries of
+   a bundle are compressed in parallel. Level 9 was most of the remaining time; the data reads back
+   the same, but `_sbdata.cas` comes out somewhat larger and no longer byte-identical to older
+   caches. New `Utils.CompressFileForCache`; `Utils.CompressFile` is unchanged (level 9) for
+   everything written into the game's files.
+
+### `FrostyModManager/App.config` (`perf/parallel-load` only)
+
+1. **Server garbage collection.** Loading creates millions of objects, and the default collector
+   pauses every thread and works on one core. `gcServer` makes it use all cores. Uses more memory.
+
+### `FrostyModSupport/Actions/Standard.cs` (Applying Mods)
+
+1. **Unmodified DAI base bundles are no longer parsed.** Every bundle in a superbundle that a mod
+   touches was read, but base bundles no mod changes are never written back (the toc keeps
+   pointing at the game's copy), so reading them was wasted.
+2. **Each `.sb` file is opened once per superbundle** instead of once per bundle.
+3. **Duplicate checks on written data use a set** instead of scanning a list, which compared every
+   entry each time.
 
 ---
 
