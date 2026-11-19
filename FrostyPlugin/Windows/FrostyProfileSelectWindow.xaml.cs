@@ -87,19 +87,15 @@ namespace Frosty.Core.Windows
             {
                 string version = App.Version;
 
-                if (configuration.ProfileName == "Dragon Age The Veilguard")
+                // [DAI fix] DAI is supported again
+                if (configuration.ProfileName == "Dragon Age The Veilguard" || configuration.ProfileName == "DragonAgeInquisition")
                 {
                     selectedProfileName = configuration.ProfileName;
                     Close();
                 }
-                else if (configuration.ProfileName == "DragonAgeInquisition")
-                {
-                    FrostyMessageBox.Show(configuration.GameName + " is not supported on " + version + "\n\n" + "Use 1.0.6.3 for " + configuration.GameName, "Unsupported Profile");
-                    return;
-                }
                 else
                 {
-                    FrostyMessageBox.Show(configuration.GameName + " is not supported." + "\n\n" + "This release only has support for Dragon Age\u2122: The Veilguard", "Unsupported Profile");
+                    FrostyMessageBox.Show(configuration.GameName + " is not supported." + "\n\n" + "This release only has support for Dragon Age\u2122: Inquisition and Dragon Age\u2122: The Veilguard", "Unsupported Profile");
                     return;
                 }
             }

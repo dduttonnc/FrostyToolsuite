@@ -328,19 +328,15 @@ namespace FrostyModManager.Windows
             {
                 string version = Frosty.Core.App.Version;
 
-                if (configuration.ProfileName == "Dragon Age The Veilguard")
+                // [DAI fix] DAI is supported again
+                if (configuration.ProfileName == "Dragon Age The Veilguard" || configuration.ProfileName == "DragonAgeInquisition")
                 {
                     LaunchConfiguration(configuration.ProfileName);
                     Close();
                 }
-                else if (configuration.ProfileName == "DragonAgeInquisition")
-                {
-                    FrostyMessageBox.Show($"{configuration.GameName} is not supported on {version}\n\nUse 1.0.6.3 for {configuration.GameName}", "Unsupported Profile");
-                    return;
-                }
                 else
                 {
-                    if (FrostyMessageBox.Show($"{configuration.GameName} is not supported.\n\nThis release only has support for Dragon Age\u2122: The Veilguard\n\nDo you wish to continue anyway?", "Unsupported Profile", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                    if (FrostyMessageBox.Show($"{configuration.GameName} is not supported.\n\nThis release only has support for Dragon Age\u2122: Inquisition and Dragon Age\u2122: The Veilguard\n\nDo you wish to continue anyway?", "Unsupported Profile", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
                     {
                         LaunchConfiguration(configuration.ProfileName);
                         Close();
