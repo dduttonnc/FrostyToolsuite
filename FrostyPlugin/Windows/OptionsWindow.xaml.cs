@@ -386,6 +386,37 @@ namespace Frosty.Core.Windows
         [Editor(typeof(FrostyLocalizationLanguageDataEditor))]
         public CustomComboData<string, string> MaxCasFileSize { get; set; }
 
+        // [DAI fix] limits for Frosty's worker threads (cache build and applying mods)
+        [Category("Performance")]
+        [DisplayName("CPU Threads")]
+        [Description("How many CPU threads (logical processors in Task Manager) Frosty uses when it builds its cache and applies mods.\r\n\r\nThe default leaves two free so the PC stays responsive. Lower it if your PC gets unstable under full load.")]
+        [EbxFieldMeta(EbxFieldType.Struct)]
+        [Editor(typeof(FrostyLocalizationLanguageDataEditor))]
+        public CustomComboData<string, string> WorkerThreads { get; set; }
+
+        [Category("Performance")]
+        [DisplayName("CPU Priority")]
+        [Description("Priority of that work compared with other programs. Low (the default) lets everything else go first, so the PC stays usable; the game launched afterwards is not affected.")]
+        [EbxFieldMeta(EbxFieldType.Struct)]
+        [Editor(typeof(FrostyLocalizationLanguageDataEditor))]
+        public CustomComboData<string, string> WorkerPriority { get; set; }
+
+        private static readonly List<string> priorityNames = new List<string>() { "Low", "Below Normal", "Normal", "Above Normal", "High" };
+        private static readonly System.Threading.ThreadPriority[] priorityValues =
+        {
+            System.Threading.ThreadPriority.Lowest, System.Threading.ThreadPriority.BelowNormal, System.Threading.ThreadPriority.Normal,
+            System.Threading.ThreadPriority.AboveNormal, System.Threading.ThreadPriority.Highest
+        };
+
+        public static void ApplyPerformanceSettings()
+        {
+            if (!int.TryParse(Config.Get<string>("WorkerThreads", ""), out int threads))
+                threads = WorkerPool.DefaultThreads;
+
+            int priority = priorityNames.IndexOf(Config.Get<string>("WorkerPriority", "Low"));
+            WorkerPool.Configure(threads, priorityValues[(priority < 0) ? 0 : priority]);
+        }
+
         //[Category("Mod View")]
         //[DisplayName("Collapse categories by default")]
         //[Description("Automatically collapse mod categories in the Available Mods list on startup.")]
@@ -414,6 +445,19 @@ namespace Frosty.Core.Windows
             MaxCasFileSize = new CustomComboData<string, string>(sizes, sizes);
             MaxCasFileSize.SelectedIndex = sizes.IndexOf(Config.Get<string>("MaxCasFileSize", "1GB"));
 
+            List<string> threadValues = new List<string>();
+            List<string> threadNames = new List<string>();
+            for (int i = 1; i <= Environment.ProcessorCount; i++)
+            {
+                threadValues.Add(i.ToString());
+                threadNames.Add((i == WorkerPool.DefaultThreads) ? i + " (default)" : i.ToString());
+            }
+            WorkerThreads = new CustomComboData<string, string>(threadValues, threadNames);
+            WorkerThreads.SelectedIndex = Math.Max(0, Math.Min(WorkerPool.MaxThreads, threadValues.Count) - 1);
+
+            WorkerPriority = new CustomComboData<string, string>(priorityNames, priorityNames);
+            WorkerPriority.SelectedIndex = Math.Max(0, priorityNames.IndexOf(Config.Get<string>("WorkerPriority", "Low")));
+
             //CollapseCategories = Config.Get("CollapseCategories", false);
             //AppliedModIcons = Config.Get("AppliedModIcons", true);
         }
@@ -433,6 +477,10 @@ namespace Frosty.Core.Windows
             Config.Add("UpdateCheckPrerelease", UpdateCheckPrerelease);
 
             Config.Add("MaxCasFileSize", MaxCasFileSize.SelectedName);
+
+            Config.Add("WorkerThreads", WorkerThreads.SelectedValue);
+            Config.Add("WorkerPriority", WorkerPriority.SelectedValue);
+            ApplyPerformanceSettings();
 
             //Config.Add("CollapseCategories", CollapseCategories);
             //Config.Add("AppliedModIcons", AppliedModIcons);

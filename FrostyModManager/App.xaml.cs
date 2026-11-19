@@ -114,6 +114,8 @@ namespace FrostyModManager
             //RefreshConfigurationList();
 
             Config.Load();
+            // [DAI fix] CPU Threads and CPU Priority options
+            Frosty.Core.Windows.ModManagerOptionsData.ApplyPerformanceSettings();
             //ini.LoadEntries("DefaultSettings.ini");
 
             if (Config.Get<bool>("UpdateCheck", true) || Config.Get<bool>("UpdateCheckPrerelease", false))
