@@ -4,8 +4,10 @@ Base: branch `1.0.6.4` of https://github.com/CadeEvs/FrostyToolsuite (moved up f
 on 2026-11-17; 1.0.6.4 is 1.0.6.3 plus 10 small upstream fixes, #327 to #344, and was tested in game).
 Branch: `dai-fixes` on https://github.com/dduttonnc/FrostyToolsuite (v1 to v6 in one commit,
 "My DAI build"; later versions in their own commits). Every change is marked in the code with a
-`[DAI fix]` comment (34 in MainWindow.xaml.cs, 3 in MainWindow.xaml, 23 in ConfigWindow, 1 in
-FrostyPack, 8 in the executor, 8 in Standard.cs, 5 in AssetManager.cs, 4 in LegacyAssetLoader.cs, 1 in Utils.cs, 1 in App.xaml.cs, 1 in App.config, 1 in AssemblyInfo.cs).
+`[DAI fix]` comment (21 in MainWindow.xaml.cs, 3 in MainWindow.xaml, 17 in ConfigWindow, 1 in
+FrostyPack, 9 in the executor, 8 in Standard.cs, 5 in AssetManager.cs, 6 in LegacyAssetLoader.cs,
+1 each in Utils.cs, WorkerPool.cs, ILogger.cs, OptionsWindow.xaml.cs, SplashWindow.xaml,
+SplashWindow.xaml.cs, App.config and AssemblyInfo.cs, 2 in App.xaml.cs).
 
 ## Build version
 
@@ -307,6 +309,25 @@ Each step was checked in game (romances, textures, voice packs, item mods). Appl
    the same, but `_sbdata.cas` comes out somewhat larger and no longer byte-identical to older
    caches. New `Utils.CompressFileForCache`; `Utils.CompressFile` is unchanged (level 9) for
    everything written into the game's files.
+
+### CPU Threads and CPU Priority options (`perf/cpu-limit`)
+
+Running every core flat out can make a PC feel locked up, and an unstable overclock can crash
+under full load. Options > Mod Manager Options > Performance now has two dropdowns:
+
+* **CPU Threads**: 1 up to the number of logical processors Windows reports. The default is that
+  number minus 2 (at least 1), e.g. 14 on a 16-thread CPU.
+* **CPU Priority**: Low (default), Below Normal, Normal, Above Normal, High. Realtime is not
+  offered. These are the priorities of Frosty's worker threads, not of the whole process, so the
+  game Frosty launches still starts at normal priority.
+
+New `FrostySdk/WorkerPool.cs` runs that work on its own threads, because the .NET thread pool
+can't be capped below one thread per core. The loader (`LegacyAssetLoader`, cache compression in
+`AssetManager`) and, when applying mods, mod loading, handlers and the per-superbundle work
+(`FrostyModExecutor`) use it; the loading thread also runs at the chosen priority. Nothing ever
+waits on a job that hasn't started, so 1 thread works too, only slower. Settings are applied at
+startup and when Options is saved. Garbage collection (server GC) still uses every core in short
+bursts, and the non-DAI apply paths (Heat, manifest) are unchanged.
 
 ### `FrostyModManager/App.config` (`perf/parallel-load` only)
 

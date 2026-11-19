@@ -287,7 +287,7 @@ namespace Frosty.ModSupport
             }
 
 
-            Parallel.ForEach(fmod.Resources, resource =>
+            WorkerPool.ForEach(fmod.Resources.ToList(), resource =>
             {
                 // pull existing bundles from asset manager
                 HashSet<int> bundles = new HashSet<int>();
@@ -1163,7 +1163,7 @@ namespace Frosty.ModSupport
                 assetEntries.AddRange(modifiedChunks.Values);
 
                 int currentResource = 0;
-                Parallel.ForEach(assetEntries, new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount }, entry =>
+                WorkerPool.ForEach(assetEntries, entry =>
                 {
                     if (entry.ExtraData is HandlerExtraData handlerExtaData)
                     {
@@ -1564,6 +1564,7 @@ namespace Frosty.ModSupport
                 }
                 else
                 {
+                    // [DAI fix] superbundles, mod loading and handlers run on WorkerPool (CPU threads / priority options)
                     List<SuperBundleAction> actions = new List<SuperBundleAction>();
                     ManualResetEvent doneEvent = new ManualResetEvent(false);
 
@@ -1574,7 +1575,7 @@ namespace Frosty.ModSupport
                             continue;
 
                         SuperBundleAction action = new SuperBundleAction(superBundle, doneEvent, this, modDirName + "/" + patchPath, cancelToken);
-                        ThreadPool.QueueUserWorkItem(action.ThreadPoolCallback, null);
+                        WorkerPool.Post(() => action.ThreadPoolCallback(null));
                         actions.Add(action);
                         numTasks++;
                         totalTasks++;
@@ -1583,7 +1584,7 @@ namespace Frosty.ModSupport
                     foreach (string superBundle in addedSuperBundles)
                     {
                         SuperBundleAction action = new SuperBundleAction(superBundle, doneEvent, this, modDirName + "/" + patchPath, cancelToken);
-                        ThreadPool.QueueUserWorkItem(action.ThreadPoolCallback, null);
+                        WorkerPool.Post(() => action.ThreadPoolCallback(null));
                         actions.Add(action);
                         numTasks++;
                         totalTasks++;

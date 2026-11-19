@@ -130,6 +130,7 @@
     <Compile Include="Sha1.cs" />
     <Compile Include="TypeLibrary.cs" />
     <Compile Include="Utils.cs" />
+    <Compile Include="WorkerPool.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Profiles.bin" />
