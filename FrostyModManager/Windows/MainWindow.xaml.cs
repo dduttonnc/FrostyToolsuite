@@ -397,7 +397,7 @@ namespace FrostyModManager
                     }
                     catch (Exception ex)
                     {
-                        App.Logger.LogError("Could not load {0}: {1}", fi.Name, ex.GetBaseException().Message);
+                        App.Logger.LogError("Could not load {0}: {1}", fi.Name, ex.GetBaseException().ToString());
                     }
                     task.TaskLogger.Log("progress:" + currentMod++ / (float)totalMods * 100d);
                 });
@@ -413,7 +413,7 @@ namespace FrostyModManager
                     }
                     catch (Exception ex)
                     {
-                        App.Logger.LogError("Could not load {0}: {1}", fi.Name, ex.GetBaseException().Message);
+                        App.Logger.LogError("Could not load {0}: {1}", fi.Name, ex.GetBaseException().ToString());
                     }
                     task.TaskLogger.Log("progress:" + currentMod++ / (float)totalMods * 100d);
                 });
@@ -1070,7 +1070,8 @@ namespace FrostyModManager
 #endif
             }
 
-            foreach (BaseModResource resource in mod.Resources)
+            // [DAI fix] legacy-format mods have no resource list
+            foreach (BaseModResource resource in mod.NewFormat ? mod.Resources : Enumerable.Empty<BaseModResource>())
             {
                 if (resource.Type == ModResourceType.Ebx && resource.Name.Equals("levels/root/rootlevel/rootlevel/description"))
                 {
