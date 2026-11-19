@@ -20,6 +20,7 @@ Shows as **1.0.7-dai.1-dav-experimental**. Commits on top of J-Lyt's branch:
 | Mod apply on the worker pool (DAI and Veilguard), thread-safe archive ref counts, `.daimod` removal entries skipped | `FrostyModSupport/FrostyModExecutor.cs` |
 | v1-v7 Mod Manager changes, splash loading list, CPU Threads / CPU Priority options, server GC, version suffix | `FrostyModManager/Windows/MainWindow.xaml(.cs)`, `ConfigWindow.xaml.cs`, `FrostyPack.cs`, `SplashWindow.xaml(.cs)`, `App.xaml.cs`, `App.config`, `Properties/AssemblyInfo.cs`, `FrostyPlugin/Windows/OptionsWindow.xaml.cs` |
 | Veilguard cache build: bundles parsed in batches on the worker pool and added in their original order; removed an unused search of all bundles for every bundle, and the per-name list search when reading tocs | `FrostySdk/Managers/Loaders/CasAssetLoader.cs` |
+| The DAI SDK (`Profiles\DragonAgeSDK.dll`) is copied into the build again. J-Lyt's project only copied the Veilguard SDK, so DAI asked to regenerate its SDK, and that fails on 1.0.7 ("Unable to find the first type info offset") | `FrostySdk/FrostySdk.csproj` |
 
 Differences from the 1.0.6.4 DAI build that need an in-game check:
 

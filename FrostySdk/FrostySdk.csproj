@@ -172,10 +172,10 @@
     </Content>
     <Content Include="Profiles\DeadSpaceSDK.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    </Content>-->
     <Content Include="Profiles\DragonAgeSDK.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>-->
+    </Content>
     <Content Include="Profiles\DragonAgeTheVeilguardSDK.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
