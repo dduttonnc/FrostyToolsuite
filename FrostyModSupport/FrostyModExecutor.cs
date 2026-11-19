@@ -409,6 +409,32 @@ namespace Frosty.ModSupport
             public NullEntryException() : base() { }
         }
 
+        // [DAI fix] archive ref counts are updated from several threads
+        private readonly object archiveDataLock = new object();
+
+        private void AddArchiveRef(Sha1 sha1, byte[] data)
+        {
+            lock (archiveDataLock)
+            {
+                if (!m_archiveData.TryAdd(sha1, new ArchiveInfo() { Data = data, RefCount = 1 }))
+                    m_archiveData[sha1].RefCount++;
+            }
+        }
+
+        private bool ReleaseArchiveRef(Sha1 sha1)
+        {
+            lock (archiveDataLock)
+            {
+                if (!m_archiveData.TryGetValue(sha1, out ArchiveInfo info))
+                    return false;
+
+                info.RefCount--;
+                if (info.RefCount <= 0)
+                    m_archiveData.TryRemove(sha1, out _);
+                return true;
+            }
+        }
+
         private void ProcessModResources(IResourceContainer fmod)
         {
             // Bundle whitelist may not contain the chunk bundle. This adds it to prevent issues
@@ -417,7 +443,7 @@ namespace Frosty.ModSupport
                 App.WhitelistedBundles.Add(s_chunksBundleHash);
             }
 
-            Parallel.ForEach(fmod.Resources, resource =>
+            WorkerPool.ForEach(fmod.Resources.ToList(), resource =>
             {
                 // pull existing bundles from asset manager
                 HashSet<int> bundles = new HashSet<int>();
@@ -491,14 +517,11 @@ namespace Frosty.ModSupport
                                 if (existingEntry.Sha1 == resource.Sha1)
                                     goto label_add_bundles;
 
-                                if (!m_archiveData.ContainsKey(existingEntry.Sha1))
+                                // [DAI fix] thread-safe
+                                if (!ReleaseArchiveRef(existingEntry.Sha1))
                                 {
                                     return;
                                 }
-
-                                m_archiveData[existingEntry.Sha1].RefCount--;
-                                if (m_archiveData[existingEntry.Sha1].RefCount == 0)
-                                    m_archiveData.TryRemove(existingEntry.Sha1, out _);
 
                                 m_modifiedEbx.TryRemove(resource.Name, out _);
                                 m_numArchiveEntries--;
@@ -536,10 +559,7 @@ namespace Frosty.ModSupport
                             entry.Size = data.Length;
 
                             m_modifiedEbx.TryAdd(entry.Name, entry);
-                            if (!m_archiveData.ContainsKey(entry.Sha1))
-                                m_archiveData.TryAdd(entry.Sha1, new ArchiveInfo() { Data = data, RefCount = 1 });
-                            else
-                                m_archiveData[entry.Sha1].RefCount++;
+                            AddArchiveRef(entry.Sha1, data); // [DAI fix] thread-safe
                             m_numArchiveEntries++;
                         }
                     }
@@ -594,14 +614,11 @@ namespace Frosty.ModSupport
                                 if (existingEntry.Sha1 == resource.Sha1)
                                     goto label_add_bundles;
 
-                                if (!m_archiveData.ContainsKey(existingEntry.Sha1))
+                                // [DAI fix] thread-safe
+                                if (!ReleaseArchiveRef(existingEntry.Sha1))
                                 {
                                     return;
                                 }
-
-                                m_archiveData[existingEntry.Sha1].RefCount--;
-                                if (m_archiveData[existingEntry.Sha1].RefCount == 0)
-                                    m_archiveData.TryRemove(existingEntry.Sha1, out _);
 
                                 m_modifiedRes.TryRemove(resource.Name, out _);
                                 m_numArchiveEntries--;
@@ -642,10 +659,7 @@ namespace Frosty.ModSupport
                             entry.Size = data.Length;
 
                             m_modifiedRes.TryAdd(entry.Name, entry);
-                            if (!m_archiveData.ContainsKey(entry.Sha1))
-                                m_archiveData.TryAdd(entry.Sha1, new ArchiveInfo() { Data = data, RefCount = 1 });
-                            else
-                                m_archiveData[entry.Sha1].RefCount++;
+                            AddArchiveRef(entry.Sha1, data); // [DAI fix] thread-safe
                             m_numArchiveEntries++;
                         }
                     }
@@ -710,14 +724,11 @@ namespace Frosty.ModSupport
                                 if (existingEntry.Sha1 == resource.Sha1)
                                     goto label_add_bundles;
 
-                                if (!m_archiveData.ContainsKey(existingEntry.Sha1))
+                                // [DAI fix] thread-safe
+                                if (!ReleaseArchiveRef(existingEntry.Sha1))
                                 {
                                     return;
                                 }
-
-                                m_archiveData[existingEntry.Sha1].RefCount--;
-                                if (m_archiveData[existingEntry.Sha1].RefCount == 0)
-                                    m_archiveData.TryRemove(existingEntry.Sha1, out _);
 
                                 m_modifiedChunks.TryRemove(guid, out _);
                                 m_numArchiveEntries--;
@@ -833,10 +844,7 @@ namespace Frosty.ModSupport
                             entry.Size = data.Length;
 
                             m_modifiedChunks.TryAdd(guid, entry);
-                            if (!m_archiveData.ContainsKey(entry.Sha1))
-                                m_archiveData.TryAdd(entry.Sha1, new ArchiveInfo() { Data = data, RefCount = 1 });
-                            else
-                                m_archiveData[entry.Sha1].RefCount++;
+                            AddArchiveRef(entry.Sha1, data); // [DAI fix] thread-safe
                             m_numArchiveEntries++;
                         }
                     }
@@ -998,6 +1006,10 @@ namespace Frosty.ModSupport
             // obtain resources to modify
             foreach (DbObject resource in resourceList)
             {
+                // [DAI fix] .daimod removal entries have no data, just a name for "remove" actions
+                if (resource.GetValue<bool>("isRemoval", false))
+                    continue;
+
                 string resourceType = resource.GetValue<string>("type");
                 if (resourceType == "superbundle")
                 {
@@ -1488,7 +1500,7 @@ namespace Frosty.ModSupport
                 assetEntries.AddRange(m_modifiedChunks.Values);
 
                 int currentResource = 0;
-                Parallel.ForEach(assetEntries, entry =>
+                WorkerPool.ForEach(assetEntries, entry =>
                 {
                     if (entry.ExtraData is HandlerExtraData handlerExtaData)
                     {
@@ -1787,7 +1799,7 @@ namespace Frosty.ModSupport
                             continue;
 
                         CasBundleAction action = new CasBundleAction(superBundle, doneEvent, this);
-                        ThreadPool.QueueUserWorkItem(action.ThreadPoolCallback, null);
+                        WorkerPool.Post(() => action.ThreadPoolCallback(null));
                         actions.Add(action);
                         m_numTasks++;
                         totalTasks++;
@@ -2066,6 +2078,7 @@ namespace Frosty.ModSupport
                 // remaining games
                 else
                 {
+                    // [DAI fix] superbundles, mod loading and handlers run on WorkerPool (CPU threads / priority options)
                     List<SuperBundleAction> actions = new List<SuperBundleAction>();
                     ManualResetEvent doneEvent = new ManualResetEvent(false);
 
@@ -2076,7 +2089,7 @@ namespace Frosty.ModSupport
                             continue;
 
                         SuperBundleAction action = new SuperBundleAction(superBundle, doneEvent, this, m_modDirName + "/" + m_patchPath, cancelToken);
-                        ThreadPool.QueueUserWorkItem(action.ThreadPoolCallback, null);
+                        WorkerPool.Post(() => action.ThreadPoolCallback(null));
                         actions.Add(action);
                         m_numTasks++;
                         totalTasks++;
@@ -2085,7 +2098,7 @@ namespace Frosty.ModSupport
                     foreach (string superBundle in m_addedSuperBundles)
                     {
                         SuperBundleAction action = new SuperBundleAction(superBundle, doneEvent, this, m_modDirName + "/" + m_patchPath, cancelToken);
-                        ThreadPool.QueueUserWorkItem(action.ThreadPoolCallback, null);
+                        WorkerPool.Post(() => action.ThreadPoolCallback(null));
                         actions.Add(action);
                         m_numTasks++;
                         totalTasks++;
