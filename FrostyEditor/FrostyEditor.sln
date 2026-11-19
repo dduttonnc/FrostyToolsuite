@@ -131,23 +131,23 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LaunchPlatformPlugin", "..\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FrostyCmd", "..\FrostyCmd\FrostyCmd.csproj", "{500ACAB7-D948-4BCA-8208-20812D712DDB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnimationEditorPlugin", "..\Plugins\AnimationEditorPlugin\AnimationEditorPlugin.csproj", "{CE312C84-2677-433C-B4B1-352BD16E7590}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AnimationEditorPlugin", "..\Plugins\AnimationEditorPlugin\AnimationEditorPlugin.csproj", "{CE312C84-2677-433C-B4B1-352BD16E7590}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FrostyStringGeneration", "..\FrostyStringGeneration\FrostyStringGeneration.csproj", "{56980B5A-1E2E-43F9-86BA-D670CF413F9E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatapathFixPlugin", "..\Plugins\DatapathFixPlugin\DatapathFixPlugin\DatapathFixPlugin.csproj", "{0E8214C6-290D-B6CB-9FFF-08FB407D7384}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatapathFixPlugin", "..\Plugins\DatapathFixPlugin\DatapathFixPlugin\DatapathFixPlugin.csproj", "{0E8214C6-290D-B6CB-9FFF-08FB407D7384}"
 	ProjectSection(ProjectDependencies) = postProject
 		{E01353AE-0A20-4E8D-863F-D140F7759E35} = {E01353AE-0A20-4E8D-863F-D140F7759E35}
 		{E20FEA8D-7006-4C13-B453-5BA2BAC60CBC} = {E20FEA8D-7006-4C13-B453-5BA2BAC60CBC}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatapathFix", "..\Plugins\DatapathFixPlugin\DatapathFix\DatapathFix.csproj", "{E20FEA8D-7006-4C13-B453-5BA2BAC60CBC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatapathFix", "..\Plugins\DatapathFixPlugin\DatapathFix\DatapathFix.csproj", "{E20FEA8D-7006-4C13-B453-5BA2BAC60CBC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatapathFix(DEBUG)", "..\Plugins\DatapathFixPlugin\DatapathFix\DatapathFix(DEBUG).csproj", "{E01353AE-0A20-4E8D-863F-D140F7759E35}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatapathFix(DEBUG)", "..\Plugins\DatapathFixPlugin\DatapathFix\DatapathFix(DEBUG).csproj", "{E01353AE-0A20-4E8D-863F-D140F7759E35}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnifyAssetsPlugin", "..\Plugins\UnifyAssetsPlugin\UnifyAssetsPlugin.csproj", "{645F9DF3-7AC8-4305-B83C-B35D17CB2955}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnifyAssetsPlugin", "..\Plugins\UnifyAssetsPlugin\UnifyAssetsPlugin.csproj", "{645F9DF3-7AC8-4305-B83C-B35D17CB2955}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MeshVariationDbPlugin", "..\Plugins\MeshVariationDbPlugin\MeshVariationDbPlugin.csproj", "{9A78916B-F20B-46E5-9E11-F3AD393B1434}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MeshVariationDbPlugin", "..\Plugins\MeshVariationDbPlugin\MeshVariationDbPlugin.csproj", "{9A78916B-F20B-46E5-9E11-F3AD393B1434}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
