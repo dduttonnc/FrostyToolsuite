@@ -52,4 +52,4 @@ using System.Windows;
 [assembly: AssemblyVersion("1.0.7.0")]
 [assembly: AssemblyFileVersion("1.0.7.0")]
 // [DAI fix] Fork version shown to users; keep the two above 4-part.
-[assembly: AssemblyInformationalVersion("1.0.7-dai.1-dav-experimental")]
+[assembly: AssemblyInformationalVersion("1.7")]
