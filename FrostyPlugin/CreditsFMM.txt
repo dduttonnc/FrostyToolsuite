@@ -7,11 +7,22 @@ Zhpete
 NoOneOfSignificance
 AllyJaxx
 MrJTGaming
+Wavebend
+CosmicDreamsofCode
+J-Lyt (DAV version)
+Dduttonnc (Merged DAI/DAV, Multi-threading, and DAI MOD fixes)
 
 [Acknowledgements]
 Special thanks to GalaxyMan2015: without his years of work and dedication, Frosty would not exist and Frostbite modding would very well still be in the dark ages. Thanks GMan!
 
 Special thanks to munchyfly for providing endless support to our users.
+
+https://github.com/dduttonnc/FrostyToolsuite/releases For the latest version of Frosty by dduttonnc 
+
+https://github.com/CadeEvs/FrostyToolsuite for original Frosty
+
+https://github.com/FrostyToolsuite/FrostyToolsuite for FrostyToolsuite v2 (not yet released)
+
 
 [Credits]
 
