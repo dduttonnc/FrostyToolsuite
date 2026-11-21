@@ -306,7 +306,7 @@ Upstream PR #355 (branch `pr6-daimod-reconfigure`, based on #354).
 Branch `perf/cache-build-and-apply`; `perf/parallel-load` adds the multi-core loading below on top
 of it. No change to what gets written, only how fast.
 
-Cache build on a 16-thread CPU: originally 10-15 min, ~7 min with the safe fixes, 45 s with
+Cache build on an i9-9900K 16-thread CPU: originally 10-15 min, ~7 min with the safe fixes, 45 s with
 `perf/parallel-load`, about 32 s with `perf/splash-files` (cache identical to the 45 s build).
 Each step was checked in game (romances, textures, voice packs, item mods). Applying mods: 1m 24s.
 

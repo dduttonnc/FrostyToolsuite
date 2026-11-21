@@ -41,7 +41,7 @@ v1.0.6.4-dai.1 - 2026.11.19.0
 Dragon Age: Inquisition build on CadeEvs' Frosty 1.0.6.4.
 
 Improvements:
-- Much faster cache build: about 32 seconds instead of 10-15 minutes on a 16-thread CPU
+- Much faster cache build: about 32 seconds instead of 10-15 minutes on an i9-9900K 16-thread CPU
 - Faster mod apply: unmodified base bundles are skipped and mod data loads on several cores
 - Added 'CPU Threads' and 'CPU Priority' options (Options > Performance), so Frosty doesn't take over the whole PC
 - Taller loading screen with the superbundle count, progress and the list of superbundles being loaded
