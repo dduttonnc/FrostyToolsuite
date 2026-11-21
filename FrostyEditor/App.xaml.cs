@@ -49,7 +49,10 @@ namespace FrostyEditor
         public App()
         {
             Assembly entryAssembly = Assembly.GetEntryAssembly();
-            Frosty.Core.App.Version = entryAssembly.GetName().Version + " - " + Frosty.Core.App.BuildVersion;
+            // [DAI fix] same fork version as the Mod Manager
+            string version = entryAssembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+                ?? entryAssembly.GetName().Version.ToString();
+            Frosty.Core.App.Version = version + " - " + Frosty.Core.App.BuildVersion;
 
             Environment.CurrentDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
