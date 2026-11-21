@@ -7,6 +7,8 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
+using FrostySdk.Interfaces;
 
 namespace FrostySdk.Managers
 {
@@ -23,9 +25,6 @@ namespace FrostySdk.Managers
     {
         internal class CasAssetLoader : IAssetLoader
         {
-            // [DAI fix] bundles are parsed in batches on the worker pool, then added in their original order
-            private const int ParseBatchSize = 512;
-
             // [DAI fix] same order as the old list, without a full search for every bundle name
             private class BundleList
             {
@@ -51,6 +50,7 @@ namespace FrostySdk.Managers
                 public List<BaseBundleInfo> ToList() => items.FindAll(bi => bi != null);
             }
 
+            // [DAI fix] the loading thread runs at the CPU priority option too
             public void Load(AssetManager parent, BinarySbDataHelper helper)
             {
                 Thread thread = Thread.CurrentThread;
@@ -66,67 +66,275 @@ namespace FrostySdk.Managers
                 }
             }
 
+            // [DAI fix] tocs are read and bundles parsed several superbundles ahead on the worker pool;
+            // this thread then adds everything in the original order
             private void LoadSuperBundles(AssetManager parent, BinarySbDataHelper helper)
             {
-                // load superbundles
-                foreach (SuperBundleInfo sbInfo in parent.m_fileSystem.EnumerateSuperBundleInfos())
+                Pipeline pipeline = new Pipeline(parent, new List<SuperBundleInfo>(parent.m_fileSystem.EnumerateSuperBundleInfos()));
+                int sbCount = pipeline.Count;
+
+                for (int sbIndex = 0; sbIndex < sbCount; sbIndex++)
                 {
-                    string sbName = sbInfo.Name;
+                    string sbName = pipeline.Name(sbIndex);
                     parent.m_superBundles.Add(new SuperBundleEntry() { Name = sbName });
-                    int sbIndex = parent.m_superBundles.Count - 1;
 
-                    BundleList bundles = new BundleList();
+                    PreparedSuperBundle sb = pipeline.WaitToc(sbIndex);
+                    AddTocChunks(parent, sb);
 
-                    // load default superbundle
-                    parent.WriteToLog("Loading data ({0})", sbName);
-                    parent.ReportProgress(parent.m_superBundles.Count, parent.m_fileSystem.SuperBundleCount);
+                    parent.WriteToLog("Loading Data {0}/{1} (up to {2} at once): {3}", sbIndex + 1, sbCount, WorkerPool.MaxThreads, sbName);
+                    parent.WriteToLog("progress:{0}", sbIndex * 100.0 / sbCount);
 
-                    // parse superbundle toc files from patch and data
-                    bool isPatch = true;
-                    string tocPath = parent.m_fileSystem.ResolvePath(string.Format("native_patch/{0}.toc", sbName));
-                    if (tocPath.Equals(string.Empty))
+                    int added = 0;
+                    while (added < sb.Bundles.Count)
                     {
-                        tocPath = parent.m_fileSystem.ResolvePath(string.Format("native_data/{0}.toc", sbName));
-                        isPatch = false;
-                    }
+                        pipeline.UpdateList(sbIndex, added, sb.Bundles.Count);
+                        DbObject[] parsed = pipeline.WaitBatch(sbIndex, added);
 
-                    if (!tocPath.Equals(string.Empty))
-                    {
-                        using (NativeReader reader = new NativeReader(new FileStream(tocPath, FileMode.Open, FileAccess.Read), parent.m_fileSystem.CreateDeobfuscator()))
-                            ReadToc(parent, sbName, reader, bundles, isPatch);
-                    }
-
-                    // load split superbundles from catalogs
-                    foreach (string catalog in sbInfo.SplitSuperBundles)
-                    {
-                        string sbPath = sbName.Replace("win32", catalog);
-
-                        parent.WriteToLog("Loading data ({0})", sbPath);
-
-                        // parse superbundle toc files from patch and data
-                        isPatch = true;
-                        tocPath = parent.m_fileSystem.ResolvePath(string.Format("native_patch/{0}.toc", sbPath));
-                        if (tocPath.Equals(string.Empty))
+                        for (int i = 0; i < parsed.Length; i++)
                         {
-                            tocPath = parent.m_fileSystem.ResolvePath(string.Format("native_data/{0}.toc", sbPath));
-                            isPatch = false;
+                            DbObject bundle = parsed[i];
+                            parent.m_bundles.Add(new BundleEntry { Name = sb.Bundles[added + i].Name, SuperBundleId = sbIndex });
+
+                            // process assets
+                            parent.ProcessBundleEbx(bundle, parent.m_bundles.Count - 1, helper);
+                            parent.ProcessBundleRes(bundle, parent.m_bundles.Count - 1, helper);
+                            parent.ProcessBundleChunks(bundle, parent.m_bundles.Count - 1, helper);
                         }
 
-                        if (!tocPath.Equals(string.Empty))
-                        {
-                            using (NativeReader reader = new NativeReader(new FileStream(tocPath, FileMode.Open, FileAccess.Read), parent.m_fileSystem.CreateDeobfuscator()))
-                                ReadToc(parent, sbPath, reader, bundles, isPatch);
-                        }
+                        added += parsed.Length;
+                        parent.WriteToLog("progress:{0}", (sbIndex + added / (double)sb.Bundles.Count) * 100.0 / sbCount);
+                    }
+                }
+
+                pipeline.ClearList();
+            }
+
+            private struct TocChunk
+            {
+                public Guid Id;
+                public ChunkAssetEntry Entry; // null removes the chunk
+            }
+
+            private class PreparedSuperBundle
+            {
+                public List<TocChunk> Chunks = new List<TocChunk>();
+                public List<BaseBundleInfo> Bundles;
+            }
+
+            private class BundleBatch
+            {
+                public int SbIndex;
+                public int Start;
+                public Task<DbObject[]> Task;
+            }
+
+            // [DAI fix] schedules toc reads and bundle batches strictly in load order, so the loading thread
+            // never waits on work that can't start, and keeps the splash list of superbundles in flight
+            private class Pipeline
+            {
+                private const int BatchSize = 64;
+                private const int MaxLines = 32;
+
+                private readonly AssetManager parent;
+                private readonly List<SuperBundleInfo> sbInfos;
+                private readonly Task<PreparedSuperBundle>[] tocs;
+                private readonly int tocWindow;
+                private readonly int maxBatches;
+                private readonly Queue<BundleBatch> batches = new Queue<BundleBatch>();
+                private readonly ILoadingListLogger logger;
+                private readonly Stopwatch timer = Stopwatch.StartNew();
+                private long lastUpdate = -1000;
+                private int nextToc;
+                private int nextSb;
+                private int nextStart;
+
+                public Pipeline(AssetManager inParent, List<SuperBundleInfo> inSbInfos)
+                {
+                    parent = inParent;
+                    sbInfos = inSbInfos;
+                    tocs = new Task<PreparedSuperBundle>[sbInfos.Count];
+                    tocWindow = Math.Max(2, WorkerPool.MaxThreads);
+                    maxBatches = 2 * tocWindow;
+                    logger = parent.m_logger as ILoadingListLogger;
+                }
+
+                public int Count => sbInfos.Count;
+
+                public string Name(int sbIndex) => sbInfos[sbIndex].Name;
+
+                public PreparedSuperBundle WaitToc(int sbIndex)
+                {
+                    Pump(sbIndex);
+                    PreparedSuperBundle sb = tocs[sbIndex].GetAwaiter().GetResult();
+                    Pump(sbIndex);
+                    return sb;
+                }
+
+                public DbObject[] WaitBatch(int sbIndex, int start)
+                {
+                    if (batches.Count == 0)
+                        Pump(sbIndex);
+
+                    BundleBatch batch = batches.Peek();
+                    Debug.Assert(batch.SbIndex == sbIndex && batch.Start == start);
+
+                    // keep scheduling while a toc that is holding up later batches finishes
+                    while (!batch.Task.IsCompleted)
+                    {
+                        Task toc = BlockingToc();
+                        if (toc == null)
+                            Task.WaitAny(batch.Task);
+                        else
+                            Task.WaitAny(batch.Task, toc);
+                        Pump(sbIndex);
                     }
 
-                    // parse superbundle sb files from patch and data
-                    List<BaseBundleInfo> bundleList = bundles.ToList();
-                    if (bundleList.Count > 0)
-                        ReadSb(parent, helper, bundleList, sbIndex);
+                    batches.Dequeue();
+                    DbObject[] parsed = batch.Task.GetAwaiter().GetResult();
+                    Pump(sbIndex);
+                    return parsed;
+                }
+
+                private Task BlockingToc()
+                {
+                    if (batches.Count < maxBatches && nextSb < nextToc && !tocs[nextSb].IsCompleted)
+                        return tocs[nextSb];
+                    return null;
+                }
+
+                private void Pump(int sbIndex)
+                {
+                    while (nextToc < sbInfos.Count && nextToc < sbIndex + tocWindow)
+                    {
+                        int i = nextToc++;
+                        tocs[i] = WorkerPool.Run(() => ReadTocs(parent, sbInfos[i], i));
+                    }
+
+                    while (batches.Count < maxBatches && nextSb < nextToc && tocs[nextSb].IsCompleted)
+                    {
+                        List<BaseBundleInfo> bundles = tocs[nextSb].GetAwaiter().GetResult().Bundles;
+                        if (nextStart >= bundles.Count)
+                        {
+                            nextSb++;
+                            nextStart = 0;
+                            continue;
+                        }
+
+                        int start = nextStart;
+                        int count = Math.Min(BatchSize, bundles.Count - start);
+                        batches.Enqueue(new BundleBatch
+                        {
+                            SbIndex = nextSb,
+                            Start = start,
+                            Task = WorkerPool.Run(() => ReadBundles(parent, bundles, start, count))
+                        });
+                        nextStart += count;
+                    }
+                }
+
+                public void UpdateList(int sbIndex, int added, int total)
+                {
+                    if (logger == null || timer.ElapsedMilliseconds - lastUpdate < 100)
+                        return;
+                    lastUpdate = timer.ElapsedMilliseconds;
+
+                    StringBuilder text = new StringBuilder();
+                    text.Append(sbInfos[sbIndex].Name).AppendFormat("  (adding {0}/{1} bundles)", added, total);
+
+                    int end = Math.Min(sbIndex + tocWindow, sbInfos.Count);
+                    for (int i = sbIndex + 1; i < end; i++)
+                    {
+                        if (i - sbIndex == MaxLines)
+                        {
+                            text.AppendFormat("\n... and {0} more", end - i);
+                            break;
+                        }
+
+                        string state;
+                        if (tocs[i] == null || !tocs[i].IsCompleted)
+                            state = "reading";
+                        else if (i > nextSb || (i == nextSb && nextStart == 0))
+                            state = "waiting";
+                        else
+                            state = IsUnpacking(i) ? "unpacking" : "ready";
+
+                        text.Append('\n').Append(sbInfos[i].Name).Append("  (").Append(state).Append(')');
+                    }
+
+                    logger.LogLoadingList(text.ToString());
+                }
+
+                private bool IsUnpacking(int sbIndex)
+                {
+                    if (sbIndex == nextSb)
+                        return true;
+                    foreach (BundleBatch batch in batches)
+                    {
+                        if (batch.SbIndex == sbIndex && !batch.Task.IsCompleted)
+                            return true;
+                    }
+                    return false;
+                }
+
+                public void ClearList() => logger?.LogLoadingList("");
+            }
+
+            private static void AddTocChunks(AssetManager parent, PreparedSuperBundle sb)
+            {
+                foreach (TocChunk tocChunk in sb.Chunks)
+                {
+                    ChunkAssetEntry chunk = tocChunk.Entry;
+                    if (chunk == null)
+                    {
+                        parent.m_chunkList.Remove(tocChunk.Id);
+                        continue;
+                    }
+
+                    if (parent.m_chunkList.TryGetValue(chunk.Id, out ChunkAssetEntry existing))
+                    {
+                        // add superbundles and bundles so those dont get overridden
+                        chunk.SuperBundles.AddRange(existing.SuperBundles);
+                        chunk.Bundles.AddRange(existing.Bundles);
+
+                        parent.m_chunkList.Remove(chunk.Id);
+                    }
+
+                    parent.m_chunkList.Add(chunk.Id, chunk);
                 }
             }
 
-            private void ReadToc(AssetManager parent, string sbName, NativeReader reader, BundleList bundles, bool patch)
+            private static PreparedSuperBundle ReadTocs(AssetManager parent, SuperBundleInfo sbInfo, int sbIndex)
+            {
+                PreparedSuperBundle sb = new PreparedSuperBundle();
+                BundleList bundles = new BundleList();
+
+                // parse superbundle toc files from patch and data, then split superbundles from catalogs
+                ReadTocFile(parent, sbInfo.Name, bundles, sb, sbIndex);
+                foreach (string catalog in sbInfo.SplitSuperBundles)
+                    ReadTocFile(parent, sbInfo.Name.Replace("win32", catalog), bundles, sb, sbIndex);
+
+                sb.Bundles = bundles.ToList();
+                return sb;
+            }
+
+            private static void ReadTocFile(AssetManager parent, string sbName, BundleList bundles, PreparedSuperBundle sb, int sbIndex)
+            {
+                bool isPatch = true;
+                string tocPath = parent.m_fileSystem.ResolvePath(string.Format("native_patch/{0}.toc", sbName));
+                if (tocPath.Equals(string.Empty))
+                {
+                    tocPath = parent.m_fileSystem.ResolvePath(string.Format("native_data/{0}.toc", sbName));
+                    isPatch = false;
+                }
+
+                if (!tocPath.Equals(string.Empty))
+                {
+                    using (NativeReader reader = new NativeReader(new FileStream(tocPath, FileMode.Open, FileAccess.Read), parent.m_fileSystem.CreateDeobfuscator()))
+                        ReadToc(parent, sbName, reader, bundles, isPatch, sb, sbIndex);
+                }
+            }
+
+            private static void ReadToc(AssetManager parent, string sbName, NativeReader reader, BundleList bundles, bool patch, PreparedSuperBundle sb, int sbIndex)
             {
                 uint startPos = (uint)reader.Position;
 
@@ -152,7 +360,7 @@ namespace FrostySdk.Managers
                 {
                     string tocPath = parent.m_fileSystem.ResolvePath(string.Format("native_data/{0}.toc", sbName));
                     using (NativeReader baseReader = new NativeReader(new FileStream(tocPath, FileMode.Open, FileAccess.Read), parent.m_fileSystem.CreateDeobfuscator()))
-                        ReadToc(parent, sbName, baseReader, bundles, false);
+                        ReadToc(parent, sbName, baseReader, bundles, false, sb, sbIndex);
                 }
 
                 uint namesCount = 0;
@@ -266,10 +474,7 @@ namespace FrostySdk.Managers
                         }
                         else
                         {
-                            if (parent.m_chunkList.ContainsKey(guid))
-                            {
-                                parent.m_chunkList.Remove(guid);
-                            }
+                            sb.Chunks.Add(new TocChunk { Id = guid });
                         }
                     }
 
@@ -293,43 +498,27 @@ namespace FrostySdk.Managers
                                 CasPath = parent.m_fileSystem.GetFilePath(catalogIndex, casIndex, isPatch),
                                 DataOffset = offset
                             },
-                            SuperBundles = new List<int>() { parent.m_superBundles.Count - 1 }
+                            SuperBundles = new List<int>() { sbIndex }
                         };
 
-                        if (parent.m_chunkList.ContainsKey(chunk.Id))
-                        {
-                            ChunkAssetEntry existing = parent.m_chunkList[chunk.Id];
-
-                            // add superbundles and bundles so those dont get overridden
-                            chunk.SuperBundles.AddRange(existing.SuperBundles);
-                            chunk.Bundles.AddRange(existing.Bundles);
-
-                            parent.m_chunkList.Remove(chunk.Id);
-                        }
-
-                        parent.m_chunkList.Add(chunk.Id, chunk);
+                        sb.Chunks.Add(new TocChunk { Id = chunk.Id, Entry = chunk });
                     }
                 }
             }
 
-            private void ReadSb(AssetManager parent, BinarySbDataHelper helper, List<BaseBundleInfo> bundles, int sbIndex)
+            private static DbObject[] ReadBundles(AssetManager parent, List<BaseBundleInfo> bundles, int start, int count)
             {
+                DbObject[] parsed = new DbObject[count];
                 string patchSbPath = "";
                 string baseSbPath = "";
                 NativeReader patchReader = null;
                 NativeReader baseReader = null;
 
-                byte[][] rawBundles = new byte[ParseBatchSize][];
-                DbObject[] parsedBundles = new DbObject[ParseBatchSize];
-
-                for (int batchStart = 0; batchStart < bundles.Count; batchStart += ParseBatchSize)
+                try
                 {
-                    int batchCount = Math.Min(ParseBatchSize, bundles.Count - batchStart);
-
-                    // reading stays in order on this thread, the sb/toc files are read front to back
-                    for (int i = 0; i < batchCount; i++)
+                    for (int i = 0; i < count; i++)
                     {
-                        BaseBundleInfo bi = bundles[batchStart + i];
+                        BaseBundleInfo bi = bundles[start + i];
 
                         byte flag;
                         if ((bi.Size & 0xC0000000) == 0x40000000)
@@ -363,30 +552,16 @@ namespace FrostySdk.Managers
 
                         // TODO: make deobfuscator remove the obfs header
                         reader.Position = flag == 1 ? bi.Offset + 0x22C : bi.Offset;
-                        rawBundles[i] = reader.ReadBytes((int)(bi.Size & ~0xC0000000));
-                    }
-
-                    WorkerPool.For(batchCount, i => parsedBundles[i] = ParseBundle(parent, rawBundles[i]));
-
-                    for (int i = 0; i < batchCount; i++)
-                    {
-                        BaseBundleInfo bi = bundles[batchStart + i];
-                        DbObject bundle = parsedBundles[i];
-                        rawBundles[i] = null;
-                        parsedBundles[i] = null;
-
-                        // [DAI fix] removed an unused search of all loaded bundles for every bundle
-                        parent.m_bundles.Add(new BundleEntry { Name = bi.Name, SuperBundleId = sbIndex });
-
-                        // process assets
-                        parent.ProcessBundleEbx(bundle, parent.m_bundles.Count - 1, helper);
-                        parent.ProcessBundleRes(bundle, parent.m_bundles.Count - 1, helper);
-                        parent.ProcessBundleChunks(bundle, parent.m_bundles.Count - 1, helper);
+                        parsed[i] = ParseBundle(parent, reader.ReadBytes((int)(bi.Size & ~0xC0000000)));
                     }
                 }
+                finally
+                {
+                    patchReader?.Dispose();
+                    baseReader?.Dispose();
+                }
 
-                patchReader?.Dispose();
-                baseReader?.Dispose();
+                return parsed;
             }
 
             private static NativeReader OpenSbReader(AssetManager parent, string root, string sbName, byte flag)
