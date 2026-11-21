@@ -9,11 +9,11 @@ using System.Runtime.InteropServices;
 using SharpDX.D3DCompiler;
 using FrostySdk.IO;
 using System.IO;
-using FrostySdk.Managers;
 using System.Windows.Shapes;
 using Frosty.Core.Controls;
 using Frosty.Core;
 using Frosty.Core.Windows;
+using FrostySdk.Managers.Entries;
 
 namespace AtlasTexturePlugin
 {
@@ -326,11 +326,11 @@ namespace AtlasTexturePlugin
 
         public override List<ToolbarItem> RegisterToolbarItems()
         {
-            return new List<ToolbarItem>()
-            {
-                new ToolbarItem("Export", "Export Atlas Texture", "Images/Export.png", new RelayCommand((object state) => { ExportButton_Click(this, new RoutedEventArgs()); })),
-                new ToolbarItem("Import", "Import Atlas Texture", "Images/Import.png", new RelayCommand((object state) => { ImportButton_Click(this, new RoutedEventArgs()); })),
-            };
+            List<ToolbarItem> toolbarItems = base.RegisterToolbarItems();
+            toolbarItems.Add(new ToolbarItem("Export", "Export Atlas Texture", "FrostyEditor;component/Images/Export.png", new RelayCommand((object state) => { ExportButton_Click(this, new RoutedEventArgs()); })));
+            toolbarItems.Add(new ToolbarItem("Import", "Import Atlas Texture", "FrostyEditor;component/Images/Import.png", new RelayCommand((object state) => { ImportButton_Click(this, new RoutedEventArgs()); }), IsNotReadOnly));
+            
+            return toolbarItems;
         }
 
         private void ImportButton_Click(object sender, RoutedEventArgs e)
@@ -372,6 +372,7 @@ namespace AtlasTexturePlugin
                         ResAssetEntry resEntry = App.AssetManager.GetResEntry(resRid);
                         ChunkAssetEntry chunkEntry = App.AssetManager.GetChunkEntry(texture.ChunkId);
 
+                        // causes issues with duped asset and not needed?
                         // revert any modifications
                         //App.AssetManager.RevertAsset(assetEntry, dataOnly: true);
 

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using FrostySdk.Managers.Entries;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,7 +47,7 @@ namespace FrostySdk.Managers
             {
                 // [DAI fix] DAI has hundreds of small superbundles: read and parse several ahead on other
                 // threads, then add them here one at a time in the original order
-                List<string> superBundleNames = new List<string>(parent.fs.SuperBundles);
+                List<string> superBundleNames = new List<string>(parent.m_fileSystem.SuperBundles);
                 Task<PreloadedSuperBundle>[] preloads = new Task<PreloadedSuperBundle>[superBundleNames.Count];
                 int window = Math.Max(2, WorkerPool.MaxThreads);
 
@@ -70,7 +71,7 @@ namespace FrostySdk.Managers
 
                     binary.Fill(sbIndex);
 
-                    parent.superBundles.Add(new SuperBundleEntry() { Name = superBundleName });
+                    parent.m_superBundles.Add(new SuperBundleEntry() { Name = superBundleName });
                     bool patchFileExists = false;
 
                     // process base toc, bail out if it doesnt exist
@@ -117,11 +118,11 @@ namespace FrostySdk.Managers
                     }
 
                     // open superbundles for processing
-                    NativeReader baseMf = new NativeReader(new FileStream(parent.fs.ResolvePath(string.Format("native_data/{0}.sb", superBundleName)), FileMode.Open, FileAccess.Read));
+                    NativeReader baseMf = new NativeReader(new FileStream(parent.m_fileSystem.ResolvePath(string.Format("native_data/{0}.sb", superBundleName)), FileMode.Open, FileAccess.Read));
                     NativeReader patchMf = baseMf;
 
                     if (patchFileExists)
-                        patchMf = new NativeReader(new FileStream(parent.fs.ResolvePath(string.Format("native_patch/{0}.sb", superBundleName)), FileMode.Open, FileAccess.Read));
+                        patchMf = new NativeReader(new FileStream(parent.m_fileSystem.ResolvePath(string.Format("native_patch/{0}.sb", superBundleName)), FileMode.Open, FileAccess.Read));
 
                     LoadCasBundles(parent, helper, patchBundleList, baseMf, patchMf);
                     baseMf.Dispose();
@@ -147,7 +148,7 @@ namespace FrostySdk.Managers
 
                 public LoadingList(AssetManager parent, List<string> inSuperBundleNames, Task<PreloadedSuperBundle>[] inPreloads, BinaryPipeline inBinary, int inWindow)
                 {
-                    logger = parent.logger as ILoadingListLogger;
+                    logger = parent.m_logger as ILoadingListLogger;
                     superBundleNames = inSuperBundleNames;
                     preloads = inPreloads;
                     binary = inBinary;
@@ -338,9 +339,9 @@ namespace FrostySdk.Managers
                     sb.Work = new Task<BinaryBundleWork>[sb.Bundles.Count];
 
                     string superBundleName = superBundleNames[sbIndex];
-                    sb.BaseMf = new NativeReader(new FileStream(parent.fs.ResolvePath(string.Format("native_data/{0}.sb", superBundleName)), FileMode.Open, FileAccess.Read));
+                    sb.BaseMf = new NativeReader(new FileStream(parent.m_fileSystem.ResolvePath(string.Format("native_data/{0}.sb", superBundleName)), FileMode.Open, FileAccess.Read));
                     sb.PatchMf = patchFileExists
-                        ? new NativeReader(new FileStream(parent.fs.ResolvePath(string.Format("native_patch/{0}.sb", superBundleName)), FileMode.Open, FileAccess.Read))
+                        ? new NativeReader(new FileStream(parent.m_fileSystem.ResolvePath(string.Format("native_patch/{0}.sb", superBundleName)), FileMode.Open, FileAccess.Read))
                         : sb.BaseMf;
                     return sb;
                 }
@@ -357,8 +358,8 @@ namespace FrostySdk.Managers
                     loadingList.Update(sbIndex, string.Format("adding bundle {0}/{1}", i + 1, sb.Bundles.Count));
 
                     string bundleName = sb.Bundles[i].GetValue<string>("id").ToLower();
-                    parent.bundles.Add(new BundleEntry() { Name = bundleName, SuperBundleId = parent.superBundles.Count - 1 });
-                    int bundleId = parent.bundles.Count - 1;
+                    parent.m_bundles.Add(new BundleEntry() { Name = bundleName, SuperBundleId = parent.m_superBundles.Count - 1 });
+                    int bundleId = parent.m_bundles.Count - 1;
 
                     if (result.Prepared != null)
                         helper.AddPreparedBundleData(result.Prepared);
@@ -388,7 +389,7 @@ namespace FrostySdk.Managers
                 {
                     return WorkerPool.Run(() =>
                     {
-                        using (BinarySbReader reader = new BinarySbReader(stream, offset, parent.fs.CreateDeobfuscator()))
+                        using (BinarySbReader reader = new LegacyBinarySbReader(stream, offset, parent.m_fileSystem.CreateDeobfuscator()))
                             return new BinaryBundleWork { Sb = reader.ReadDbObject() };
                     });
                 }
@@ -400,13 +401,13 @@ namespace FrostySdk.Managers
                 return WorkerPool.Run(() =>
                 {
                     DbObject sb;
-                    using (BinarySbReader reader = new BinarySbReader(baseStream, stream, parent.fs.CreateDeobfuscator()))
+                    using (BinarySbReader reader = new LegacyBinarySbReader(baseStream, stream, parent.m_fileSystem.CreateDeobfuscator()))
                         sb = reader.ReadDbObject();
 
                     DbObject baseSb = null;
                     if (bi != null)
                     {
-                        using (BinarySbReader reader = new BinarySbReader(baseSbStream, bi.Offset, parent.fs.CreateDeobfuscator()))
+                        using (BinarySbReader reader = new LegacyBinarySbReader(baseSbStream, bi.Offset, parent.m_fileSystem.CreateDeobfuscator()))
                             baseSb = reader.ReadDbObject();
                     }
 
@@ -424,14 +425,14 @@ namespace FrostySdk.Managers
             {
                 PreloadedSuperBundle result = new PreloadedSuperBundle();
 
-                string baseTocPath = parent.fs.ResolvePath(string.Format("native_data/{0}.toc", superBundleName));
+                string baseTocPath = parent.m_fileSystem.ResolvePath(string.Format("native_data/{0}.toc", superBundleName));
                 if (baseTocPath == "")
                     return result;
 
                 result.BaseTocFound = true;
                 result.BaseToc = ReadToc(parent, baseTocPath);
 
-                string patchTocPath = parent.fs.ResolvePath(string.Format("native_patch/{0}.toc", superBundleName));
+                string patchTocPath = parent.m_fileSystem.ResolvePath(string.Format("native_patch/{0}.toc", superBundleName));
                 if (patchTocPath != "")
                 {
                     result.PatchTocFound = true;
@@ -452,8 +453,8 @@ namespace FrostySdk.Managers
                     bundleList.Add(bundle);
 
                 Stream[] streams = new Stream[bundleList.Count];
-                using (NativeReader baseMf = new NativeReader(new FileStream(parent.fs.ResolvePath(string.Format("native_data/{0}.sb", superBundleName)), FileMode.Open, FileAccess.Read)))
-                using (NativeReader patchMf = (result.PatchToc != null) ? new NativeReader(new FileStream(parent.fs.ResolvePath(string.Format("native_patch/{0}.sb", superBundleName)), FileMode.Open, FileAccess.Read)) : null)
+                using (NativeReader baseMf = new NativeReader(new FileStream(parent.m_fileSystem.ResolvePath(string.Format("native_data/{0}.sb", superBundleName)), FileMode.Open, FileAccess.Read)))
+                using (NativeReader patchMf = (result.PatchToc != null) ? new NativeReader(new FileStream(parent.m_fileSystem.ResolvePath(string.Format("native_patch/{0}.sb", superBundleName)), FileMode.Open, FileAccess.Read)) : null)
                 {
                     for (int i = 0; i < bundleList.Count; i++)
                     {
@@ -466,7 +467,7 @@ namespace FrostySdk.Managers
                 DbObject[] bundles = new DbObject[streams.Length];
                 for (int i = 0; i < streams.Length; i++)
                 {
-                    using (DbReader reader = new DbReader(streams[i], parent.fs.CreateDeobfuscator()))
+                    using (DbReader reader = new DbReader(streams[i], parent.m_fileSystem.CreateDeobfuscator()))
                         bundles[i] = reader.ReadDbObject();
                 }
 
@@ -477,7 +478,7 @@ namespace FrostySdk.Managers
 
             private static DbObject ReadToc(AssetManager parent, string path)
             {
-                using (DbReader reader = new DbReader(new FileStream(path, FileMode.Open, FileAccess.Read), parent.fs.CreateDeobfuscator()))
+                using (DbReader reader = new DbReader(new FileStream(path, FileMode.Open, FileAccess.Read), parent.m_fileSystem.CreateDeobfuscator()))
                     return reader.ReadDbObject();
             }
 
@@ -521,7 +522,7 @@ namespace FrostySdk.Managers
                 DbObject[] result = new DbObject[streams.Length];
                 WorkerPool.For(streams.Length, i =>
                 {
-                    using (DbReader reader = new DbReader(streams[i], parent.fs.CreateDeobfuscator()))
+                    using (DbReader reader = new DbReader(streams[i], parent.m_fileSystem.CreateDeobfuscator()))
                         result[i] = reader.ReadDbObject();
                 });
                 return result;
@@ -533,8 +534,8 @@ namespace FrostySdk.Managers
                 {
                     string bundleName = tocBundles[start + i].GetValue<string>("id").ToLower();
 
-                    parent.bundles.Add(new BundleEntry() { Name = bundleName, SuperBundleId = parent.superBundles.Count - 1 });
-                    int bundleId = parent.bundles.Count - 1;
+                    parent.m_bundles.Add(new BundleEntry() { Name = bundleName, SuperBundleId = parent.m_superBundles.Count - 1 });
+                    int bundleId = parent.m_bundles.Count - 1;
 
                     parent.ProcessBundleEbx(sbs[i], bundleId, helper);
                     parent.ProcessBundleRes(sbs[i], bundleId, helper);

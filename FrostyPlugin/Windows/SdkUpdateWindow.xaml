@@ -5,9 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Frosty.Core.Windows"
         xmlns:ctrl="clr-namespace:Frosty.Controls;assembly=FrostyControls"
-        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
-        Title="Update Profile SDK" Height="300" Width="450" WindowStartupLocation="CenterOwner">
+        Title="Update Profile SDK" Height="300" Width="500" WindowStartupLocation="CenterOwner">
     <Window.Resources>
         <x:Array x:Key="TestArray" Type="{x:Type local:SdkUpdateTask}">
             <local:SdkUpdateTask DisplayName="Waiting for process to become active" State="CompletedSuccessful"/>
@@ -32,7 +31,7 @@
                     </TextBlock.Text>
                 </TextBlock>
                 <TextBlock Text=""/>
-                <TextBlock Text="Please launch the game via Origin, then click Next to begin the process of updating the SDK" Foreground="{StaticResource FontColor}" TextWrapping="Wrap" TextAlignment="Center"/>
+                <TextBlock Text="Please launch the game. Once launched, click Next to begin the process of updating the SDK" Foreground="{StaticResource FontColor}" TextWrapping="Wrap" TextAlignment="Center"/>
             </StackPanel>
 
             <Grid Grid.Row="1" Margin="4">
@@ -85,10 +84,7 @@
                             </DataTemplate.Triggers>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
-
-
                 </ListBox>
-                
             </StackPanel>
 
             <TextBlock x:Name="failMessage" Text="" Foreground="{StaticResource FontColor}" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0 0 0 40"/>
@@ -100,8 +96,8 @@
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
 
-                <!--<Button Grid.Column="0" x:Name="quitButton" Content="Quit" Width="50" Height="22" HorizontalAlignment="Left" />-->
-                <Button Grid.Column="1" x:Name="finishButton" Content="Finish" Width="50" Height="22" HorizontalAlignment="Right" Click="FinishButton_Click" IsEnabled="False" />
+                <Button Grid.Column="0" x:Name="quitButton" Content="Quit" Width="50" Height="22" HorizontalAlignment="Left" Click="QuitButton_Click" IsEnabled="False"/>
+                <Button Grid.Column="1" x:Name="finishButton" Content="Finish" Width="50" Height="22" HorizontalAlignment="Right" Click="FinishButton_Click" IsEnabled="False"/>
             </Grid>
         </Grid>
     </Grid>

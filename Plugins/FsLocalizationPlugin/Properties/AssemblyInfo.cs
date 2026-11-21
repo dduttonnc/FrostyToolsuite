@@ -29,10 +29,13 @@ using FrostySdk;
 [assembly: PluginNotValidForProfile((int)ProfileVersion.DragonAgeInquisition)]
 [assembly: PluginNotValidForProfile((int)ProfileVersion.MassEffectAndromeda)]
 [assembly: PluginNotValidForProfile((int)ProfileVersion.Anthem)]
+[assembly: PluginNotValidForProfile((int)ProfileVersion.DragonAgeTheVeilguard)]
 [assembly: PluginNotValidForProfile((int)ProfileVersion.Fifa17)]
 [assembly: PluginNotValidForProfile((int)ProfileVersion.Fifa18)]
 [assembly: PluginNotValidForProfile((int)ProfileVersion.Fifa19)]
 [assembly: PluginNotValidForProfile((int)ProfileVersion.Fifa20)]
+[assembly: PluginNotValidForProfile((int)ProfileVersion.Fifa21)]
+[assembly: PluginNotValidForProfile((int)ProfileVersion.Fifa22)]
 
 [assembly: RegisterCustomHandler(CustomHandlerType.Ebx, typeof(FsLocalizationCustomActionHandler), ebxType: "UITextDatabase")]
 [assembly: RegisterLocalizedStringDatabase(typeof(FsLocalizationStringDatabase))]

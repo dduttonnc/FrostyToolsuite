@@ -944,7 +944,6 @@ namespace Frosty.Core.Controls
                         {
                             _children.Add(childItem);
                         });
-                        
                         if (_valueConverter != null)
                         {
                             childItem.PropertyChanged += (o, e) =>
@@ -986,12 +985,10 @@ namespace Frosty.Core.Controls
                         object defValue = (pr.Internal != null) ? Activator.CreateInstance(pr.Internal.GetType()) : null;
 
                         foreach (FrostyPropertyGridItemData childItem in ProcessClass(pr.Internal, defValue, this))
-                        {
                             Application.Current.Dispatcher.Invoke(() =>
                             {
                                 _children.Add(childItem);
                             });
-                        }
                     }
                 }
             }
@@ -1120,6 +1117,8 @@ namespace Frosty.Core.Controls
     [TemplatePart(Name = "PART_ArrayRemoveButton", Type = typeof(Button))]
     public class FrostyPropertyGridItem : TreeViewItem
     {
+        private bool isReadOnly;
+        
         private static readonly IReadOnlyDictionary<string, Type> StaticEditors = new Dictionary<string, Type>
         {
             //{ "String", typeof(FrostyStringEditor) },
@@ -1148,8 +1147,14 @@ namespace Frosty.Core.Controls
 
             FrostyPropertyGridItemData item = (FrostyPropertyGridItemData)DataContext;
 
+            if (GetAssetEditor() != null)
+            {
+                isReadOnly = GetAssetEditor().IsReadOnly;
+            }
+            
             Button btn = GetTemplateChild("PART_ArrayRemoveButton") as Button;
             btn.Click += ArrayRemoveButton_Click;
+            btn.IsEnabled = !isReadOnly;
 
             if (!item.IsCategory)
             {
@@ -1197,6 +1202,7 @@ namespace Frosty.Core.Controls
                     elem = (UIElement)editorType.GetMethod("CreateEditor").Invoke(editor, new object[] { item });
                 }
 
+                value.IsEnabled = !isReadOnly;
                 value.Content = elem;
             }
 
@@ -1206,8 +1212,7 @@ namespace Frosty.Core.Controls
                 Header = "Copy",
                 Icon = new Image
                 {
-                    Source = StringToBitmapSourceConverter.CopySource,
-                    Opacity = 0.5
+                    Source = StringToBitmapSourceConverter.CopySource
                 }
             };
             mi.Click += CopyMenuItem_Click;
@@ -1218,12 +1223,12 @@ namespace Frosty.Core.Controls
                 Header = "Paste",
                 Icon = new Image
                 {
-                    Source = StringToBitmapSourceConverter.PasteSource,
-                    Opacity = 0.5
-                }
+                    Source = StringToBitmapSourceConverter.PasteSource
+                },
+                IsEnabled = false
             };
+            if (!isReadOnly) { BindingOperations.SetBinding(mi, IsEnabledProperty, new Binding("HasData") { Source = FrostyClipboard.Current }); }
             mi.Click += PasteMenuItem_Click;
-            BindingOperations.SetBinding(mi, IsEnabledProperty, new Binding("HasData") { Source = FrostyClipboard.Current });
             cm.Items.Add(mi);
 
             if (item.IsPointerRef)
@@ -1235,8 +1240,7 @@ namespace Frosty.Core.Controls
                     Header = "Copy Guid",
                     Icon = new Image
                     {
-                        Source = StringToBitmapSourceConverter.CopySource,
-                        Opacity = 0.5
+                        Source = StringToBitmapSourceConverter.CopySource
                     }
                 };
                 mi.Click += CopyGuidMenuItem_Click;
@@ -1247,11 +1251,11 @@ namespace Frosty.Core.Controls
             {
                 cm.Items.Add(new Separator());
 
-                mi = new MenuItem {Header = "Insert Before"};
+                mi = new MenuItem { Header = "Insert Before", IsEnabled = !isReadOnly };
                 mi.Click += ArrayInsertBeforeMenuItem_Click;
                 cm.Items.Add(mi);
 
-                mi = new MenuItem {Header = "Insert After"};
+                mi = new MenuItem { Header = "Insert After", IsEnabled = !isReadOnly };
                 mi.Click += ArrayInsertAfterMenuItem_Click;
                 cm.Items.Add(mi);
             }
@@ -1279,7 +1283,7 @@ namespace Frosty.Core.Controls
                 guidToCopy = obj.GetInstanceGuid().ToString();
             }
 
-            Clipboard.SetText(guidToCopy);
+            FrostyClipboard.Current.SetText(guidToCopy);
         }
 
         /// <summary>
@@ -1326,6 +1330,14 @@ namespace Frosty.Core.Controls
             while (!(parent.GetType().IsSubclassOf(typeof(FrostyPropertyGrid)) || parent is FrostyPropertyGrid))
                 parent = VisualTreeHelper.GetParent(parent);
             return (parent as FrostyPropertyGrid);
+        }
+
+        private FrostyAssetEditor GetAssetEditor()
+        {
+            DependencyObject parent = VisualTreeHelper.GetParent(this);
+            while (parent != null && !(parent.GetType().IsSubclassOf(typeof(FrostyAssetEditor)) || parent is FrostyAssetEditor))
+                parent = VisualTreeHelper.GetParent(parent);
+            return (parent as FrostyAssetEditor);
         }
 
         /// <summary>
@@ -1375,19 +1387,16 @@ namespace Frosty.Core.Controls
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            if (e.Key == Key.Subtract || e.Key == Key.Add || e.Key == Key.Multiply)
+            if (e.Key == Key.Subtract || e.Key == Key.Add)
             {
-                // to stop +/-/* from expanding/collapsing
+                // to stop +/- from expanding/collapsing
                 e.Handled = true;
 
                 if (e.OriginalSource is TextBox tb)
                 {
-                    // to ensure that textboxes still respond to +/-/*
+                    // to ensure that textboxes still respond to +/-
                     int lastLocation = tb.SelectionStart;
-                    tb.Text = tb.Text.Insert(lastLocation, 
-                        (e.Key == Key.Subtract) ? "-" :
-                        (e.Key == Key.Add) ? "+" :
-                        (e.Key == Key.Multiply) ? "*" : "");
+                    tb.Text = tb.Text.Insert(lastLocation, (e.Key == Key.Subtract) ? "-" : "+");
                     tb.SelectionStart = lastLocation + 1;
                 }
             }
@@ -1745,26 +1754,29 @@ namespace Frosty.Core.Controls
                     actualDefaultValue = typeOverrideDefaultValue;
                 }
 
-                FrostyPropertyGridItemData subItem = new FrostyPropertyGridItemData(name, pi.Name, pi.GetValue(actualObject), pi.GetValue(actualDefaultValue), rootChild, flags) {Binding = new PropertyValueBinding(pi, actualObject)};
+                if (pi.GetValue(actualObject) != null) // Checks if property object is null.
+                {
+                    FrostyPropertyGridItemData subItem = new FrostyPropertyGridItemData(name, pi.Name, pi.GetValue(actualObject), pi.GetValue(actualDefaultValue), rootChild, flags) { Binding = new PropertyValueBinding(pi, actualObject) };
 
-                if (attributes.GetCustomAttribute<FrostySdk.Attributes.IsReadOnlyAttribute>() != null)
-                    subItem.IsReadOnly = true;
-                if (attributes.GetCustomAttribute<FrostySdk.Attributes.DescriptionAttribute>() != null)
-                    subItem.Description = attributes.GetCustomAttribute<FrostySdk.Attributes.DescriptionAttribute>().Description;
-                if (attributes.GetCustomAttribute<DependsOnAttribute>() != null)
-                    subItem.DependsOn = attributes.GetCustomAttribute<DependsOnAttribute>().Name;
-                if (attributes.GetCustomAttribute<FrostySdk.Attributes.EditorAttribute>() != null)
-                    subItem.TypeEditor = attributes.GetCustomAttribute<FrostySdk.Attributes.EditorAttribute>().EditorType;
-                if (attributes.GetCustomAttribute<IsExpandedByDefaultAttribute>() != null)
-                    subItem.IsExpanded = true;
-                if (attributes.GetCustomAttribute<FixedSizeArrayAttribute>() != null)
-                    subItem.IsEnabled = false;
+                    if (attributes.GetCustomAttribute<FrostySdk.Attributes.IsReadOnlyAttribute>() != null)
+                        subItem.IsReadOnly = true;
+                    if (attributes.GetCustomAttribute<FrostySdk.Attributes.DescriptionAttribute>() != null)
+                        subItem.Description = attributes.GetCustomAttribute<FrostySdk.Attributes.DescriptionAttribute>().Description;
+                    if (attributes.GetCustomAttribute<DependsOnAttribute>() != null)
+                        subItem.DependsOn = attributes.GetCustomAttribute<DependsOnAttribute>().Name;
+                    if (attributes.GetCustomAttribute<FrostySdk.Attributes.EditorAttribute>() != null)
+                        subItem.TypeEditor = attributes.GetCustomAttribute<FrostySdk.Attributes.EditorAttribute>().EditorType;
+                    if (attributes.GetCustomAttribute<IsExpandedByDefaultAttribute>() != null)
+                        subItem.IsExpanded = true;
+                    if (attributes.GetCustomAttribute<FixedSizeArrayAttribute>() != null)
+                        subItem.IsEnabled = false;
 
-                subItem.MetaData.AddRange(attributes.GetCustomAttributes<EditorMetaDataAttribute>());
-                subItem.Attributes.AddRange(attributes.GetCustomAttributes<Attribute>());
+                    subItem.MetaData.AddRange(attributes.GetCustomAttributes<EditorMetaDataAttribute>());
+                    subItem.Attributes.AddRange(attributes.GetCustomAttributes<Attribute>());
 
-                categories[category].Children.Add(subItem);
-                rootChild.Children.Add(subItem);
+                    categories[category].Children.Add(subItem);
+                    rootChild.Children.Add(subItem);
+                }
             }
 
             return categories.Values.ToArray();

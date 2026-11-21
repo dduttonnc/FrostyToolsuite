@@ -76,7 +76,6 @@ namespace Frosty.Core.Controls.Editors
         private void FrostyCStringControl_TargetUpdated(object sender, DataTransferEventArgs e)
         {
             Text = Value;
-            ShowStringDisplay();
         }
     }
 }

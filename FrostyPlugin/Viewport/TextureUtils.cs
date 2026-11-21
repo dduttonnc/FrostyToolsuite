@@ -69,7 +69,7 @@ namespace Frosty.Core.Viewport
                 hash = (hash * 16777619) ^ (uint)desc.StencilWriteMask.GetHashCode();
                 return hash;
             }
-
+            
             public static uint Hash(D3D11.BlendStateDescription desc)
             {
                 uint hash = 2166136261;
@@ -123,7 +123,6 @@ namespace Frosty.Core.Viewport
 #endif
 
                 int adapterIndex = Config.Get<int>("RenderAdapterIndex", 0);
-                //int adapterIndex = Config.Get<int>("Render", "AdapterIndex", 0);
                 SharpDX.DXGI.Factory factory = new SharpDX.DXGI.Factory1();
                 SharpDX.DXGI.Adapter adapter = factory.GetAdapter(adapterIndex);
 
@@ -323,7 +322,7 @@ namespace Frosty.Core.Viewport
         public static D3D11.BlendState CreateBlendState(
             params D3D11.RenderTargetBlendDescription[] targets)
         {
-            D3D11.BlendStateDescription desc = new D3D11.BlendStateDescription { IndependentBlendEnable = targets.Length > 1 };
+            D3D11.BlendStateDescription desc = new D3D11.BlendStateDescription {IndependentBlendEnable = targets.Length > 1};
             for (int i = 0; i < targets.Length; i++)
             {
                 desc.RenderTarget[i] = targets[i];

@@ -5,6 +5,7 @@ using FrostySdk.Managers;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using FrostySdk.Managers.Entries;
 
 namespace Frosty.Core.Legacy
 {
@@ -21,9 +22,11 @@ namespace Frosty.Core.Legacy
         private bool cacheMode = false;
 
         /* Load in legacy files */
+        public bool ShouldInitializeOnStartup => true;
+
         public void Initialize(ILogger logger)
         {
-            logger.Log("Loading Legacy Files");
+            logger.Log("Loading legacy files");
             foreach (EbxAssetEntry entry in App.AssetManager.EnumerateEbx("ChunkFileCollector"))
             {
                 EbxAsset asset = App.AssetManager.GetEbx(entry);
@@ -148,6 +151,8 @@ namespace Frosty.Core.Legacy
 
             App.AssetManager.RevertAsset(lfe);
 
+            ChunkAssetEntry orig = App.AssetManager.GetChunkEntry(lfe.ChunkId);
+
             Guid guid = App.AssetManager.AddChunk(data, GenerateDeterministicGuid(lfe));
             foreach (LegacyFileEntry.ChunkCollectorInstance inst in lfe.CollectorInstances)
             {
@@ -162,7 +167,10 @@ namespace Frosty.Core.Legacy
                 inst.ModifiedEntry.CompressedSize = assetChunkEntry.ModifiedEntry.Data.Length;
 
                 // @temp
-                assetChunkEntry.ModifiedEntry.AddToChunkBundle = true;
+                foreach (int sbId in orig.SuperBundles)
+                {
+                    assetChunkEntry.AddToSuperBundle(sbId);
+                }
                 assetChunkEntry.ModifiedEntry.UserData = "legacy;" + lfe.Name;
 
                 // link to main ebx

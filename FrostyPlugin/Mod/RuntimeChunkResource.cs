@@ -1,4 +1,5 @@
 ﻿using FrostySdk.Managers;
+using FrostySdk.Managers.Entries;
 
 namespace Frosty.Core.Mod
 {
@@ -10,18 +11,14 @@ namespace Frosty.Core.Mod
             resourceIndex = -1;
             name = entry.Id.ToString();
             sha1 = entry.Sha1;
-            size = entry.Size;
+            size = entry.OriginalSize;
             logicalOffset = entry.LogicalOffset;
             logicalSize = entry.LogicalSize;
             rangeStart = entry.RangeStart;
             rangeEnd = entry.RangeEnd;
             h32 = entry.H32;
             firstMip = entry.FirstMip;
-
-            if (entry.IsTocChunk)
-            {
-                flags |= 0x02;
-            }
+            superBundlesToAdd.AddRange(entry.AddedSuperBundles);
         }
     }
 }

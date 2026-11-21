@@ -10,7 +10,7 @@ using Frosty.Core.Controls;
 using Frosty.Core.Windows;
 using Frosty.Core;
 using System.Windows.Media;
-using FrostySdk;
+using FrostySdk.Managers.Entries;
 
 namespace ChunkResEditorPlugin
 {
@@ -195,13 +195,25 @@ namespace ChunkResEditorPlugin
                 string FirstLine = "Selected chunk is in Bundles: ";
                 if (SelectedChk.FirstMip != -1)
                     FirstLine += " (FirstMip:" + SelectedChk.FirstMip + ")";
-                if (App.FileSystem.GetManifestChunk(SelectedChk.Id) != null)
+                if (App.FileSystemManager.GetManifestChunk(SelectedChk.Id) != null)
                 {
-                        chunksBundleBox.Items.Add("Selected chunk is a Manifest chunk.");
+                    chunksBundleBox.Items.Add("Selected chunk is a Manifest chunk.");
                 }
-                else if (SelectedChk.Bundles.Count == 0 && SelectedChk.AddedBundles.Count == 0)
+                else if (SelectedChk.SuperBundles.Count != 0)
                 {
-                    chunksBundleBox.Items.Add("Selected chunk is only in SuperBundles.");
+                    chunksBundleBox.Items.Add("Selected chunk is in SuperBundles:");
+                    foreach (int superbundle in SelectedChk.SuperBundles)
+                    {
+                        chunksBundleBox.Items.Add(App.AssetManager.GetSuperBundle(superbundle).Name);
+                    }
+                }
+                if (SelectedChk.AddedSuperBundles.Count != 0)
+                {
+                    chunksBundleBox.Items.Add("Added to SuperBundles:");
+                    foreach (int superbundle in SelectedChk.AddedSuperBundles)
+                    {
+                        chunksBundleBox.Items.Add(App.AssetManager.GetSuperBundle(superbundle).Name);
+                    }
                 }
                 if (SelectedChk.Bundles.Count != 0)
                 {

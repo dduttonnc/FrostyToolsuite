@@ -1,4 +1,9 @@
-﻿using Frosty.Core.Mod;
+﻿using Frosty.Core;
+using Frosty.Core.Mod;
+using FrostySdk;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Windows.Media;
 
 namespace FrostyModManager
@@ -7,22 +12,133 @@ namespace FrostyModManager
     {
         public string ModName
         {
-            get
-            {
+            get {
                 if (Mod != null)
+                {
                     return Mod.ModDetails.Title;
-                else
-                    return BackupFileName;
+                }
+
+                if (BackupFileName.EndsWith("_Separator"))
+                {
+                    return BackupFileName.Replace("_Separator", "");
+                }
+
+                return BackupFileName;
             }
         }
         public ImageSource ModIcon
         {
-            get
-            {
+            get {
                 if (Mod != null)
-                    return Mod.ModDetails.Icon;
-                else
-                    return new ImageSourceConverter().ConvertFromString("pack://application:,,,/FrostyModManager;component/Images/ModImportWarning.png") as ImageSource;
+                {
+                    if (Mod.ModDetails.Icon != null)
+                    {
+                        return Mod.ModDetails.Icon;
+                    }
+
+                    return new ImageSourceConverter().ConvertFromString("pack://application:,,,/FrostyModManager;component/Images/DefaultModIcon.png") as ImageSource;
+                }
+
+                if (BackupFileName.EndsWith("_Separator"))
+                {
+                    return null;
+                }
+
+                return new ImageSourceConverter().ConvertFromString("pack://application:,,,/FrostyModManager;component/Images/ModImportWarningApplied.png") as ImageSource;
+            }
+        }
+
+        public string ModTooltip
+        {
+            get {
+                if (Mod == null)
+                {
+                    DirectoryInfo modsDir = new DirectoryInfo(Path.Combine("Mods", ProfilesLibrary.ProfileName));
+
+                    if (Config.Get<bool>("UseCustomModsDirectory", false) && Directory.Exists(Config.Get<string>("CustomModsDirectory", "")))
+                    {
+                        modsDir = new DirectoryInfo(Path.Combine(Config.Get<string>("CustomModsDirectory", ""), ProfilesLibrary.ProfileName));
+                    }
+                        
+                    return $"Missing from: {modsDir}";
+                }
+
+                return null;
+            }
+        }
+
+        private List<string> packList;
+
+        public int ModIndex
+        {
+            get 
+            {
+                string modFilename = BackupFileName;
+
+                if (Mod != null)
+                {
+                    modFilename = Mod.Filename;
+                }
+
+                string selectedPack = Config.Get<string>("SelectedPack", "", ConfigScope.Game);
+                string pack = Config.Get(selectedPack, "", ConfigScope.Pack);
+
+                packList = pack.Split('|').ToList();
+
+                int index = packList.FindIndex(x => x == $"{modFilename}:{IsEnabled}");
+                return index;
+            }
+        }
+
+        public string ModPriority
+        {
+            get {
+                if (ModIndex == 0)
+                {
+                    return "Low Priority";
+                }
+
+                if (ModIndex == packList.Count - 1)
+                {
+                    return "High Priority";
+                }
+
+                return null;
+            }
+        }
+
+        public string ModVisibility
+        {
+            get {
+                if (Mod == null && BackupFileName.EndsWith("_Separator"))
+                {
+                    return "Collapsed";
+                }
+
+                return "Visible";
+            }
+        }
+
+        public string ModHorizontalAlignment
+        {
+            get {
+                if (Mod == null && BackupFileName.EndsWith("_Separator"))
+                {
+                    return "Center";
+                }
+
+                return "Stretch";
+            }
+        }
+
+        public string ModFontWeight {
+            get {
+                if (Mod == null && BackupFileName.EndsWith("_Separator"))
+                {
+                    return "Bold";
+                }
+
+                return "Normal";
             }
         }
 

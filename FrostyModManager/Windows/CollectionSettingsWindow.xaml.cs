@@ -1,13 +1,10 @@
 ﻿using Frosty.Controls;
 using System.Windows.Media.Imaging;
 using System.IO;
-using Frosty.Core;
 using Frosty.Core.Mod;
 using System.Collections.Generic;
 using Frosty.Core.Controls;
 using System.IO.Compression;
-using System.Text;
-using Newtonsoft.Json;
 using Frosty.Core.Windows;
 using System;
 
@@ -103,7 +100,7 @@ namespace FrostyModManager.Windows
                     {
                         FrostyModCollection collection = new FrostyModCollection(details, appliedMods);
                         collection.ModDetails.SetIcon(iconImageButton.GetImage());
-                        
+
                         if (ssImageButton1.GetImage() != null)
                             collection.ModDetails.AddScreenshot(ssImageButton1.GetImage());
                         if (ssImageButton2.GetImage() != null)
@@ -133,7 +130,7 @@ namespace FrostyModManager.Windows
                         archive.Dispose();
                     }
                 });
-                
+
                 DialogResult = true;
                 Close();
             }

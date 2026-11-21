@@ -7,7 +7,8 @@ using FrostySdk.Managers;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading;
+using FrostySdk.Managers.Entries;
+using System.Diagnostics;
 
 namespace Frosty.Core.IO
 {
@@ -114,10 +115,15 @@ namespace Frosty.Core.IO
                 if (entry.HasModifiedData)
                 {
                     userData = entry.ModifiedEntry.UserData;
-                    using (EbxBaseWriter ebxWriter = EbxBaseWriter.CreateWriter(new MemoryStream()))
+                    EbxWriteFlags flags = EbxWriteFlags.None;
+                    if (ProfilesLibrary.EbxVersion == 6)
                     {
-                        ebxWriter.WriteAsset(entry.ModifiedEntry.DataObject as EbxAsset);
+                        flags |= EbxWriteFlags.DoNotSort;
+                    }
 
+                    using (EbxBaseWriter ebxWriter = EbxBaseWriter.CreateWriter(new MemoryStream(), flags))
+                    {
+                        ebxWriter.WriteAsset(entry.ModifiedEntry.DataObject as EbxAsset, App.AssetManager.GetAsset(entry));
                         size = ebxWriter.Length;
                         data = Utils.CompressFile(ebxWriter.ToByteArray(), compressionOverride: compressType);
 
@@ -151,7 +157,7 @@ namespace Frosty.Core.IO
                     resMeta = (entry.ModifiedEntry.ResMeta != null) ? entry.ModifiedEntry.ResMeta : entry.ResMeta;
                     userData = entry.ModifiedEntry.UserData;
 
-                    flags = (byte)((entry.IsInline) ? 1 : 0);
+                    flags |= (byte)((entry.IsInline) ? 1 : 0);
                 }
             }
 
@@ -177,11 +183,13 @@ namespace Frosty.Core.IO
             private uint logicalSize;
             private int h32;
             private int firstMip;
+            private List<int> superBundlesToAdd = new List<int>();
 
             public ChunkResource(ChunkAssetEntry entry, Manifest manifest)
                 : base(entry)
             {
                 name = entry.Id.ToString();
+                superBundlesToAdd.AddRange(entry.AddedSuperBundles);
                 if (entry.HasModifiedData)
                 {
                     sha1 = entry.ModifiedEntry.Sha1;
@@ -196,33 +204,68 @@ namespace Frosty.Core.IO
                     firstMip = entry.ModifiedEntry.FirstMip;
                     userData = entry.ModifiedEntry.UserData;
 
-                    flags = (byte)((entry.IsInline) ? 1 : 0);
-                    flags |= (byte)((entry.ModifiedEntry.AddToChunkBundle) ? 1 << 1 : 0);
-
-                    // add special chunks bundle
-                    if (entry.ModifiedEntry.AddToChunkBundle)
-                    {
-                        // MustAddChunks should add chunks, so seems redundant to check for it here,
-                        // as the chunk should already be an added chunk
-
-                        if (ProfilesLibrary.MustAddChunks || entry.IsAdded)
-                            AddBundle("chunks");
-                    }
+                    flags |= (byte)((entry.IsInline) ? 1 : 0);
                 }
                 else
                 {
                     // special chunks bundle
-                    if (App.FileSystem.GetManifestChunk(new Guid(name)) != null)
+                    if (App.FileSystemManager.GetManifestChunk(new Guid(name)) != null)
                     {
                         // not required?
                         flags |= 0x04;
                     }
 
-                    // @todo: calculate RangeStart/End for texture chunks added to bundles, where they are not
-                    //        stored in the bundle (ie. Manifest layout)
-
                     h32 = entry.H32;
                     firstMip = entry.FirstMip;
+
+                    // calculate RangeStart/End for texture chunks added to bundles, where they are not
+                    // stored in the bundle (ie. Manifest layout)
+                    if (firstMip != -1 && entry.LogicalOffset != 0 && entry.RangeStart == 0 && entry.RangeEnd == 0)
+                    {
+                        byte[] data = NativeReader.ReadInStream(App.AssetManager.GetRawStream(entry));
+
+                        using (NativeReader reader = new NativeReader(new MemoryStream(data)))
+                        {
+                            long logicalOffset = entry.LogicalOffset;
+                            uint size = 0;
+
+                            while (true)
+                            {
+                                int decompressedSize = reader.ReadInt(Endian.Big);
+                                ushort compressionType = reader.ReadUShort();
+                                int bufferSize = reader.ReadUShort(Endian.Big);
+
+                                int flags = ((compressionType & 0xFF00) >> 8);
+
+                                if ((flags & 0x0F) != 0)
+                                {
+                                    bufferSize = ((flags & 0x0F) << 0x10) + bufferSize;
+                                }
+                                if ((decompressedSize & 0xFF000000) != 0)
+                                {
+                                    decompressedSize &= 0x00FFFFFF;
+                                }
+
+                                logicalOffset -= decompressedSize;
+                                if (logicalOffset < 0)
+                                {
+                                    break;
+                                }
+
+                                compressionType = (ushort)(compressionType & 0x7F);
+                                if (compressionType == 0x00)
+                                {
+                                    bufferSize = decompressedSize;
+                                }
+
+                                size += (uint)(bufferSize + 8);
+                                reader.Position += bufferSize;
+                            }
+
+                            rangeStart = size;
+                            rangeEnd = (uint)data.Length;
+                        }
+                    }
                 }
             }
 
@@ -236,6 +279,11 @@ namespace Frosty.Core.IO
                 writer.Write(logicalSize);
                 writer.Write(h32);
                 writer.Write(firstMip);
+                writer.Write(superBundlesToAdd.Count);
+                foreach (int sbId in superBundlesToAdd)
+                {
+                    writer.Write(sbId);
+                }
             }
         }
 
@@ -251,14 +299,14 @@ namespace Frosty.Core.IO
             overrideSettings = inOverrideSettings;
         }
 
-        public void WriteProject(FrostyProject project, bool editorLaunch, CancellationToken cancelToken)
+        public void WriteProject(FrostyProject project)
         {
             Write(FrostyMod.Magic);
             Write(FrostyMod.Version);
             Write(0xDEADBEEFDEADBEEF);
             Write(0xDEADBEEF);
             Write(ProfilesLibrary.ProfileName);
-            Write(App.FileSystem.Head);
+            Write(App.FileSystemManager.Head);
 
             ModSettings settings = overrideSettings ?? project.ModSettings;
 
@@ -268,35 +316,26 @@ namespace Frosty.Core.IO
             WriteNullTerminatedString(settings.Version);
             WriteNullTerminatedString(settings.Description);
             WriteNullTerminatedString(settings.Link);
+            WriteNullTerminatedString(settings.DexResourceName);
 
             AddResource(new EmbeddedResource("Icon", settings.Icon, manifest));
+            
             for (int i = 0; i < 4; i++)
+            {
                 AddResource(new EmbeddedResource("Screenshot" + i.ToString(), settings.GetScreenshot(i), manifest));
+            }
+
+            AddResource(new EmbeddedResource("DexResource", settings.DEXResource, manifest));
 
             // @todo: superbundles
 
             // added bundles
-            bool addedBundlesAllowed = Config.Get<bool>("AddedBundlesFbmod", true);
-            List<int> disallowedBundles = new List<int>();
             foreach (BundleEntry bentry in App.AssetManager.EnumerateBundles(modifiedOnly: true))
             {
                 if (!bentry.Added)
                     continue;
 
-                if (addedBundlesAllowed)
-                    AddResource(new BundleResource(bentry, manifest));
-                else
-                    disallowedBundles.Add(HashBundle(bentry));
-            }
-
-            int HashBundle(BundleEntry bentry)
-            {
-                int hash = Fnv1.HashString(bentry.Name.ToLower());
-
-                if (bentry.Name.Length == 8 && int.TryParse(bentry.Name, System.Globalization.NumberStyles.HexNumber, null, out int tmp))
-                    hash = tmp;
-
-                return hash;
+                AddResource(new BundleResource(bentry, manifest));
             }
 
             // ebx
@@ -307,25 +346,6 @@ namespace Frosty.Core.IO
                     // ignore transient only edits (such as id fields)
                     if (entry.HasModifiedData && entry.ModifiedEntry.IsTransientModified)
                         continue;
-
-                    //Don't bother writing assets if they are not in whitelisted bundles, when launching from the editor.
-                    if (editorLaunch && App.WhitelistedBundles.Count != 0 && !(entry.Bundles.Count == 0 && !entry.IsAdded))
-                    {
-                        List<int> totalBundles = new List<int>(entry.Bundles);
-                        totalBundles.AddRange(entry.AddedBundles);
-
-                        bool hasWhitelistedBundle = false;
-                        foreach (int bunId in totalBundles)
-                        {
-                            if (App.WhitelistedBundles.Contains(HashBundle(App.AssetManager.GetBundleEntry(bunId))) || (addedBundlesAllowed && App.AssetManager.GetBundleEntry(bunId).Added))
-                            {
-                                hasWhitelistedBundle = true;
-                                break;
-                            }
-                        }
-                        if (!hasWhitelistedBundle)
-                            continue;
-                    }
 
                     if (entry.HasModifiedData)
                     {
@@ -346,8 +366,6 @@ namespace Frosty.Core.IO
                         AddResource(new EbxResource(entry, manifest));
                     }
                 }
-
-                cancelToken.ThrowIfCancellationRequested();
             }
 
             // res
@@ -374,8 +392,6 @@ namespace Frosty.Core.IO
                         AddResource(new ResResource(entry, manifest));
                     }
                 }
-
-                cancelToken.ThrowIfCancellationRequested();
             }
 
             // chunks
@@ -385,27 +401,24 @@ namespace Frosty.Core.IO
                 // directly, but instead as part of an ebx or res modification
 
                 if (entry.IsDirectlyModified)
-                {
                     AddResource(new ChunkResource(entry, manifest));
-                }
-
-                cancelToken.ThrowIfCancellationRequested();
             }
 
             // legacy custom action handler
-            ILegacyCustomActionHandler tmpHandler = new LegacyCustomActionHandler();
+            ICustomAssetCustomActionHandler tmpHandler = new LegacyCustomActionHandler();
             tmpHandler.SaveToMod(this);
 
-            cancelToken.ThrowIfCancellationRequested();
+            // custom assets
+            foreach (string type in App.PluginManager.CustomAssetHandlers)
+            {
+                ICustomAssetCustomActionHandler customHandler = App.PluginManager.GetCustomAssetHandler(type);
+                customHandler.SaveToMod(this);
+            }
 
             // write resources
             Write(resources.Count);
             foreach (EditorModResource resource in resources)
-            {
                 resource.Write(this);
-
-                cancelToken.ThrowIfCancellationRequested();
-            }
 
             // write manifest + data
             long manifestOffset = Position;

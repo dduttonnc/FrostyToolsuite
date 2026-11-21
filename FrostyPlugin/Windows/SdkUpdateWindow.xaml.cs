@@ -1,5 +1,4 @@
-﻿using Frosty.Controls;
-using Frosty.Core.Sdk;
+﻿using Frosty.Core.Sdk;
 using Frosty.Core.IO;
 using FrostySdk;
 using System;
@@ -7,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
@@ -36,10 +36,6 @@ namespace Frosty.Core.Windows
         private string statusMessage;
         private string failMessage;
 
-        public SdkUpdateTask()
-        {
-        }
-
         public event PropertyChangedEventHandler PropertyChanged;
         private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
         {
@@ -57,7 +53,7 @@ namespace Frosty.Core.Windows
     /// <summary>
     /// Interaction logic for SdkUpdateWindow.xaml
     /// </summary>
-    public partial class SdkUpdateWindow : FrostyDockableWindow
+    public partial class SdkUpdateWindow
     {
         public string ProfileName => ProfilesLibrary.DisplayName;
         private SdkUpdateTask failedTask = null;
@@ -101,11 +97,20 @@ namespace Frosty.Core.Windows
 
             successMessage.Visibility = (failedTask == null) ? Visibility.Visible : Visibility.Collapsed;
             failMessage.Text = (failedTask != null) ? failedTask.FailMessage : "";
+            quitButton.IsEnabled = true;
             finishButton.IsEnabled = true;
         }
 
+        private void QuitButton_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
+            DialogResult = true;
+            Close();
+        }
+        
         private void FinishButton_Click(object sender, RoutedEventArgs e)
         {
+            Process.Start(Assembly.GetEntryAssembly().Location);
             Application.Current.Shutdown();
             DialogResult = true;
             Close();
@@ -140,7 +145,7 @@ namespace Frosty.Core.Windows
                     {
                         if (process.ProcessName.IndexOf(ProfilesLibrary.ProfileName, StringComparison.OrdinalIgnoreCase) >= 0)
                         {
-                            task.FailMessage = string.Format("Unable to access the specified process");
+                            task.FailMessage = "Unable to access the specified process";
                             task.StatusMessage = process.ProcessName;
                             task.State = SdkUpdateTaskState.CompletedFail;
                             return false;
@@ -180,9 +185,7 @@ namespace Frosty.Core.Windows
 
             string[] patterns = new string[]
             {
-                "488b05???????? 48894108 48890d???????? 48???? C3",
-                "488b05???????? 48894108 48890d????????",
-                "488b05???????? 488905???????? 488d05???????? 488905???????? E9"
+                "48391D???????? ???? 488b4310"
             };
 
             IList<long> offsets = null;

@@ -13,13 +13,42 @@ namespace Frosty.Core.Mod
         public string Description { get; }
         public string Category => (category == "") ? "Misc" : category;
         public string Link { get; }
+        public string DexResourceName { get; }
         public ImageSource Icon { get; private set; }
         public List<ImageSource> Screenshots { get; } = new List<ImageSource>();
         public List<FrostyModRequirement> Requirements { get; } = new List<FrostyModRequirement>();
+        public bool HasDexResource => DexResourceName != "";
+        public bool HasRootResource { get; set; }
+        public int GridColumn => HasDexResource && HasRootResource ? 1 : 0;
+        public bool HasLink => Link != "";
 
         private string category;
 
-        public FrostyModDetails(string inTitle, string inAuthor, string inCategory, string inVersion, string inDescription, string inModPageLink)
+        public string LinkID {
+            get {
+                if (Link != "")
+                {
+                    if (Link.Contains("nexusmods.com"))
+                    {
+                        return "Nexus Mods";
+                    }
+                    else if (Link.Contains("moddb.com"))
+                    {
+                        return "Mod DB";
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+
+        public FrostyModDetails(string inTitle, string inAuthor, string inCategory, string inVersion, string inDescription, string inModPageLink, string inDexResourceName)
         {
             Title = inTitle;
             Author = inAuthor;
@@ -27,6 +56,7 @@ namespace Frosty.Core.Mod
             Description = inDescription;
             category = inCategory;
             Link = inModPageLink;
+            DexResourceName = inDexResourceName;
         }
 
         public void SetIcon(byte[] buffer)

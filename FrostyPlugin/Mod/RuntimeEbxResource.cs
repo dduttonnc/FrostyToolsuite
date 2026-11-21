@@ -1,4 +1,5 @@
 ﻿using FrostySdk.Managers;
+using FrostySdk.Managers.Entries;
 
 namespace Frosty.Core.Mod
 {
@@ -8,9 +9,9 @@ namespace Frosty.Core.Mod
             : base(entry)
         {
             resourceIndex = -1;
-            name = entry.Name;
+            name = entry.Name.ToLower();
             sha1 = entry.Sha1;
-            size = entry.Size;
+            size = entry.OriginalSize;
         }
     }
 }

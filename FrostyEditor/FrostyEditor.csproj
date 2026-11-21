@@ -31,6 +31,7 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <PathMap>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)'))=$(MSBuildProjectName)</PathMap>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release - Final|x64' ">
     <OutputPath>bin\Release\Final\</OutputPath>
@@ -94,19 +95,17 @@
     <AssemblyOriginatorKeyFile>FrostyEditor.pfx</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>ThirdParty\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="PresentationFramework.Aero2" />
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.IO.Compression" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
     <Reference Include="System.Xaml" RequiredTargetFramework="4.0" />
@@ -123,25 +122,10 @@
     <Compile Include="Extensions\TextExtension.cs" />
     <Compile Include="DiscordRPC.cs" />
     <Compile Include="FileUnblocker.cs" />
-    <Compile Include="SplashWindowLogger.cs" />
-    <Compile Include="Windows\AboutWindow.xaml.cs">
-      <DependentUpon>AboutWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Windows\KeyPromptWindow.xaml.cs">
-      <DependentUpon>KeyPromptWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Windows\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
     <Page Include="Themes\Generic.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Windows\AboutWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Windows\KeyPromptWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -291,15 +275,28 @@
     <Resource Include="Images\Ice.png" />
     <Resource Include="Images\NormalMap.png" />
     <Resource Include="Images\Noise.png" />
+    <Resource Include="BuildDate.txt" />
     <Resource Include="ChangeLog.txt" />
-    <Resource Include="Credits.txt" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Images\Recent.png" />
-    <Content Include="Resources\Icons\fbproject.ico">
+    <Resource Include="Images\Change.png" />
+    <Content Include="Resources\Meshes\Flag.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Meshes\Sprite.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Meshes\TranslateGizmo.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Textures\DefaultLayer.dds">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Resources\Textures\DefaultLightProbe.dds" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Resources\Textures\DefaultSprite.dds">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Resources\Textures\Grid.DDS" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Shaders\character_jersey_shader.hlsl" />
     <None Include="Shaders\character_jersey_shader.xml" CopyToOutputDirectory="PreserveNewest" />
@@ -314,6 +311,57 @@
       <SubType>Designer</SubType>
     </None>
     <Resource Include="Shaders\ShaderTemplate.txt" />
+    <Content Include="Resources\Textures\Sprites\Conversation.dds">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Textures\Sprites\DirectionalLight.dds">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Textures\Sprites\GameObject.dds">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Textures\Sprites\Location.dds">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Textures\Sprites\PointLight.dds">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Textures\Sprites\RectLight.dds">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Textures\Sprites\SpotLight.dds">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Textures\TranslateGizmo.dds">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Textures\TranslateGizmoSelected.dds">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Shaders\GizmoShader.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Shaders\GizmoShader.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Shaders\LevelShader.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Shaders\LevelShader.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Shaders\SpriteShader.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Shaders\SpriteShader.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Shaders\TerrainShader.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Shaders\TerrainShader.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="ThirdParty\GFSDK_SSAO_D3D11.win64.dll" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="ThirdParty\GFSDK_ShadowLib_DX11.win64.dll" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="ThirdParty\GFSDK_Txaa.win64.dll" CopyToOutputDirectory="PreserveNewest" />
@@ -336,7 +384,6 @@
     <Content Include="ThirdParty\libfbxsdk.dll" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="ThirdParty\luacmp.dll" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="ThirdParty\luacmp.dll" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="ThirdParty\Newtonsoft.Json.dll" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="ThirdParty\SharpDX.Desktop.dll" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="ThirdParty\SharpDX.Direct2D1.dll" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="ThirdParty\SharpDX.Direct3D11.dll" CopyToOutputDirectory="PreserveNewest" />
@@ -387,20 +434,36 @@
       <IncludeAssets>compile</IncludeAssets>
     </PackageReference>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Shaders\GizmoShader.hlsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </ClCompile>
+    <ClCompile Include="Shaders\LevelShader.hlsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </ClCompile>
+    <ClCompile Include="Shaders\SpriteShader.hlsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </ClCompile>
+    <ClCompile Include="Shaders\TerrainShader.hlsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </ClCompile>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>
     </PostBuildEvent>
   </PropertyGroup>
-  <PropertyGroup>
-    <PreBuildEvent>
-    </PreBuildEvent>
-  </PropertyGroup>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
+  <Target Name="MoveFiles" AfterTargets="Build">
+    <ItemGroup>
+      <FilesToMove Include="$(OutputPath)\Newtonsoft.Json.dll"/>
+      <FilesToMove Include="$(OutputPath)\Ookii.Dialogs.Wpf.dll"/>
+    </ItemGroup>
+    <Move SourceFiles="@(FilesToMove)" DestinationFolder="$(OutputPath)\ThirdParty" />
   </Target>
-  <Target Name="AfterBuild">
+  <Target Name="DeletePDBs" AfterTargets="MoveFiles">
+    <ItemGroup>
+      <FilesToDelete Include="$(OutputPath)\Ookii.Dialogs.Wpf.pdb"/>
+    </ItemGroup>
+    <Delete Files="@(FilesToDelete)" />
   </Target>
-  -->
 </Project>

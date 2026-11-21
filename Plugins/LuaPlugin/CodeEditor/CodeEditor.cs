@@ -1,4 +1,5 @@
 ﻿using Frosty.Core;
+using Frosty.Core.Controls;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -108,11 +109,6 @@ namespace LuaPlugin.CodeEditor
             Config.Add("TextEditorIndentOnEnter", IndentOnEnter);
             Config.Add("TextEditorTabSize", TabSize);
             Config.Save();
-
-            //IndentOnEnter = Config.Get("TextEditor", "IndentOnEnter", true);
-            //TabSize = Config.Get("TextEditor", "TabSize", 4);
-            //Config.Add("TextEditor", "IndentOnEnter", IndentOnEnter);
-            //Config.Add("TextEditor", "TabSize", TabSize);
         }
 
         private void Timer_Tick(object sender, EventArgs e)
@@ -400,7 +396,7 @@ namespace LuaPlugin.CodeEditor
                 // Cut selection
                 int imin = SelectionStart.Index <= SelectionEnd.Index ? SelectionStart.Index : SelectionEnd.Index;
                 int imax = SelectionStart.Index <= SelectionEnd.Index ? SelectionEnd.Index : SelectionStart.Index;
-                Clipboard.SetText(Text.Substring(imin, imax - imin));
+                FrostyClipboard.Current.SetText(Text.Substring(imin, imax - imin));
                 ModifyText(imin, imax, "");
                 CaretBlink = true;
                 if (IndentOnEnter)
@@ -412,7 +408,7 @@ namespace LuaPlugin.CodeEditor
                 // Copy selection
                 int imin = SelectionStart.Index <= SelectionEnd.Index ? SelectionStart.Index : SelectionEnd.Index;
                 int imax = SelectionStart.Index <= SelectionEnd.Index ? SelectionEnd.Index : SelectionStart.Index;
-                Clipboard.SetText(Text.Substring(imin, imax - imin));
+                FrostyClipboard.Current.SetText(Text.Substring(imin, imax - imin));
                 CaretBlink = true;
                 InvalidateVisual();
             }

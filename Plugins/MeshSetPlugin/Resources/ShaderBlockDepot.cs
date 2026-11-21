@@ -7,6 +7,7 @@ using System.IO;
 using System.Reflection;
 using Frosty.Hash;
 using FrostySdk;
+using FrostySdk.Managers.Entries;
 using FrostySdk.Resources;
 
 #region -- Old ShaderBlocks --
@@ -301,7 +302,7 @@ namespace MeshSetPlugin.Resources
             long offset = writer.Position;
 
             writer.Write(Parameters.Count);
-            foreach (ParameterEntry param in Parameters)
+            foreach (var param in Parameters)
             {
                 writer.Write(param.ToBytes());
             }
@@ -381,7 +382,7 @@ namespace MeshSetPlugin.Resources
             long offset = writer.Position;
 
             writer.Write(Parameters.Count);
-            foreach (ParameterEntry param in Parameters)
+            foreach (var param in Parameters)
             {
                 writer.Write(param.ToBytes());
             }

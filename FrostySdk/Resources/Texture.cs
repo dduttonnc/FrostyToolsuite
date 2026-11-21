@@ -1,7 +1,10 @@
 ﻿using FrostySdk.IO;
 using FrostySdk.Managers;
 using System;
+using System.Diagnostics;
 using System.IO;
+using FrostySdk.Managers.Entries;
+using System.Runtime.Remoting.Messaging;
 
 namespace FrostySdk.Resources
 {
@@ -17,37 +20,39 @@ namespace FrostySdk.Resources
     };
 
     [Flags]
-    public enum TextureFlags : ushort
+    public enum TextureFlags
     {
-        Streaming = 0x1,
-        SrgbGamma = 0x2,
-        CpuResource = 0x4,
-        OnDemandLoaded = 0x8,
-        Mutable = 0x10,
-        NoSkipmip = 0x20,
-        XenonPackedMipmaps = 0x100,
-        Ps3MemoryCell = 0x100,
-        Ps3MemoryRsx = 0x200,
+        Streaming = 1 << 0,
+        SrgbGamma = 1 << 1,
+        CpuResource = 1 << 2,
+        OnDemandLoaded = 1 << 3,
+        Mutable = 1 << 4,
+        NoSkipmip = 1 << 5,
+        XenonPackedMipmaps = 1 << 8,
+        Ps3MemoryCell = 1 << 8,
+        Ps3MemoryRsx = 1 << 9,
+        StreamingAlways = 1 << 10,
+        SwizzledData = 1 << 11
     }
 
     public class Texture : Resource, IDisposable
     {
-        public uint FirstMipOffset 
-        { 
-            get => mipOffsets[0];
-            set => mipOffsets[0] = value;
+        public uint FirstMipOffset
+        {
+            get => m_compressedMipOffsets[0];
+            set => m_compressedMipOffsets[0] = value;
         }
-        public uint SecondMipOffset 
-        { 
-            get => mipOffsets[1];
-            set => mipOffsets[1] = value;
+        public uint SecondMipOffset
+        {
+            get => m_compressedMipOffsets[1];
+            set => m_compressedMipOffsets[1] = value;
         }
         public string PixelFormat
         {
             get
             {
                 string enumType = "RenderFormat";
-                string retVal = Enum.Parse(TypeLibrary.GetType(enumType), pixelFormat.ToString()).ToString();
+                string retVal = Enum.Parse(TypeLibrary.GetType(enumType), m_pixelFormat.ToString()).ToString();
                 return retVal.Replace(enumType + "_", "");
             }
         }
@@ -55,15 +60,16 @@ namespace FrostySdk.Resources
         public TextureFlags Flags { get; set; }
         public ushort Width { get; private set; }
         public ushort Height { get; private set; }
-
         public ushort SliceCount
         {
-            get => sliceCount;
+            get => m_sliceCount;
             set
             {
-                sliceCount = value;
+                m_sliceCount = value;
                 if (Type == TextureType.TT_2dArray || Type == TextureType.TT_3d)
-                    Depth = sliceCount;
+                {
+                    Depth = m_sliceCount;
+                }
             }
         }
         public ushort Depth { get; private set; }
@@ -78,46 +84,26 @@ namespace FrostySdk.Resources
         public uint RangeStart { get; set; }
         public uint RangeEnd { get; set; }
         public uint[] Unknown3 { get; } = new uint[4];
-
-        public Guid ChunkId 
+        public uint Unknown4 { get; set; } // unkn veilguard
+        public byte Unknown5 { get; set; } // mipmapcount2
+        public byte b3 { get; set; } // b3
+        public byte b4 { get; set; } // b4
+        public bool flag { get; set; } // flag
+        public uint Unknown9 { get; set; } // another int
+        public Guid ChunkId
         {
-            get => chunkId;
-            set => chunkId = value;
+            get => m_chunkId;
+            set => m_chunkId = value;
         }
-
         public uint ChunkSize { get; private set; }
+        public uint Version => m_version;
 
-        private uint[] mipOffsets = new uint[2];
-        private int pixelFormat;
-        private uint unknown1;
-        private ushort sliceCount;
-        private Guid chunkId;
-
-        /*
-           private uint[] mipOffsets = new uint[2];
-           private TextureType type;
-           private int pixelFormat;
-           private uint unknown1;
-           private TextureFlags flags;
-           private ushort width;
-           private ushort height;
-           private ushort depth;
-           private ushort sliceCount;
-           private byte mipCount;
-           private byte firstMip;
-           private Guid chunkId;
-           private uint[] mipSizes = new uint[15];
-           private uint chunkSize;
-           private uint[] unknown3 = new uint[4];
-           private uint assetNameHash;
-           private string textureGroup;
-           private Stream data;
-           
-           private uint logicalOffset;
-           private uint logicalSize;
-           private uint rangeStart;
-           private uint rangeEnd;
-        */
+        private uint m_version;
+        private uint[] m_compressedMipOffsets = new uint[2];
+        private int m_pixelFormat;
+        private uint m_customPoolId;
+        private ushort m_sliceCount;
+        private Guid m_chunkId;
 
         public Texture()
         {
@@ -127,142 +113,285 @@ namespace FrostySdk.Resources
         {
             base.Read(reader, am, entry, modifiedData);
 
-            if (ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedRivals)
+            //using (FileStream fileStream = new FileStream(@"E:/" + entry.Filename, FileMode.Create, FileAccess.Write))
+            //{
+            //    reader.BaseStream.CopyTo(fileStream);
+            //    reader.BaseStream.Position = 0;
+            //}
+
+            /* Texture Versions:
+             * 10 - Unknown
+             * 11 - Version and 32 bit flags now stored in resMeta; storing of mipOffsets
+             * 12 - Storing of customPoolId
+             * 13 - Unknown block before the nameHash (only used in MEA)
+             */
+            m_version = BitConverter.ToUInt32(resMeta, 0);
+
+            if (m_version == 0)
             {
-                Unknown3[0] = reader.ReadUInt();
-                Type = (TextureType)reader.ReadUInt();
-                pixelFormat = reader.ReadInt();
-                Unknown3[1] = reader.ReadUInt();
+                m_version = reader.ReadUInt();
             }
-            else
+
+#if FROSTY_DEVELOPER
+            Debug.Assert(10 <= m_version && m_version <= 13);
+#endif
+
+            if (m_version >= 11)
             {
-                mipOffsets[0] = reader.ReadUInt();
-                mipOffsets[1] = reader.ReadUInt();
-                Type = (TextureType)reader.ReadUInt();
-                pixelFormat = reader.ReadInt();
-                if (ProfilesLibrary.DataVersion == (int)ProfileVersion.MassEffectAndromeda || ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa17 || ProfilesLibrary.DataVersion == (int)ProfileVersion.StarWarsBattlefrontII
-                    || ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa18 || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedPayback || ProfilesLibrary.DataVersion == (int)ProfileVersion.Madden19
-                    || ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa19 || ProfilesLibrary.DataVersion == (int)ProfileVersion.Anthem || ProfilesLibrary.DataVersion == (int)ProfileVersion.Battlefield5
-                    || ProfilesLibrary.DataVersion == (int)ProfileVersion.Madden20 || ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa20 || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedHeat
-                    || ProfilesLibrary.DataVersion == (int)ProfileVersion.PlantsVsZombiesBattleforNeighborville || ProfilesLibrary.DataVersion == (int)ProfileVersion.StarWarsSquadrons
-                        )
-                {
-                    unknown1 = reader.ReadUInt();
-                }
-                Flags = (TextureFlags)reader.ReadUShort();
+                // offsets in compressed chunk of 2nd and 3rd mip, 1st mip is at 0
+                m_compressedMipOffsets[0] = reader.ReadUInt();
+                m_compressedMipOffsets[1] = reader.ReadUInt();
             }
+
+            Type = (TextureType)reader.ReadUInt();
+            m_pixelFormat = reader.ReadInt();
+
+            if (m_version >= 12)
+            {
+                m_customPoolId = reader.ReadUInt();
+            }
+
+            Flags = (TextureFlags)(m_version >= 11 ? reader.ReadUShort() : reader.ReadUInt());
 
             Width = reader.ReadUShort();
             Height = reader.ReadUShort();
             Depth = reader.ReadUShort();
-            sliceCount = reader.ReadUShort();
-            if (ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedRivals)
-                Flags = (TextureFlags)reader.ReadUShort();
+            if (ProfilesLibrary.IsLoaded(ProfileVersion.NeedForSpeedUnbound, ProfileVersion.DeadSpace))
+            {
+                m_sliceCount = reader.ReadByte();
+            }
+            else
+            {
+                m_sliceCount = reader.ReadUShort();
+            }
+
+
+            if (m_version <= 10)
+            {
+                Unknown3[0] = reader.ReadUShort();
+            }
+
             MipCount = reader.ReadByte();
             FirstMip = reader.ReadByte();
-            chunkId = reader.ReadGuid();
+            if (ProfilesLibrary.IsLoaded(ProfileVersion.NeedForSpeedUnbound, ProfileVersion.DeadSpace))
+            {
+                reader.ReadByte();
+            }
+
+            if (ProfilesLibrary.IsLoaded(ProfileVersion.Battlefield2042, ProfileVersion.NeedForSpeedUnbound, ProfileVersion.DeadSpace))
+            {
+                Unknown3[0] = reader.ReadUInt();
+            }
+
+            if (ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeTheVeilguard))
+            {
+                Unknown4 = reader.ReadUInt();
+                Unknown5 = reader.ReadByte(); //mipmap2
+                b3 = reader.ReadByte();
+                b4 = reader.ReadByte();
+                flag = reader.ReadBoolean();
+                Unknown9 = reader.ReadUInt();
+
+            }
+            m_chunkId = reader.ReadGuid();
+
             for (int i = 0; i < 15; i++)
+            {
                 MipSizes[i] = reader.ReadUInt();
+            }
+
             ChunkSize = reader.ReadUInt();
 
-            if (ProfilesLibrary.DataVersion == (int)ProfileVersion.Anthem)
-            {
-                for (int i = 0; i < 3; i++)
-                    Unknown3[i] = reader.ReadUInt();
-            }
-            else if (ProfilesLibrary.DataVersion == (int)ProfileVersion.MassEffectAndromeda)
+            if (m_version >= 13)
             {
                 for (int i = 0; i < 4; i++)
+                {
                     Unknown3[i] = reader.ReadUInt();
+                }
             }
-            else if (ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa18 || ProfilesLibrary.DataVersion == (int)ProfileVersion.Madden19)
+
+            if (ProfilesLibrary.IsLoaded(ProfileVersion.Fifa18, ProfileVersion.Madden19))
+            {
                 Unknown3[0] = reader.ReadUInt();
+            }
+
             AssetNameHash = reader.ReadUInt();
-            if (ProfilesLibrary.DataVersion == (int)ProfileVersion.PlantsVsZombiesGardenWarfare2)
+
+            if (ProfilesLibrary.IsLoaded(ProfileVersion.PlantsVsZombiesGardenWarfare2, ProfileVersion.Madden22, ProfileVersion.Madden23))
+            {
                 Unknown3[0] = reader.ReadUInt();
+            }
+
             TextureGroup = reader.ReadSizedString(16);
-            if (ProfilesLibrary.DataVersion == (int)ProfileVersion.Battlefield5 || ProfilesLibrary.DataVersion == (int)ProfileVersion.StarWarsSquadrons)
+
+            if (ProfilesLibrary.IsLoaded(ProfileVersion.Battlefield5, ProfileVersion.StarWarsSquadrons))
+            {
                 Unknown3[0] = reader.ReadUInt();
-            Data = am.GetChunk(am.GetChunkEntry(chunkId));
+            }
+
+            if (ProfilesLibrary.IsLoaded(ProfileVersion.Battlefield2042, ProfileVersion.NeedForSpeedUnbound, ProfileVersion.DeadSpace, ProfileVersion.DragonAgeTheVeilguard))
+            {
+                reader.ReadLong();
+            }
+
+#if FROSTY_DEVELOPER
+            //Debug.Assert(reader.Position == reader.Length);
+#endif
+
+            Data = am.GetChunk(am.GetChunkEntry(m_chunkId));
         }
 
         public override byte[] SaveBytes()
         {
             using (NativeWriter writer = new NativeWriter(new MemoryStream()))
             {
-                if (ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedRivals)
+                if (m_version <= 10)
                 {
-                    writer.Write(Unknown3[0]);
-                    writer.Write((uint)Type);
-                    writer.Write(pixelFormat);
-                    writer.Write(Unknown3[1]);
+                    writer.Write(m_version);
                 }
                 else
                 {
-                    writer.Write(mipOffsets[0]);
-                    writer.Write(mipOffsets[1]);
-                    writer.Write((uint)Type);
-                    writer.Write(pixelFormat);
-                    if (ProfilesLibrary.DataVersion == (int)ProfileVersion.MassEffectAndromeda || ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa17 || ProfilesLibrary.DataVersion == (int)ProfileVersion.StarWarsBattlefrontII ||
-                        ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa18 || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedPayback || ProfilesLibrary.DataVersion == (int)ProfileVersion.Madden19 ||
-                        ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa19 || ProfilesLibrary.DataVersion == (int)ProfileVersion.Battlefield5 || ProfilesLibrary.DataVersion == (int)ProfileVersion.Madden20 ||
-                        ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa20 || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedHeat || ProfilesLibrary.DataVersion == (int)ProfileVersion.StarWarsSquadrons
-#if FROSTY_ALPHA || FROSTY_DEVELOPER
-                    || ProfilesLibrary.DataVersion == (int)ProfileVersion.PlantsVsZombiesBattleforNeighborville
-#endif
-                        )
-                    {
-                        writer.Write(unknown1);
-                    }
+                    writer.Write(m_compressedMipOffsets[0]);
+                    writer.Write(m_compressedMipOffsets[1]);
+                }
+
+                writer.Write((uint)Type);
+                writer.Write(m_pixelFormat);
+
+                if (m_version >= 12)
+                {
+                    writer.Write(m_customPoolId);
+                }
+
+                if (m_version <= 10)
+                {
+                    writer.Write((uint)Flags);
+                }
+                else
+                {
                     writer.Write((ushort)Flags);
                 }
+
                 writer.Write(Width);
                 writer.Write(Height);
                 writer.Write(Depth);
-                writer.Write(sliceCount);
-                if (ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedRivals)
+
+                if (ProfilesLibrary.IsLoaded(ProfileVersion.NeedForSpeedUnbound, ProfileVersion.DeadSpace))
                 {
-                    writer.Write((ushort)Flags);
+                    writer.Write((byte)0);
+                }
+                else
+                {
+                    writer.Write(m_sliceCount);
+                }
+
+                if (m_version <= 10)
+                {
+                    writer.Write((ushort)Unknown3[0]);
                 }
 
                 writer.Write(MipCount);
                 writer.Write(FirstMip);
-                writer.Write(chunkId);
+
+                if (ProfilesLibrary.IsLoaded(ProfileVersion.NeedForSpeedUnbound, ProfileVersion.DeadSpace))
+                {
+                    writer.Write(MipCount);
+                }
+
+                if (ProfilesLibrary.IsLoaded(ProfileVersion.Battlefield2042, ProfileVersion.NeedForSpeedUnbound, ProfileVersion.DeadSpace))
+                {
+                    writer.Write(Unknown3[0]);
+                }
+
+                if (ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeTheVeilguard))
+                {
+                    writer.Write(Unknown4);
+                    writer.Write(MipCount); // mip count #2
+                    writer.Write(b3);
+                    writer.Write(b4);
+                    writer.Write(flag);
+                    writer.Write(Unknown9);
+                }
+
+                writer.Write(m_chunkId);
+
                 for (int i = 0; i < 15; i++)
+                {
                     writer.Write(MipSizes[i]);
+                }
+
                 writer.Write(ChunkSize);
-                if (ProfilesLibrary.DataVersion == (int)ProfileVersion.MassEffectAndromeda)
+
+                if (m_version >= 13)
                 {
                     for (int i = 0; i < 4; i++)
+                    {
                         writer.Write(Unknown3[i]);
+                    }
                 }
-                if (ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa18 || ProfilesLibrary.DataVersion == (int)ProfileVersion.Madden19)
-                    writer.Write(Unknown3[0]);
-                writer.Write(AssetNameHash);
-                if (ProfilesLibrary.DataVersion == (int)ProfileVersion.PlantsVsZombiesGardenWarfare2)
-                    writer.Write(Unknown3[0]);
-                writer.WriteFixedSizedString(TextureGroup, 16);
-                if (ProfilesLibrary.DataVersion == (int)ProfileVersion.Battlefield5 || ProfilesLibrary.DataVersion == (int)ProfileVersion.StarWarsSquadrons)
-                    writer.Write(Unknown3[0]);
 
-                return writer.ToByteArray();
+                if (ProfilesLibrary.IsLoaded(ProfileVersion.Fifa18, ProfileVersion.Madden19))
+                {
+                    writer.Write(Unknown3[0]);
+                }
+
+                writer.Write(AssetNameHash);
+
+                if (ProfilesLibrary.IsLoaded(ProfileVersion.PlantsVsZombiesGardenWarfare2, ProfileVersion.Madden22, ProfileVersion.Madden23))
+                {
+                    writer.Write(Unknown3[0]);
+                }
+
+                writer.WriteFixedSizedString(TextureGroup, 16);
+
+                if (ProfilesLibrary.IsLoaded(ProfileVersion.Battlefield5, ProfileVersion.StarWarsSquadrons))
+                {
+                    writer.Write(Unknown3[0]);
+                }
+
+                if (ProfilesLibrary.IsLoaded(ProfileVersion.NeedForSpeedUnbound, ProfileVersion.DeadSpace, ProfileVersion.DragonAgeTheVeilguard))
+                {
+                    writer.Write(0);
+                }
+
+                if (m_version >= 11)
+                {
+                    unsafe
+                    {
+                        // update the res meta
+                        fixed (byte* ptr = &resMeta[0])
+                        {
+                            *(uint*)(ptr + 0) = m_version;
+                            *(uint*)(ptr + 4) = (uint)Flags;
+                        }
+                    }
+                }
+
+                byte[] result = writer.ToByteArray();
+                //File.WriteAllBytes(@"E:\writeOutput.bin", result);
+                return result;
             }
         }
 
-        public Texture(TextureType inType, string inFormat, ushort inWidth, ushort inHeight, ushort inDepth = 1)
+        public Texture(TextureType inType, string inFormat, ushort inWidth, ushort inHeight, ushort inDepth = 1, uint inVersion = 12, byte[] inResMeta = null)
         {
             Type = inType;
-            pixelFormat = getTextureFormat(inFormat);
+            m_pixelFormat = getTextureFormat(inFormat);
             Width = inWidth;
             Height = inHeight;
             Depth = inDepth;
-            sliceCount = inDepth;
-            unknown1 = 0;
+            m_sliceCount = inDepth;
+            m_customPoolId = 0;
             Flags = 0;
             Unknown3[0] = 0xFFFFFFFF;
             Unknown3[1] = 0xFFFFFFFF;
             Unknown3[2] = 0xFFFFFFFF;
             Unknown3[3] = 0xFFFFFFFF;
+            m_version = inVersion;
+            if (inResMeta != null)
+            {
+                resMeta = inResMeta;
+            }
         }
 
         ~Texture() => Dispose(false);
@@ -271,14 +400,14 @@ namespace FrostySdk.Resources
         {
             Data = am.GetChunk(am.GetChunkEntry(newChunkId));
 
-            chunkId = newChunkId;
+            m_chunkId = newChunkId;
             ChunkSize = (uint)Data.Length;
         }
 
         public void SetData(byte[] inData)
         {
             Data = new MemoryStream(inData);
-            chunkId = Guid.Empty;
+            m_chunkId = Guid.Empty;
             ChunkSize = (uint)Data.Length;
         }
 

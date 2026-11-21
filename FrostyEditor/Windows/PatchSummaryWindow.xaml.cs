@@ -5,13 +5,14 @@ using Frosty.Controls;
 using FrostySdk.IO;
 using System.IO;
 using Frosty.Core.Controls;
+using FrostySdk.Managers.Entries;
 
 namespace FrostyEditor.Windows
 {
     /// <summary>
     /// Interaction logic for PatchSummaryWindow.xaml
     /// </summary>
-    public partial class PatchSummaryWindow : FrostyDockableWindow
+    public partial class PatchSummaryWindow
     {
         public PatchSummaryWindow(AssetManagerImportResult result)
         {

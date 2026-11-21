@@ -3,7 +3,6 @@ using Frosty.Core.Commands;
 using Frosty.Core.Controls;
 using FrostySdk;
 using FrostySdk.IO;
-using FrostySdk.Managers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -13,6 +12,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
+using FrostySdk.Managers.Entries;
 
 namespace Frosty.Core.Windows
 {
@@ -36,7 +36,7 @@ namespace Frosty.Core.Windows
     /// <summary>
     /// Interaction logic for AssetInstancesWindow.xaml
     /// </summary>
-    public partial class AssetInstancesWindow : FrostyDockableWindow
+    public partial class AssetInstancesWindow
     {
         public object SelectedItem { get; private set; }
         public ItemDoubleClickCommand DoubleClickCommand { get; private set; }
@@ -52,7 +52,7 @@ namespace Frosty.Core.Windows
         private EbxAsset asset;
         private EbxAssetEntry entry;
 
-        public AssetInstancesWindow(IEnumerable objects, object inSelected, EbxAsset inAsset, EbxAssetEntry inEntry)
+        public AssetInstancesWindow(IEnumerable objects, object inSelected, EbxAsset inAsset, EbxAssetEntry inEntry, bool isReadOnly)
         {
             InitializeComponent();
             DoubleClickCommand = new ItemDoubleClickCommand(DoubleClickSelectedAsset);
@@ -85,6 +85,14 @@ namespace Frosty.Core.Windows
             asset = inAsset;
             entry = inEntry;
             rootObject = asset.RootObject;
+            
+            if (isReadOnly)
+            {
+                createInstanceButton.IsEnabled = false;
+                deleteInstanceButton.IsEnabled = false;
+                renameInstanceButton.IsEnabled = false;
+                duplicateInstanceButton.IsEnabled = false;
+            }
         }
 
         private void cancelButton_Click(object sender, RoutedEventArgs e)

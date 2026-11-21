@@ -16,6 +16,7 @@ using System.Windows.Media;
 using Frosty.Core.Windows;
 using System.Linq;
 using System.Windows.Input;
+using FrostySdk.Managers.Entries;
 
 //using System.IO;
 

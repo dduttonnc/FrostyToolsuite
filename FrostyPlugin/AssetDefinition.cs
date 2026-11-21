@@ -1,13 +1,14 @@
 ﻿using Frosty.Core.Attributes;
 using Frosty.Core.Controls;
 using FrostySdk;
-using FrostySdk.Ebx;
 using FrostySdk.Interfaces;
 using FrostySdk.IO;
 using FrostySdk.Managers;
 using System.Collections.Generic;
 using System.IO;
 using System.Windows.Media;
+using FrostySdk.Managers.Entries;
+using FrostySdk.Ebx;
 
 namespace Frosty.Core
 {
@@ -99,6 +100,7 @@ namespace Frosty.Core
         {
             exportTypes.Add(new AssetExportType("bin", "Binary File"));
             exportTypes.Add(new AssetExportType("xml", "XML File"));
+            exportTypes.Add(new AssetExportType("yaml", "YAML File"));
         }
 
         /// <summary>
@@ -157,7 +159,13 @@ namespace Frosty.Core
                 ExportToXml(entry, path);
                 return true;
             }
-            
+
+            if (filterType == "yaml")
+            {
+                ExportToYaml(entry, path);
+                return true;
+            }
+
             if (filterType == "bin")
             {
                 ExportToBin(entry, path);
@@ -187,8 +195,20 @@ namespace Frosty.Core
         private void ExportToXml(EbxAssetEntry entry, string path)
         {
             EbxAsset asset = App.AssetManager.GetEbx(entry);
-            using (EbxXmlWriter writer = new EbxXmlWriter(new FileStream(path, FileMode.Create), App.AssetManager))
-                writer.WriteObjects(asset.Objects);
+            int tabSize = Config.Get<int>("ExportTabSize", 2);
+            bool exportOffsets = Config.Get<bool>("ExportWithOffsets", false);
+            using (EbxXmlWriter writer = new EbxXmlWriter(asset, new FileStream(path, FileMode.Create), App.AssetManager, tabSize, exportOffsets))
+                writer.WriteObjects();
+        }
+
+        // exports the asset to yaml
+        private void ExportToYaml(EbxAssetEntry entry, string path)
+        {
+            EbxAsset asset = App.AssetManager.GetEbx(entry);
+            int tabSize = Config.Get<int>("ExportTabSize", 2);
+            bool exportOffsets = Config.Get<bool>("ExportWithOffsets", false);
+            using (EbxYamlWriter writer = new EbxYamlWriter(asset, new FileStream(path, FileMode.Create), App.AssetManager, tabSize, exportOffsets))
+                writer.WriteObjects();
         }
 
         // exports the asset as raw ebx
@@ -200,11 +220,17 @@ namespace Frosty.Core
                 return;
             }
 
-            if (ProfilesLibrary.EnableExecution)
+            if (ProfilesLibrary.EnableExecution && entry.HasModifiedData)
             {
-                using (EbxBaseWriter writer = EbxBaseWriter.CreateWriter(new MemoryStream()))
+                EbxWriteFlags flags = EbxWriteFlags.None;
+                if (ProfilesLibrary.EbxVersion == 6)
                 {
-                    writer.WriteAsset(App.AssetManager.GetEbx(entry));
+                    flags |= EbxWriteFlags.DoNotSort;
+                }
+
+                using (EbxBaseWriter writer = EbxBaseWriter.CreateWriter(new MemoryStream(), flags))
+                {
+                    writer.WriteAsset(App.AssetManager.GetEbx(entry), App.AssetManager.GetAsset(entry));
                     using (NativeWriter fileWriter = new NativeWriter(new FileStream(path, FileMode.Create, FileAccess.Write)))
                         fileWriter.Write(writer.ToByteArray());
                 }
@@ -225,21 +251,18 @@ namespace Frosty.Core
                 App.Logger.LogError("Cannot Import .bin into asset with handler");
                 return;
             }
-
-            using (EbxReader reader = EbxReader.CreateReader(new FileStream(path, FileMode.Open, FileAccess.Read), App.FileSystem, true))
+            
+            using (EbxReader reader = EbxReader.CreateReader(new FileStream(path, FileMode.Open, FileAccess.Read), App.FileSystemManager, true))
             {
                 EbxAsset newAsset = reader.ReadAsset<EbxAsset>();
-
                 if (dataOnly)
                 {
                     // use guids from original asset
                     EbxAsset origAsset = App.AssetManager.GetEbx(entry);
                     dynamic rootObj = newAsset.RootObject;
-
                     newAsset.SetFileGuid(origAsset.FileGuid);
                     rootObj.SetInstanceGuid(new AssetClassGuid(origAsset.RootInstanceGuid, -1));
                 }
-
                 App.AssetManager.ModifyEbx(entry.Name, newAsset);
             }
         }

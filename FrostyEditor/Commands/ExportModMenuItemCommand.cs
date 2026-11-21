@@ -1,9 +1,9 @@
-﻿using Frosty.Core.Controls;
+﻿using Frosty.Controls;
+using Frosty.Core.Controls;
 using Frosty.Core.Windows;
 using FrostyEditor.Windows;
 using System;
-using System.IO;
-using System.Threading;
+using System.Windows;
 using System.Windows.Input;
 
 namespace FrostyEditor.Commands
@@ -18,10 +18,28 @@ namespace FrostyEditor.Commands
 
         public bool CanExecute(object parameter)
         {
-            return (App.AssetManager != null && App.AssetManager.GetModifiedCount() != 0);
+            //return (App.AssetManager != null && App.AssetManager.GetModifiedCount() != 0);
+            return (App.AssetManager != null);
         }
 
         public void Execute(object parameter)
+        {
+            if (App.AssetManager.GetModifiedCount() == 0)
+            {
+                MessageBoxResult result = FrostyMessageBox.Show("This project file has no modified assets. Do you wish to export anyway?", "Frosty Editor", MessageBoxButton.YesNo);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    ExportMod(parameter);
+                }
+            }
+            else
+            {
+                ExportMod(parameter);
+            }
+        }
+
+        private void ExportMod(object parameter)
         {
             MainWindow mainWin = parameter as MainWindow;
             ModSettingsWindow win = new ModSettingsWindow(mainWin.Project);
@@ -33,27 +51,7 @@ namespace FrostyEditor.Commands
                 if (sfd.ShowDialog())
                 {
                     string filename = sfd.FileName;
-
-                    // setup ability to cancel the process
-                    CancellationTokenSource cancelToken = new CancellationTokenSource();
-
-                    FrostyTaskWindow.Show("Saving Mod", "", (task) =>
-                    {
-                        try
-                        {
-                            mainWin.ExportMod(mainWin.Project.GetModSettings(), filename, false, cancelToken.Token);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            // process was cancelled
-                            App.Logger.Log("Export Cancelled");
-
-                            if (File.Exists(filename))
-                            {
-                                File.Delete(filename);
-                            }
-                        }
-                    }, showCancelButton: true, cancelCallback: (task) => cancelToken.Cancel());
+                    FrostyTaskWindow.Show("Saving Mod", "", (task) => { mainWin.ExportMod(mainWin.Project.GetModSettings(), filename, false); });
                 }
             }
         }

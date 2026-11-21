@@ -15,6 +15,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Diagnostics.Contracts;
 using System.Text;
+using FrostySdk.Managers.Entries;
 
 namespace FsLocalizationPlugin
 {
@@ -150,7 +151,6 @@ namespace FsLocalizationPlugin
         {
             string language = "LanguageFormat_" + Config.Get<string>("Language", "English", ConfigScope.Game);
             App.Logger.Log(language);
-            //string language = "LanguageFormat_" + Config.Get<string>("Init", "Language", "English");
 
             Guid binaryChunk = Guid.Empty;
             Guid histogram = Guid.Empty;
@@ -180,6 +180,7 @@ namespace FsLocalizationPlugin
                         textEntry.AssetModified += (o, e) =>
                         {
                             loadedDatabase = App.AssetManager.GetEbxAs<FsLocalizationAsset>(textEntry);
+
                         };
                         binaryChunk = localizedText.BinaryChunk;
                         histogram = localizedText.HistogramChunk;
@@ -233,12 +234,12 @@ namespace FsLocalizationPlugin
 
         public string GetString(string stringId)
         {
-            return GetString(HashStringId(stringId));
+            return GetString(HashStringId(stringId.ToUpper()));
         }
 
         public uint AddString(string id, string value)
         {
-            uint hash = HashStringId(id);
+            uint hash = HashStringId(id.ToUpper());
 
             loadedDatabase.AddString(hash, value);
             App.AssetManager.ModifyEbx(App.AssetManager.GetEbxEntry(loadedDatabase.FileGuid).Name, loadedDatabase);
@@ -260,7 +261,7 @@ namespace FsLocalizationPlugin
 
         public void SetString(string id, string value)
         {
-            SetString(HashStringId(id), value);
+            SetString(HashStringId(id.ToUpper()), value);
         }
 
         public void AddStringWindow()

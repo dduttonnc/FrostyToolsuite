@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -9,94 +9,131 @@ using FrostySdk;
 using Microsoft.Win32;
 using Frosty.Controls;
 using Frosty.Core;
+using System.Linq;
 
 namespace FrostyEditor.Windows
 {
     /// <summary>
     /// Interaction logic for PrelaunchWindow2.xaml
     /// </summary>
-    public partial class PrelaunchWindow2 : FrostyDockableWindow
+    public partial class PrelaunchWindow2
     {
-        private List<FrostyConfiguration> configs = new List<FrostyConfiguration>();
-        private FrostyConfiguration defaultConfig;
+        private ObservableCollection<FrostyConfiguration> configurations = new ObservableCollection<FrostyConfiguration>();
+        private FrostyConfiguration defaultConfiguration;
 
         public PrelaunchWindow2()
         {
             InitializeComponent();
         }
 
-        private void LaunchConfig(string profile)
+        private void LaunchConfiguration(string profile)
         {
             // load profiles
-            if (!ProfilesLibrary.Initialize(profile))
+            if (!ProfilesLibrary.SelectProfile(profile))
             {
                 FrostyMessageBox.Show("There was an error when trying to load game using specified profile.", "Frosty Editor");
                 Close();
                 return;
             }
+            
+            if (RememberProfileCheckBox.IsChecked == true)
+            {
+                Config.Add("UseDefaultProfile2", true);
+                Config.Add("DefaultProfile2", profile);
+                Config.Save();
+            }
 
-            App.InitDiscordRPC();
-            App.UpdateDiscordRPC("Initializing");
+            App.InitDiscordRpc();
+            App.UpdateDiscordRpc("Initializing");
 
             // launch splash
             SplashWindow splash = new SplashWindow();
-            App.Current.MainWindow = splash;
+            Application.Current.MainWindow = splash;
             splash.Show();
             Close();
         }
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            ModifyConfigurationButton.IsEnabled = false;
+            RemoveConfigurationButton.IsEnabled = false;
+            LaunchConfigurationButton.IsEnabled = false;
+
             RefreshConfigurationList();
 
-            RemoveConfigButton.IsEnabled = false;
-            LaunchConfigButton.IsEnabled = false;
-
-            string defaultConfigName = Config.Get<string>("DefaultProfile", null);
-
-            if (!string.IsNullOrEmpty(defaultConfigName))
+            if (ConfigurationListView.Items.Count == 0)
             {
-                defaultConfig = configs.Find(x => x.ProfileName == defaultConfigName);
+                try
+                {
+                    await ScanGames();
+                    RefreshConfigurationList();
+                }
+                catch
+                {
+                    // do nothing
+                }
             }
 
-            ConfigList.SelectedItem = defaultConfig;
-        }
-
-        private async void LaunchConfigButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (ConfigList.SelectedIndex == -1)
-                return;
-
-            if (ConfigList.SelectedItem is FrostyConfiguration config)
+            if (Config.Get<bool>("UseDefaultProfile2", false))
             {
-                LaunchConfig(config.ProfileName);
-                await Task.Delay(1);
-                Close();
+                string defaultConfigurationName = Config.Get<string>("DefaultProfile2", null);
+
+                if (!string.IsNullOrEmpty(defaultConfigurationName))
+                {
+                    defaultConfiguration = configurations.FirstOrDefault(x => x.ProfileName == defaultConfigurationName);
+
+                    if (defaultConfiguration == null)
+                    {
+                        FrostyMessageBox.Show("There was an error when trying to load game using specified profile.", "Frosty Editor");
+                        return;
+                    }
+                    
+                    await Task.Delay(1);
+                    LaunchConfiguration(defaultConfiguration.ProfileName);
+                    Close();
+                }
             }
-            ConfigList.SelectedIndex = -1;
         }
 
-        private void ConfigList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void LaunchConfigurationButton_OnClick(object sender, RoutedEventArgs e)
         {
-            RemoveConfigButton.IsEnabled = true;
-            LaunchConfigButton.IsEnabled = true;
+            SelectConfiguration();
         }
 
-        private async void ConfigList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void ConfigurationListView_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (ConfigList.SelectedIndex == -1)
-                return;
+            ModifyConfigurationButton.IsEnabled = true;
+            RemoveConfigurationButton.IsEnabled = true;
+            LaunchConfigurationButton.IsEnabled = true;
 
-            if (ConfigList.SelectedItem is FrostyConfiguration config)
+            if (SelectGameTextBlock.IsVisible)
             {
-                LaunchConfig(config.ProfileName);
-                await Task.Delay(1);
-                Close();
+                SelectGameTextBlock.Visibility = Visibility.Collapsed;
             }
-            ConfigList.SelectedIndex = -1;
+
+            if (ConfigurationListView.SelectedItem is FrostyConfiguration configuration)
+            {
+                ProfileNameTextBlock.Text = configuration.GameName;
+                ProfilePathTextBlock.Text = configuration.GamePath;
+            }
+            else
+            {
+                ProfileNameTextBlock.Text = "";
+                ProfilePathTextBlock.Text = "";
+                SelectGameTextBlock.Visibility = Visibility.Visible;
+
+                ModifyConfigurationButton.IsEnabled = false;
+                RemoveConfigurationButton.IsEnabled = false;
+                LaunchConfigurationButton.IsEnabled = false;
+            }
         }
 
-        private void NewConfigButton_Click(object sender, RoutedEventArgs e)
+        private void ConfigurationListView_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            SelectConfiguration();
+        }
+
+        private void AddConfigurationButton_OnClick(object sender, RoutedEventArgs e)
         {
             OpenFileDialog ofd = new OpenFileDialog
             {
@@ -105,7 +142,10 @@ namespace FrostyEditor.Windows
             };
 
             if (ofd.ShowDialog() == false)
+            {
+                FrostyMessageBox.Show("No game executable chosen.", "Frosty Editor");
                 return;
+            }
 
             FileInfo fi = new FileInfo(ofd.FileName);
 
@@ -117,36 +157,30 @@ namespace FrostyEditor.Windows
             }
 
             // make sure config doesnt already exist
-            foreach (FrostyConfiguration config in configs)
+            foreach (FrostyConfiguration configuration in configurations)
             {
-                if (config.ProfileName == fi.Name.Remove(fi.Name.Length - 4))
+                if (configuration.ProfileName == fi.Name.Remove(fi.Name.Length - 4))
                 {
-                    FrostyMessageBox.Show("That game already has a configuration.");
+                    FrostyMessageBox.Show($"{configuration.GameName} already has a profile.", "Frosty Editor");
                     return;
                 }
             }
 
-            if (ProfilesLibrary.ContainsEAC)
-                FrostyMessageBox.Show("This game contains EasyAntiCheat and cannot automatically generate an sdk. We will not support nor assist anyone who attempts to bypass it.", "Warning");
-
             // create
             Config.AddGame(fi.Name.Remove(fi.Name.Length - 4), fi.DirectoryName);
-            configs.Add(new FrostyConfiguration(fi.Name.Remove(fi.Name.Length - 4)));
+            configurations.Add(new FrostyConfiguration(fi.Name.Remove(fi.Name.Length - 4)));
             Config.Save();
 
-            ConfigList.Items.Refresh();
+            ConfigurationListView.Items.Refresh();
         }
 
-        private void ScanForGamesButton_Click(object sender, RoutedEventArgs e)
+        private void ScanButton_OnClick(object sender, RoutedEventArgs e)
         {
-            using (RegistryKey lmKey = Registry.LocalMachine.OpenSubKey("SOFTWARE\\WOW6432Node"))
+            ScanGames().ContinueWith(t =>
             {
-                int totalCount = 0;
-
-                IterateSubKeys(lmKey, ref totalCount);
-            }
-
-            ConfigList.Items.Refresh();
+                // Refresh the configuration list after scanning is done
+                RefreshConfigurationList();
+            });
         }
 
         private void IterateSubKeys(RegistryKey subKey, ref int totalCount)
@@ -157,9 +191,9 @@ namespace FrostyEditor.Windows
                 {
                     IterateSubKeys(subKey.OpenSubKey(subKeyName), ref totalCount);
                 }
-                catch (System.Exception)
+                catch (System.Security.SecurityException)
                 {
-                    continue;
+                    // do nothing
                 }
             }
 
@@ -180,14 +214,17 @@ namespace FrostyEditor.Windows
 
                         if (ProfilesLibrary.HasProfile(nameWithoutExt))
                         {
-                            foreach (FrostyConfiguration config in configs)
+                            Application.Current.Dispatcher.Invoke(() =>
                             {
-                                if (config.ProfileName == fi.Name.Remove(fi.Name.Length - 4))
-                                    return;
-                            }
+                                foreach (FrostyConfiguration configuration in configurations)
+                                {
+                                    if (configuration.ProfileName == fi.Name.Remove(fi.Name.Length - 4))
+                                        return;
+                                }
 
-                            Config.AddGame(fi.Name.Remove(fi.Name.Length - 4), fi.DirectoryName);
-                            configs.Add(new FrostyConfiguration(fi.Name.Remove(fi.Name.Length - 4)));
+                                Config.AddGame(fi.Name.Remove(fi.Name.Length - 4), fi.DirectoryName);
+                                configurations.Add(new FrostyConfiguration(fi.Name.Remove(fi.Name.Length - 4)));
+                            });
 
                             totalCount++;
                         }
@@ -196,40 +233,142 @@ namespace FrostyEditor.Windows
             }
         }
 
-        private void RemoveConfigButton_Click(object sender, RoutedEventArgs e)
+        private void RemoveConfigurationButton_OnClick(object sender, RoutedEventArgs e)
         {
-            if (FrostyMessageBox.Show("Are you sure you want to delete this configuration?", "Frosty Editor", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+            if (FrostyMessageBox.Show("Are you sure you want to remove this profile?", "Frosty Editor", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
             {
-                FrostyConfiguration selectedItem = ConfigList.SelectedItem as FrostyConfiguration;
+                FrostyConfiguration selectedItem = ConfigurationListView.SelectedItem as FrostyConfiguration;
 
                 Config.RemoveGame(selectedItem.ProfileName);
 
-                configs.Remove(selectedItem);
-                ConfigList.Items.Refresh();
+                configurations.Remove(selectedItem);
+                ConfigurationListView.Items.Refresh();
 
-                ConfigList.SelectedIndex = 0;
+                ConfigurationListView.SelectedIndex = -1;
                 Config.Save();
             }
         }
 
+        private void ModifyConfigurationButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            if (FrostyMessageBox.Show("Are you sure you want to change the game path for this profile?", "Frosty Editor", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+            {
+                FrostyConfiguration selectedItem = ConfigurationListView.SelectedItem as FrostyConfiguration;
+
+                ChangeGamePath(selectedItem.ProfileName, selectedItem.GameName);
+            }
+        }
+        
         private void RefreshConfigurationList()
         {
-            configs.Clear();
-
-            foreach (string profile in Config.GameProfiles)
+            Dispatcher.Invoke(() =>
             {
-                try
+                configurations.Clear();
+
+                foreach (string profile in Config.GameProfiles)
                 {
-                    configs.Add(new FrostyConfiguration(profile));
+                    try
+                    {
+                        configurations.Add(new FrostyConfiguration(profile));
+                    }
+                    catch (FileNotFoundException)
+                    {
+                        string displayName = ProfilesLibrary.GetProfileDisplayName(profile);
+                        
+                        MessageBoxResult result = FrostyMessageBox.Show($"{displayName} could not be found\n\nDo you want to remove this profile?\n\nSelecting 'No' will allow you to choose another location.", "Missing Profile", MessageBoxButton.YesNoCancel);
+
+                        if (result == MessageBoxResult.Yes)
+                        {
+                            Config.RemoveGame(profile);
+                            Config.Save();
+                        }
+                        else if (result == MessageBoxResult.No)
+                        {
+                            ChangeGamePath(profile, displayName);
+                        }
+                    }
                 }
-                catch (System.IO.FileNotFoundException)
-                {
-                    Config.RemoveGame(profile); // couldn't find the exe, so remove it from the profile list
-                    Config.Save();
-                }
+
+                ConfigurationListView.ItemsSource = configurations;
+            });
+        }
+
+        private void ChangeGamePath(string profile, string displayName)
+        {
+            OpenFileDialog ofd = new OpenFileDialog
+            {
+                Filter = $"*.exe (Game Executable)|{profile}.exe",
+                Title = $"Choose {displayName} Game Executable"
+            };
+
+            if (ofd.ShowDialog() == false)
+            {
+                FrostyMessageBox.Show("No game executable chosen.", "Frosty Editor");
+                return;
             }
 
-            ConfigList.ItemsSource = configs;
+            FileInfo fi = new FileInfo(ofd.FileName);
+
+            // try to load game profile
+            if (!ProfilesLibrary.HasProfile(profile))
+            {
+                FrostyMessageBox.Show("There was an error when trying to load game using specified profile.", "Frosty Editor");
+                return;
+            }
+            
+            Config.Add("GamePath", fi.DirectoryName, ConfigScope.Game, profile);
+            Config.Save();
+            
+            RefreshConfigurationList();
+        }
+        
+        private void SelectConfiguration()
+        {
+            if (ConfigurationListView.SelectedIndex == -1)
+                return;
+
+            if (ConfigurationListView.SelectedItem is FrostyConfiguration configuration)
+            {
+                string version = Frosty.Core.App.Version;
+
+                // [DAI fix] DAI is supported again
+                if (configuration.ProfileName == "Dragon Age The Veilguard" || configuration.ProfileName == "DragonAgeInquisition")
+                {
+                    LaunchConfiguration(configuration.ProfileName);
+                    Close();
+                }
+                else
+                {
+                    if (FrostyMessageBox.Show($"{configuration.GameName} is not supported.\n\nThis release only has support for Dragon Age\u2122: Inquisition and Dragon Age\u2122: The Veilguard\n\nDo you wish to continue anyway?", "Unsupported Profile", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                    {
+                        LaunchConfiguration(configuration.ProfileName);
+                        Close();
+                    }
+                }
+            }
+            ConfigurationListView.SelectedIndex = -1;
+        }
+
+        private async Task ScanGames()
+        {
+            ScanButton.IsEnabled = false;
+
+            await Task.Run((() =>
+            {
+                using (RegistryKey lmKey = Registry.LocalMachine.OpenSubKey("SOFTWARE\\WOW6432Node"))
+                {
+                    int totalCount = 0;
+
+                    IterateSubKeys(lmKey, ref totalCount);
+                }
+            }));
+
+            ScanButton.IsEnabled = true;
+        }
+
+        private void CancelButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            Close();
         }
     }
 }

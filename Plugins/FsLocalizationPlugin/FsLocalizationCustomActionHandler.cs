@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using FrostySdk.Managers.Entries;
 
 namespace FsLocalizationPlugin
 {
@@ -93,32 +94,29 @@ namespace FsLocalizationPlugin
             dynamic localizedText = ebxAsset.RootObject;
 
             ChunkAssetEntry chunkEntry = am.GetChunkEntry(localizedText.BinaryChunk);
-            ChunkAssetEntry histogramEntry = am.GetChunkEntry(localizedText.HistogramChunk);
-            
-            if (chunkEntry != null && histogramEntry != null)
-            {
-                ChunkAssetEntry newChunkEntry = new ChunkAssetEntry();
+            ChunkAssetEntry HistogramEntry = am.GetChunkEntry(localizedText.HistogramChunk);
 
-                byte[] histogramData = NativeReader.ReadInStream(am.GetChunk(histogramEntry));
-                List<char> values = ModifyHistogram(histogramData, modFs);
+            byte[] buf2 = NativeReader.ReadInStream(am.GetChunk(HistogramEntry));
+            List<char> values = ModifyHistogram(buf2, modFs);
 
-                byte[] buf = NativeReader.ReadInStream(am.GetChunk(chunkEntry));
-                buf = ModifyChunk(buf, modFs, values);
+            byte[] buf = NativeReader.ReadInStream(am.GetChunk(chunkEntry));
+            buf = ModifyChunk(buf, modFs, values);
 
-                localizedText.BinaryChunkSize = (uint)buf.Length;
-                newChunkEntry.LogicalSize = (uint)buf.Length;
-                buf = Utils.CompressFile(buf);
+            // create new chunk entry so we can create a new runtime resource, this chunk is not actually added
+            ChunkAssetEntry newChunkEntry = new ChunkAssetEntry();
 
-                newChunkEntry.Id = chunkEntry.Id;
-                newChunkEntry.Sha1 = Utils.GenerateSha1(buf);
-                newChunkEntry.Size = buf.Length;
-                newChunkEntry.H32 = Fnv1.HashString(origEntry.Name.ToLower());
-                newChunkEntry.FirstMip = -1;
-                newChunkEntry.IsTocChunk = true;
+            localizedText.BinaryChunkSize = (uint)buf.Length;
+            newChunkEntry.LogicalSize = (uint)buf.Length;
+            buf = Utils.CompressFile(buf);
 
-                runtimeResources.AddResource(new RuntimeChunkResource(newChunkEntry), buf);
-            }
-            
+            newChunkEntry.Id = chunkEntry.Id;
+            newChunkEntry.Sha1 = Utils.GenerateSha1(buf);
+            newChunkEntry.Size = buf.Length;
+            newChunkEntry.H32 = Fnv1.HashString(origEntry.Name.ToLower());
+            newChunkEntry.FirstMip = -1;
+
+            runtimeResources.AddResource(new RuntimeChunkResource(newChunkEntry), buf);
+
             using (EbxBaseWriter writer = EbxBaseWriter.CreateWriter(new MemoryStream()))
             {
                 writer.WriteAsset(ebxAsset);

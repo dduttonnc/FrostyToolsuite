@@ -16,6 +16,7 @@
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
+    <PathMap>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)'))=$(MSBuildProjectName)</PathMap>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Developer - Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
@@ -59,10 +60,6 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\FrostyEditor\ThirdParty\Newtonsoft.Json.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="SharpDX">
@@ -102,6 +99,8 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml.Linq" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <Reference Include="System.Data" />
@@ -131,18 +130,31 @@
     <Compile Include="Attributes\RegisterStartupActionAttribute.cs" />
     <Compile Include="Attributes\RegisterTabExtensionAttribute.cs" />
     <Compile Include="Attributes\RegisterThirdPartyDllAttribute.cs" />
+    <Compile Include="Attributes\RegisterToolbarExtensionAttribute.cs" />
     <Compile Include="Attributes\RegisterTypeOverrideAttribute.cs" />
     <Compile Include="Attributes\RegisterUserShaderAttribute.cs" />
+    <Compile Include="CodingStandards\FrostyCodingStandards.cs" />
+    <Compile Include="Controls\FrostyBaseAssetEditor.cs" />
     <Compile Include="Controls\FrostyExceptionBox.cs" />
+    <Compile Include="Controls\FrostyNotification.cs" />
     <Compile Include="Controls\VirtualizingTilePanel.cs" />
     <Compile Include="Converters\AssetEntryToBitmapSourceConverter.cs" />
     <Compile Include="Converters\VisibilityToBooleanConverter.cs" />
     <Compile Include="Extensions\DataExplorerContextMenuExtension.cs" />
     <Compile Include="Extensions\ExecutionAction.cs" />
     <Compile Include="Extensions\StartupAction.cs" />
+    <Compile Include="Extensions\TextExtension.cs" />
+    <Compile Include="Extensions\ToolbarExtension.cs" />
     <Compile Include="FrostyConfiguration.cs" />
     <Compile Include="FrostyLogger.cs" />
+    <Compile Include="FrostyProfileTaskWindowLogger.cs" />
     <Compile Include="FrostyTaskLogger.cs" />
+    <Compile Include="Legacy\LegacyFileManagerV2.cs" />
+    <Compile Include="Managers\NotificationManager.cs" />
+    <Compile Include="Managers\UndoManager.cs" />
+    <Compile Include="Misc\FrostyTimer.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Mod\FrostyModCollection.cs" />
     <Compile Include="Mod\FrostyModRequirement.cs" />
     <Compile Include="Extensions\TabExtension.cs" />
@@ -164,6 +176,7 @@
     <Compile Include="Mod\IFrostyMod.cs" />
     <Compile Include="Mod\ILegacyCustomHandler.cs" />
     <Compile Include="Mod\IModCustomHandler.cs" />
+    <Compile Include="Mod\InitFsResource.cs" />
     <Compile Include="Mod\IResourceContainer.cs" />
     <Compile Include="Mod\ModResourceType.cs" />
     <Compile Include="Mod\ModSettings.cs" />
@@ -172,13 +185,28 @@
     <Compile Include="Mod\RuntimeEbxResource.cs" />
     <Compile Include="Mod\RuntimeResources.cs" />
     <Compile Include="Mod\RuntimeResResource.cs" />
-    <Compile Include="Plugin.cs" />
-    <Compile Include="PluginLoadStatus.cs" />
-    <Compile Include="PluginLoadType.cs" />
-    <Compile Include="PluginManagerType.cs" />
-    <Compile Include="ShaderDefinition.cs" />
+    <Compile Include="Sdk\FBTypes\Bf2042.cs" />
     <Compile Include="TypeExtensions.cs" />
-    <Compile Include="Utils\UpdateChecker.cs" />
+    <Compile Include="Utils\HalfUtils.cs" />
+    <Compile Include="Utils\UpdateCheckerUtils.cs" />
+    <Compile Include="Windows\UpdateCheckerWindow.xaml.cs">
+      <DependentUpon>UpdateCheckerWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Windows\AboutWindow.xaml.cs">
+      <DependentUpon>AboutWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Windows\FrostyProfileSelectWindow.xaml.cs">
+      <DependentUpon>FrostyProfileSelectWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Windows\FrostyProfileTaskWindow.xaml.cs">
+      <DependentUpon>FrostyProfileTaskWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Windows\KeyPromptWindow.xaml.cs">
+      <DependentUpon>KeyPromptWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Windows\ManageModDataWindow.xaml.cs">
+      <DependentUpon>ManageModDataWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Windows\OptionsWindow.xaml.cs">
       <DependentUpon>OptionsWindow.xaml</DependentUpon>
     </Compile>
@@ -203,6 +231,7 @@
     <Compile Include="Controls\Editors\FrostyCStringEditor.cs" />
     <Compile Include="Controls\Editors\FrostyCustomComboDataEditor.cs" />
     <Compile Include="Controls\Editors\FrostyEnumEditor.cs" />
+    <Compile Include="Controls\Editors\FrostyFolderPathEditor.cs" />
     <Compile Include="Controls\Editors\FrostyGuidEditor.cs" />
     <Compile Include="Controls\Editors\FrostyImagePathEditor.cs" />
     <Compile Include="Controls\Editors\FrostyLinearTransformEditor.cs" />
@@ -233,7 +262,6 @@
     <Compile Include="Converters\StringToPathDataConverter.cs" />
     <Compile Include="Converters\TreeViewListSortConverter.cs" />
     <Compile Include="FrostyProject.cs" />
-    <Compile Include="HalfUtils.cs" />
     <Compile Include="Handlers\LegacyCustomActionHandler.cs" />
     <Compile Include="Interfaces\IEditorWindow.cs" />
     <Compile Include="Legacy\LegacyFileEntry.cs" />
@@ -243,7 +271,7 @@
     <Compile Include="Misc\CustomComboData.cs" />
     <Compile Include="Mod\FrostyMod.cs" />
     <Compile Include="Mod\FrostyModDetails.cs" />
-    <Compile Include="PluginManager.cs" />
+    <Compile Include="Managers\PluginManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RelayCommand.cs" />
     <Compile Include="RenderDoc.cs" />
@@ -266,6 +294,9 @@
     </Compile>
     <Compile Include="Windows\FrostyTaskWindow.xaml.cs">
       <DependentUpon>FrostyTaskWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Windows\PatchSummaryWindow.xaml.cs">
+      <DependentUpon>PatchSummaryWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Windows\RenameInstanceWindow.xaml.cs">
       <DependentUpon>RenameInstanceWindow.xaml</DependentUpon>
@@ -292,6 +323,31 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="Themes\Controls\Notification.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Windows\UpdateCheckerWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Windows\AboutWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Windows\FrostyProfileSelectWindow.xaml" />
+    <Page Include="Windows\FrostyProfileTaskWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Windows\KeyPromptWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Windows\ManageModDataWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Windows\OptionsWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -316,6 +372,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Windows\PatchSummaryWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Windows\RenameInstanceWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -332,6 +392,7 @@
     <Resource Include="Images\Clear.png" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Images\More.png" />
     <Resource Include="Images\Rename.png" />
   </ItemGroup>
   <ItemGroup>
@@ -420,6 +481,27 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Images\Assets\StatFileType.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Sdk\Anthem-Strings.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Sdk\Bf2042-Strings.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="AppIcon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\Open.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\Remove.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Credits.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="CreditsFMM.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

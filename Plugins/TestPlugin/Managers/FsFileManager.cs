@@ -1,6 +1,8 @@
 ﻿using Frosty.Core;
 using Frosty.Hash;
+using FrostySdk;
 using FrostySdk.Interfaces;
+using FrostySdk.IO;
 using FrostySdk.Managers;
 using System;
 using System.Collections.Generic;
@@ -8,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FrostySdk.Managers.Entries;
 
 namespace TestPlugin.Managers
 {
@@ -51,21 +54,37 @@ namespace TestPlugin.Managers
 
         public Stream GetAsset(AssetEntry entry)
         {
-            throw new NotImplementedException();
+            if (entry != null)
+            {
+                byte[] buf = null;
+                if (entry.ModifiedEntry != null)
+                {
+                    DbObject dbObject = entry.ModifiedEntry.DataObject as DbObject;
+                    buf = dbObject.GetValue<DbObject>("$file").GetValue<byte[]>("payload");
+                }
+                else
+                    buf = App.FileSystemManager.GetFileFromMemoryFs(entry.Name);
+
+                return new MemoryStream(buf);
+            }
+            else
+                return null;
         }
 
         public AssetEntry GetAssetEntry(string key)
         {
-            throw new NotImplementedException();
+            return entries.ContainsKey(Fnv1.HashString(key)) ? entries[Fnv1.HashString(key)] : null;
         }
+
+        public bool ShouldInitializeOnStartup => true;
 
         public void Initialize(ILogger logger)
         {
-            logger.Log("Loading fs Files");
+            logger.Log("Loading fs files");
 
-            uint totalCount = App.FileSystem.GetFsCount();
+            uint totalCount = App.FileSystemManager.GetFsCount();
             uint index = 0;
-            foreach (string fsFileName in App.FileSystem.EnumerateFilesInMemoryFs())
+            foreach (string fsFileName in App.FileSystemManager.EnumerateFilesInMemoryFs())
             {
                 uint progress = (uint)((index / (float)totalCount) * 100);
                 logger.Log("progress:" + progress);
@@ -79,7 +98,18 @@ namespace TestPlugin.Managers
 
         public void ModifyAsset(string key, byte[] data)
         {
-            throw new NotImplementedException();
+            int hash = Fnv1.HashString(key);
+            if (!entries.ContainsKey(hash))
+                return;
+
+            FsFileEntry entry = entries[hash];
+
+            if (entry.ModifiedEntry == null)
+                entry.ModifiedEntry = new ModifiedAssetEntry();
+
+            using (DbReader reader = new DbReader(new MemoryStream(data), null))
+                entry.ModifiedEntry.DataObject = reader.ReadDbObject();
+            entry.IsDirty = true;
         }
 
         public void OnCommand(string command, params object[] value)

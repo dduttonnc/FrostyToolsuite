@@ -9,6 +9,7 @@ using System.Windows.Media;
 using Frosty.Core.Windows;
 using Frosty.Core.Controls;
 using FrostySdk.Interfaces;
+using FrostySdk.Managers.Entries;
 using MeshSetPlugin.Resources;
 using MeshSetPlugin.Editors;
 
@@ -40,9 +41,15 @@ namespace MeshSetPlugin
 
         [DisplayName("Flatten Hierarchy (Blender)")]
         public bool FlattenHierarchy { get; set; }
+
+        [DisplayName("Export Single LOD")]
         public bool ExportSingleLod { get; set; }
+
         [DisplayName("Export Additional Meshes")]
         public bool ExportAdditionalMeshes { get; set; }
+        
+        [DisplayName("Export Depth/Shadow Meshes")]
+        public bool ExportNonRenderable { get; set; }
     }
 
     public class SkinnedMeshExportSettings : MeshExportSettings
@@ -108,22 +115,20 @@ namespace MeshSetPlugin
             bool flattenHierarchy = Config.Get<bool>("MeshSetExportFlattenHierarchy", false, ConfigScope.Game);
             bool exportSingleLod = Config.Get<bool>("MeshSetExportExportSingleLod", false, ConfigScope.Game);
             bool exportAdditionalMeshes = Config.Get<bool>("MeshSetExportExportAdditionalMeshes", false, ConfigScope.Game);
+            bool exportNonRenderable = Config.Get<bool>("MeshSetExportExportNonRenderable", false, ConfigScope.Game);
             string skeleton = Config.Get<string>("MeshSetExportSkeleton", "", ConfigScope.Game);
-
-            //string Version = Config.Get<string>("MeshSetExport", "Version", "FBX_2012");
-            //string Scale = Config.Get<string>("MeshSetExport", "Scale", "Centimeters");
-            //bool flattenHierarchy = Config.Get<bool>("MeshSetExport", "FlattenHierarchy", false);
-            //bool exportAdditionalMeshes = Config.Get<bool>("MeshSetExport", "ExportAdditionalMeshes", false);
-            //string skeleton = Config.Get<string>("MeshSetExport", "Skeleton", "");
 
             settings.Version = (MeshExportVersion)Enum.Parse(typeof(MeshExportVersion), Version);
             settings.Scale = (MeshExportScale)Enum.Parse(typeof(MeshExportScale), Scale);
             settings.FlattenHierarchy = flattenHierarchy;
             settings.ExportSingleLod = exportSingleLod;
             settings.ExportAdditionalMeshes = exportAdditionalMeshes;
+            settings.ExportNonRenderable = exportNonRenderable;
 
             if (settings is SkinnedMeshExportSettings exportSettings)
+            {
                 exportSettings.SkeletonAsset = skeleton;
+            }
 
             outSettings = settings;
             return FrostyImportExportBox.Show<MeshExportSettings>("Mesh Export Settings", FrostyImportExportType.Export, settings) == MessageBoxResult.OK;
@@ -143,12 +148,14 @@ namespace MeshSetPlugin
             // get skeleton (if required)
             string skeleton = "";
             if (meshSet.Type == MeshType.MeshType_Skinned)
+            {
                 skeleton = ((SkinnedMeshExportSettings)settings).SkeletonAsset;
+            }
 
             FrostyTaskWindow.Show("Exporting MeshSet", "", (task) =>
             {
                 FBXExporter exporter = new FBXExporter(task);
-                exporter.ExportFBX(meshAsset, path, settings.Version.ToString().Replace("FBX_", ""), settings.Scale.ToString(), settings.FlattenHierarchy, settings.ExportSingleLod, skeleton, (filterType == "fbx") ? "binary" : "obj", meshSet);
+                exporter.ExportFBX(meshAsset, path, settings.Version.ToString().Replace("FBX_", ""), settings.Scale.ToString(), settings.FlattenHierarchy, settings.ExportSingleLod, settings.ExportNonRenderable, skeleton, (filterType == "fbx") ? "binary" : "obj", meshSet);
             });
         }
 
@@ -159,15 +166,12 @@ namespace MeshSetPlugin
             Config.Add("MeshSetExportFlattenHierarchy", settings.FlattenHierarchy, ConfigScope.Game);
             Config.Add("MeshSetExportExportSingleLod", settings.ExportSingleLod, ConfigScope.Game);
             Config.Add("MeshSetExportExportAdditionalMeshes", settings.ExportAdditionalMeshes, ConfigScope.Game);
-
-            //Config.Add("MeshSetExport", "Version", settings.Version.ToString());
-            //Config.Add("MeshSetExport", "Scale", settings.Scale.ToString());
-            //Config.Add("MeshSetExport", "FlattenHierarchy", settings.FlattenHierarchy);
-            //Config.Add("MeshSetExport", "ExportAdditionalMeshes", settings.ExportAdditionalMeshes);
+            Config.Add("MeshSetExportExportNonRenderable", settings.ExportNonRenderable, ConfigScope.Game);
 
             if (settings is SkinnedMeshExportSettings exportSettings)
+            {
                 Config.Add("MeshSetExportSkeleton", exportSettings.SkeletonAsset, ConfigScope.Game);
-            //Config.Add("MeshSetExport", "Skeleton", exportSettings.SkeletonAsset);
+            }
 
             Config.Save();
         }

@@ -11,6 +11,7 @@ using Frosty.Core.Controls;
 using Frosty.Core.Windows;
 using Frosty.Core;
 using System.Windows.Media;
+using FrostySdk.Managers.Entries;
 
 namespace DelayLoadBundlePlugin
 {
@@ -81,7 +82,7 @@ namespace DelayLoadBundlePlugin
             if (selectedItem == null)
                 return;
 
-            Clipboard.SetText(selectedItem.Hash.ToString());
+            FrostyClipboard.Current.SetText(selectedItem.Hash.ToString());
         }
 
         GridViewColumnHeader lastSortHeader;

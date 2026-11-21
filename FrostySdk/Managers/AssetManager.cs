@@ -7,418 +7,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using FrostySdk.Managers.Entries;
+using FrostySdk.BaseProfile;
 
 namespace FrostySdk.Managers
 {
-    public enum ResourceType : uint
-    {
-        Texture = 0x6BDE20BA,
-        PcaComponentWeightsResource = 0x8D9E6F01,
-        AtlasTexture = 0x957C32B1,
-        MeshSet = 0x49B156D4,
-        IShaderDatabase = 0x36F3F2C0,
-        EAClothAssetData = 0x85AC783D,
-        MeshAdjancencyResource = 0xBA02FEE0,
-        MorphTargetsResource = 0x1091C8C5,
-        EAClothEntityData = 0x85EA8656,
-        FaceFxResource = 0x59C79990,
-        HavokPhysicsData = 0x91043F65,
-        OccluderMesh = 0x30B4A553,
-        EnlightenDatabase = 0x70C5CB3E,
-        EnlightenStaticDatabase = 0xC6CD3286,
-        LargeParticleCloud = 0xAD1AC4FD,
-        Dx11ShaderProgramDatabase = 0xF04F0C81,
-        RenderTexture = 0x41D57E10,
-        UITtfFontFile = 0x9D00966A,
-        AssetBank = 0x51A3C853,
-        IesResource = 0x0DEAFE10,
-        MorphResource = 0xEB228507,
-        PlayerPresetResource = 0x52EE0D39,
-        TerrainDecals = 0x15E1F32E,
-        TerrainLayerCombinations = 0xA23E75DB,
-        VisualTerrain = 0x1CA38E06,
-        TerrainStreamingTree = 0x22FE8AC8,
-        ZoneStreamerGrid = 0xEFC70728,
-        CompiledLuaResource = 0xAFECB022,
-        LinearMediaAsset = 0x86521D6C,
-        EnlightenShaderDatabase = 0x59CEEB57,
-        AnimTrackData = 0xD070EED1,
-        LocalizedStringResource = 0x5E862E05,
-        GtsoLut = 0xCB8BCD07,
-        MeshEmitterResource = 0xC611F34A,
-        EAClothData = 0x387CA0AD,
-        PamReplayResource = 0xC664A660,
-        HavokClothPhysicsData = 0xE36F0D59,
-        HeightfieldDecal = 0x9C4FAA17,
-        DxTexture = 0x5C4954A6,
-        DelayLoadBundleResource = 0x76742DC8,
-        MorphMaterialResource = 0x24A019CC,
-        RagdollResource = 0x319D8CD0,
-        SwfMovie = 0x2D47A5FF,
-        DxShaderProgramDatabase = 0x10F0E5A1,
-        BundleRefTableResource = 0x428EC9D4,
-        FifaPhysicsResourceData = 0xEF23407C,
-        NewWaveResource = 0xB2C465F6,
-        EnlightenShaderDatabaseResource = 0xB15AD3FD,
-        SvgImage = 0x89983F10,
-        RawFileData = 0x3568E2B7,
-        PhysicsResource = 0x41759364,
-        PersistenceDefRuntimeResource = 0x0EE85483,
-        ScenarioDefRuntimeResource = 0x2EEC1D7A,
-        SerializedExpressionNodeGraph = 0x7DD4CC89,
-        MeshComputeFaceAdjacencyResource = 0x0EDE7594,
-        MeshComputeIndexBufferResource = 0x2C3E1E37,
-        MeshComputeMeshDefinitionResource = 0x81F0E34F,
-        AntResource = 0xEC1B7BF4,
-        Dx12PcRvmDatabase = 0x6B4B6E85,
-        Dx12NvRvmDatabase = 0x50E8E7EE,
-        Dx11NvRvmDatabase = 0xF7CC814D,
-        Dx11RvmDatabase = 0x8DA16895,
-        PathfindingRuntimeResource = 0x4B803D3B,
-        AtlasGroupResource = 0x1445F2DB,
-        EmitterGraphResource = 0x78791C75,
-        RaceGroundTextureResource = 0xD41D60,
-        MetaMorphTargetMeshResourceAsset = 0x39173AB8,
-        FootballMetaMorphVertexRegionWeightsResource = 0x59BBF1E8,
-        FootballMetaMorphMeshDeltaPositionsResource = 0x4C4D624A,
-        PSDResource = 0x3B9D1688,
-        CompressedClipData = 0x85548684,
-        ShaderBlockDepotAsset = 0xDDB3E17F,
-        CompiledBytecode = 0xE2B02F7,
-        ShaderBlockDepot = 0xD8F5DAAF,
-        Invalid = 0xFFFFFFFF
-    }
-
-    public enum AssetDataLocation
-    {
-        Cas,
-        SuperBundle,
-        Cache,
-        CasNonIndexed
-    }
-
-    public enum BundleType
-    {
-        None = -1,
-        SubLevel,
-        BlueprintBundle,
-        SharedBundle
-    }
-
-    public class SuperBundleEntry
-    {
-        public string Name;
-        public bool Added;
-    }
-
-    public class BundleEntry
-    {
-        public string DisplayName => Name;
-
-        public string Name;
-        public int SuperBundleId;
-        public EbxAssetEntry Blueprint;
-        public BundleType Type;
-        public bool Added;
-    }
-
-    public class AssetExtraData
-    {
-        public Sha1 BaseSha1;
-        public Sha1 DeltaSha1;
-        public long DataOffset;
-        public int SuperBundleId;
-        public bool IsPatch;
-        public string CasPath = "";
-    }
-
-    public class AssetEntry
-    {
-        public virtual string Name { get; set; }
-        public virtual string Type { get; set; }
-        public virtual string AssetType { get; }
-
-        public virtual string DisplayName => Filename + ((IsDirty) ? "*" : "");
-        public virtual string Filename
-        {
-            get
-            {
-                int id = Name.LastIndexOf('/');
-                return id == -1 ? Name : Name.Substring(id + 1);
-            }
-        }
-        public virtual string Path
-        {
-            get
-            {
-                int id = Name.LastIndexOf('/');
-                return id == -1 ? "" : Name.Substring(0, id);
-            }
-        }
-
-        public Sha1 Sha1;
-        public Sha1 BaseSha1;
-
-        public long Size;
-        public long OriginalSize;
-        public bool IsInline;
-        public AssetDataLocation Location;
-        public AssetExtraData ExtraData;
-
-        public List<int> Bundles = new List<int>();
-        public List<int> AddedBundles = new List<int>();
-        public List<int> RemBundles = new List<int>();
-
-        public ModifiedAssetEntry ModifiedEntry;
-        public List<AssetEntry> LinkedAssets = new List<AssetEntry>();
-
-        /// <summary>
-        /// returns true if this asset was added
-        /// </summary>
-        public bool IsAdded { get; set; }
-
-        /// <summary>
-        /// returns true if this asset or any asset linked to it is modified
-        /// </summary>
-        public virtual bool IsModified => IsDirectlyModified || IsIndirectlyModified;
-
-        /// <summary>
-        /// returns true if this asset (and only this asset) is modified
-        /// </summary>
-        public bool IsDirectlyModified => ModifiedEntry != null || AddedBundles.Count != 0 || RemBundles.Count != 0;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public bool HasModifiedData => ModifiedEntry != null && (ModifiedEntry.Data != null || ModifiedEntry.DataObject != null);
-
-        /// <summary>
-        /// returns true if this asset is considered modified through another linked asset
-        /// ie. An ebx would be considered modified if its linked resource has been modified
-        /// </summary>
-        public bool IsIndirectlyModified
-        {
-            get
-            {
-                foreach (AssetEntry entry in LinkedAssets)
-                {
-                    if (entry.IsModified)
-                        return true;
-                }
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// returns true if this asset, or any asset linked to it is dirty
-        /// </summary>
-        public virtual bool IsDirty
-        {
-            get
-            {
-                if (dirty)
-                    return true;
-
-                foreach (AssetEntry entry in LinkedAssets)
-                {
-                    if (entry.IsDirty)
-                        return true;
-                }
-                return false;
-            }
-            set
-            {
-                if (dirty != value)
-                {
-                    dirty = value;
-                    if (dirty)
-                        OnModified();
-                }
-            }
-        }
-        private bool dirty;
-
-        /// <summary>
-        /// Links the current asset to another
-        /// </summary>
-        public void LinkAsset(AssetEntry assetToLink)
-        {
-            if (!LinkedAssets.Contains(assetToLink))
-                LinkedAssets.Add(assetToLink);
-
-            if (assetToLink is ChunkAssetEntry entry)
-            {
-                if (entry.HasModifiedData)
-                {
-                    // store the res/ebx name in the chunk
-                    entry.ModifiedEntry.H32 = Fnv1.HashString(Name.ToLower());
-                }
-                else
-                {
-                    // asset was added to bundle (so no ModifiedEntry)
-                    entry.H32 = Fnv1.HashString(Name.ToLower());
-                }
-            }
-        }
-
-        /// <summary>
-        /// Adds the current asset to the specified bundle
-        /// </summary>
-        public virtual bool AddToBundle(int bid)
-        {
-            if (IsInBundle(bid))
-                return false;
-
-            AddedBundles.Add(bid);
-            IsDirty = true;
-
-            return true;
-        }
-
-        /// <summary>
-        /// Adds the current asset to the specified bundles
-        /// </summary>
-        public bool AddToBundles(IEnumerable<int> bundles)
-        {
-            bool added = false;
-            foreach (int bid in bundles)
-            {
-                if (!Bundles.Contains(bid) && !AddedBundles.Contains(bid))
-                {
-                    AddedBundles.Add(bid);
-                    IsDirty = true;
-                    added = true;
-                }
-            }
-
-            return added;
-        }
-
-        /// <summary>
-        /// Returns true if asset is in the specified bundle
-        /// </summary>
-        public bool IsInBundle(int bid) => Bundles.Contains(bid) || AddedBundles.Contains(bid);
-
-        /// <summary>
-        /// Iterates through all bundles that the asset is a part of
-        /// </summary>
-        public IEnumerable<int> EnumerateBundles(bool addedOnly = false)
-        {
-            if (!addedOnly)
-            {
-                for (int i = 0; i < Bundles.Count; i++)
-                {
-                    if (!RemBundles.Contains(Bundles[i]))
-                        yield return Bundles[i];
-                }
-            }
-
-            for (int i = 0; i < AddedBundles.Count; i++)
-                yield return AddedBundles[i];
-        }
-
-        public virtual void ClearModifications() => ModifiedEntry = null;
-
-        public event EventHandler AssetModified;
-        public void OnModified() => AssetModified?.Invoke(this, new EventArgs());
-    }
-
-    public class ModifiedAssetEntry
-    {
-        public Sha1 Sha1;
-        public byte[] Data;
-        public object DataObject;
-        public long OriginalSize;
-
-        public byte[] ResMeta;
-
-        public uint LogicalOffset;
-        public uint LogicalSize;
-        public uint RangeStart;
-        public uint RangeEnd;
-        public int FirstMip = -1;
-
-        public bool IsInline;
-
-        public bool AddToChunkBundle = true;
-        public bool IsTransientModified = false;
-        public int H32;
-
-        public List<Guid> DependentAssets = new List<Guid>();
-        public string UserData = "";
-
-        public bool IsDirty = false;
-    }
-
-    public class EbxAssetEntry : AssetEntry
-    {
-        public Guid Guid;
-        public List<Guid> DependentAssets = new List<Guid>();
-        public override string AssetType => "ebx";
-
-        public bool ContainsDependency(Guid guid)
-        {
-            return HasModifiedData ? ModifiedEntry.DependentAssets.Contains(guid) : DependentAssets.Contains(guid);
-        }
-
-        public IEnumerable<Guid> EnumerateDependencies()
-        {
-            if (HasModifiedData)
-            {
-                foreach (Guid guid in ModifiedEntry.DependentAssets)
-                    yield return guid;
-            }
-            else
-            {
-                foreach (Guid guid in DependentAssets)
-                    yield return guid;
-            }
-        }
-    }
-
-    public class ResAssetEntry : AssetEntry
-    {
-        public override string Type => ((ResourceType)ResType).ToString();
-        public override string AssetType => "res";
-
-        //#if FROSTY_DEVELOPER
-//        // @tmp
-//        public override string DisplayName => ("(" + (OriginalSize / 1024.0d).ToString("F2") + "kb) ".PadRight(6) + Filename) + ((IsDirty) ? "*" : "");
-//#endif
-
-        public ulong ResRid;
-        public uint ResType;
-        public byte[] ResMeta;
-    }
-
-    public class ChunkAssetEntry : AssetEntry
-    {
-        public override string Name => Id.ToString();
-        public override string Type => "Chunk";
-        public override string AssetType => "chunk";
-
-        public Guid Id;
-        public uint BundledSize;
-        public uint LogicalOffset;
-        public uint LogicalSize;
-        public uint RangeStart;
-        public uint RangeEnd;
-
-        public int H32;
-        public int FirstMip;
-        public bool IsTocChunk;
-        public bool TocChunkSpecialHack;
-
-        public override bool AddToBundle(int bid)
-        {
-            if(Bundles.Count == 0 && !IsAdded)
-            {
-                return false;
-            }
-            return base.AddToBundle(bid);
-        }
-    }
-
     public class AssetManagerImportResult
     {
         public bool InvalidatedDueToPatch { get; internal set; }
@@ -429,6 +22,8 @@ namespace FrostySdk.Managers
 
     public interface ICustomAssetManager
     {
+        bool ShouldInitializeOnStartup { get; }
+
         void Initialize(ILogger logger);
         AssetEntry GetAssetEntry(string key);
         Stream GetAsset(AssetEntry entry);
@@ -485,7 +80,7 @@ namespace FrostySdk.Managers
                 if (totalCount == 0)
                     return;
 
-                FileInfo fi = new FileInfo(am.fs.CacheName + "_sbdata.cas");
+                FileInfo fi = new FileInfo(am.m_fileSystem.CacheName + "_sbdata.cas");
                 if (!Directory.Exists(fi.DirectoryName))
                     Directory.CreateDirectory(fi.DirectoryName);
 
@@ -493,14 +88,14 @@ namespace FrostySdk.Managers
                 {
                     foreach (KeyValuePair<string, byte[]> kvp in ebxDataFiles)
                     {
-                        EbxAssetEntry entry = am.ebxList[kvp.Key];
+                        EbxAssetEntry entry = am.m_ebxList[kvp.Key];
                         entry.ExtraData.DataOffset = writer.Position;
 
                         writer.Write(kvp.Value);
                     }
                     foreach (KeyValuePair<string, byte[]> kvp in resDataFiles)
                     {
-                        ResAssetEntry entry = am.resList[kvp.Key];
+                        ResAssetEntry entry = am.m_resList[kvp.Key];
                         entry.ExtraData.DataOffset = writer.Position;
 
                         writer.Write(kvp.Value);
@@ -508,7 +103,7 @@ namespace FrostySdk.Managers
                     foreach (KeyValuePair<string, byte[]> kvp in chunkDataFiles)
                     {
                         Guid chunkId = new Guid(kvp.Key);
-                        ChunkAssetEntry entry = am.chunkList[chunkId];
+                        ChunkAssetEntry entry = am.m_chunkList[chunkId];
 
                         entry.ExtraData.DataOffset = writer.Position;
                         writer.Write(kvp.Value);
@@ -599,8 +194,10 @@ namespace FrostySdk.Managers
         internal class BaseBundleInfo
         {
             public string Name;
+            public string SbName;
             public long Offset;
             public long Size;
+            public bool IsPatch;
         }
 
         internal interface IAssetLoader
@@ -610,44 +207,42 @@ namespace FrostySdk.Managers
         #endregion
 
         private const ulong CacheMagic = 0x02005954534F5246;
-
         /*
           Cache Versions:
-            1 - Initial Version
-            2 - Nothing changed in the format just bumped up that the cache gets regenerated, bc bundled chunks did not always had their logical offset/size stored
+            4 - Nothing changed in the format just bumped up that the cache gets regenerated, bc bundled chunks did not always had their logical offset/size stored
         */
-        private const uint CacheVersion = 2;
+        private const uint CacheVersion = 4;
 
-        private FileSystem fs;
-        private ResourceManager rm;
-        private ILogger logger;
+        private FileSystemManager m_fileSystem;
+        private ResourceManager m_resourceManager;
+        private ILogger m_logger;
 
-        private List<SuperBundleEntry> superBundles = new List<SuperBundleEntry>();
-        private List<BundleEntry> bundles = new List<BundleEntry>();
-        private Dictionary<string, EbxAssetEntry> ebxList = new Dictionary<string, EbxAssetEntry>(StringComparer.OrdinalIgnoreCase);
-        private Dictionary<string, ResAssetEntry> resList = new Dictionary<string, ResAssetEntry>();
-        private Dictionary<Guid, ChunkAssetEntry> chunkList = new Dictionary<Guid, ChunkAssetEntry>();
+        private List<SuperBundleEntry> m_superBundles = new List<SuperBundleEntry>();
+        private List<BundleEntry> m_bundles = new List<BundleEntry>();
+        private Dictionary<string, EbxAssetEntry> m_ebxList = new Dictionary<string, EbxAssetEntry>(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, ResAssetEntry> m_resList = new Dictionary<string, ResAssetEntry>();
+        private Dictionary<Guid, ChunkAssetEntry> m_chunkList = new Dictionary<Guid, ChunkAssetEntry>();
 
         //private Dictionary<string, bool> ebxPaths = new Dictionary<string, bool>();
-        private Dictionary<Guid, EbxAssetEntry> ebxGuidList = new Dictionary<Guid, EbxAssetEntry>();
-        private Dictionary<ulong, ResAssetEntry> resRidList = new Dictionary<ulong, ResAssetEntry>();
+        private Dictionary<Guid, EbxAssetEntry> m_ebxGuidList = new Dictionary<Guid, EbxAssetEntry>();
+        private Dictionary<ulong, ResAssetEntry> m_resRidList = new Dictionary<ulong, ResAssetEntry>();
 
-        private Dictionary<string, ICustomAssetManager> customAssetManagers = new Dictionary<string, ICustomAssetManager>();
+        private Dictionary<string, ICustomAssetManager> m_customAssetManagers = new Dictionary<string, ICustomAssetManager>();
 
-        public AssetManager(FileSystem inFs, ResourceManager inRm)
+        public AssetManager(FileSystemManager inFileSystem, ResourceManager inResourceManager)
         {
-            fs = inFs;
-            rm = inRm;
+            m_fileSystem = inFileSystem;
+            m_resourceManager = inResourceManager;
         }
 
         public void RegisterCustomAssetManager(string type, Type managerType)
         {
-            customAssetManagers.Add(type, (ICustomAssetManager)Activator.CreateInstance(managerType));
+            m_customAssetManagers.Add(type, (ICustomAssetManager)Activator.CreateInstance(managerType));
         }
 
         public void Initialize(bool additionalStartup = true, AssetManagerImportResult result = null)
         {
-            DateTime StartTime = DateTime.Now;
+            DateTime startTime = DateTime.Now;
             List<EbxAssetEntry> prePatchCache = new List<EbxAssetEntry>();
 
             if (!ReadFromCache(out prePatchCache))
@@ -663,15 +258,14 @@ namespace FrostySdk.Managers
 
                 GC.Collect();
 
-                // if there is not additional startup or the ebxGuidList has items, write the cache
-                if (!additionalStartup || ebxGuidList.Count > 0)
+                if (!additionalStartup)
                 {
                     WriteToCache();
                 }
             }
 
-            TimeSpan ElapsedTime = DateTime.Now - StartTime;
-            WriteToLog("Loading Complete", ElapsedTime.ToString());
+            TimeSpan elapsedTime = DateTime.Now - startTime;
+            WriteToLog("Loading complete", elapsedTime.ToString());
 
             if (additionalStartup)
             {
@@ -679,13 +273,13 @@ namespace FrostySdk.Managers
                 DoEbxIndexing();
 
                 // determine if bundle is a blueprint bundle or a shared bundle
-                foreach (BundleEntry bundle in bundles)
+                foreach (BundleEntry bundle in m_bundles)
                 {
                     bundle.Type = BundleType.SharedBundle;
                     bundle.Blueprint = GetEbxEntry(bundle.Name.Remove(0, 6));
                     if (bundle.Blueprint == null)
                     {
-                        // just try with the win32 inplace
+                        // just try with the win32 in place
                         bundle.Blueprint = GetEbxEntry(bundle.Name);
                     }
 
@@ -694,15 +288,22 @@ namespace FrostySdk.Managers
                         // is either sublevel or blueprint bundle
                         bundle.Type = BundleType.SubLevel;
                         if (TypeLibrary.IsSubClassOf(bundle.Blueprint.Type, "BlueprintBundle"))
+                        {
                             bundle.Type = BundleType.BlueprintBundle;
+                        }
                     }
                 }
 
                 // now initialize any custom asset managers
-                foreach (ICustomAssetManager manager in customAssetManagers.Values)
-                    manager.Initialize(logger);
+                foreach (ICustomAssetManager manager in m_customAssetManagers.Values)
+                {
+                    if (manager.ShouldInitializeOnStartup)
+                    {
+                        manager.Initialize(m_logger);
+                    }
+                }
 
-                if (result != null && ProfilesLibrary.DataVersion != (int)ProfileVersion.Fifa19 && ProfilesLibrary.DataVersion != (int)ProfileVersion.Madden20 && ProfilesLibrary.DataVersion != (int)ProfileVersion.Fifa20)
+                if (result != null)
                 {
                     result.InvalidatedDueToPatch = prePatchCache != null;
                     if (prePatchCache != null)
@@ -721,7 +322,9 @@ namespace FrostySdk.Managers
                             {
                                 // entry was found
                                 foundObjs.Add(ebx.Guid);
-                                if (entry.Sha1 != ebx.Sha1)
+
+                                // Fifa BinarySb layout doesnt store sha1s, so we cant check what files changed
+                                if (entry.Sha1 != ebx.Sha1 && BaseBinarySb.GetMagic() == BaseBinarySb.Magic.Standard)
                                 {
                                     // entry was modified
                                     modifiedObjs.Add(entry);
@@ -739,7 +342,7 @@ namespace FrostySdk.Managers
                             }
                         }
 
-                        foreach (EbxAssetEntry entry in ebxList.Values)
+                        foreach (EbxAssetEntry entry in m_ebxList.Values)
                         {
                             if (!foundObjs.Contains(entry.Guid))
                             {
@@ -754,35 +357,48 @@ namespace FrostySdk.Managers
                     }
                 }
 
-                if (ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa19 || ProfilesLibrary.DataVersion == (int)ProfileVersion.Anthem || ProfilesLibrary.DataVersion == (int)ProfileVersion.Madden20 || ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa20 || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedHeat
-                 || ProfilesLibrary.DataVersion == (int)ProfileVersion.PlantsVsZombiesBattleforNeighborville
-                    )
+                if (ProfilesLibrary.IsLoaded(ProfileVersion.Fifa19,
+                        ProfileVersion.Anthem,
+                        ProfileVersion.Madden20,
+                        ProfileVersion.Fifa20,
+                        ProfileVersion.NeedForSpeedHeat,
+                        ProfileVersion.PlantsVsZombiesBattleforNeighborville,
+                        ProfileVersion.Fifa21,
+                        ProfileVersion.Madden22,
+                        ProfileVersion.Fifa22,
+                        ProfileVersion.Battlefield2042,
+                        ProfileVersion.Madden23,
+                        ProfileVersion.NeedForSpeedUnbound,
+                        ProfileVersion.DeadSpace,
+                        ProfileVersion.DragonAgeTheVeilguard))
                 {
                     // load class infos
-                    WriteToLog("Loading Type Info");
+                    WriteToLog("Loading type info");
                     TypeLibrary.Reflection.LoadClassInfoAssets(this);
                 }
             }
         }
 
-        public void SetLogger(ILogger inLogger) => logger = inLogger;
+        public void SetLogger(ILogger inLogger) => m_logger = inLogger;
 
-        public void ClearLogger() => logger = null;
+        public void ClearLogger() => m_logger = null;
 
         public void DoEbxIndexing()
         {
-            if (ebxGuidList.Count > 0)
+            if (m_ebxGuidList.Count > 0)
+            {
                 return;
+            }
 
             List<EbxAssetEntry> ebxToRemove = new List<EbxAssetEntry>();
-            int assetCount = ebxList.Count;
+            int assetCount = m_ebxList.Count;
             int count = 0;
 
             DateTime startTime = DateTime.Now;
-            foreach (EbxAssetEntry entry in ebxList.Values)
+            foreach (EbxAssetEntry entry in m_ebxList.Values)
             {
 #if ENABLE_LCU
-                if (ProfilesLibrary.DataVersion == (int)ProfileVersion.Madden20 && entry.ExtraData.CasPath.StartsWith("LCU/"))
+                if (ProfilesLibrary.IsLoaded(ProfileVersion.Madden20) && entry.ExtraData.CasPath.StartsWith("LCU/"))
                     Console.WriteLine(entry.Name);
 #endif
 
@@ -790,7 +406,9 @@ namespace FrostySdk.Managers
                 if (ProfilesLibrary.DataVersion == (int)ProfileVersion.Anthem)
                 {
                     if (entry.ExtraData.CasPath.StartsWith("native_patch"))
+                    {
                         patched = true;
+                    }
                 }
 
                 Stream stream = GetEbxStream(entry);
@@ -798,7 +416,7 @@ namespace FrostySdk.Managers
 
                 if (stream != null)
                 {
-                    using (EbxReader reader = EbxReader.CreateReader(stream, fs, patched))
+                    using (EbxReader reader = EbxReader.CreateReader(stream, m_fileSystem, patched))
                     {
                         entry.Type = reader.RootType;
                         entry.Guid = reader.FileGuid;
@@ -810,53 +428,66 @@ namespace FrostySdk.Managers
 
                         // only if the lower case one matches
                         if (newNameHash == nameHash)
+                        {
                             entry.Name = name;
+                        }
 
                         foreach (EbxImportReference import in reader.imports)
                         {
                             if (!entry.ContainsDependency(import.FileGuid))
+                            {
                                 entry.DependentAssets.Add(import.FileGuid);
-
+                            }
                         }
 
-                        if (ebxGuidList.ContainsKey(entry.Guid))
+                        if (m_ebxGuidList.ContainsKey(entry.Guid))
                         {
                             //logger.Log("Existing asset found with same guid '{0}'", entry.Guid);
                             continue;
                         }
-                        ebxGuidList.Add(entry.Guid, entry);
+                        m_ebxGuidList.Add(entry.Guid, entry);
                     }
                 }
                 else
                 {
                     // Mark as encrypted or remove (Both are unloadable types)
-                    if (rm.IsEncrypted(entry.Sha1)) { entry.Type = "EncryptedAsset"; }
-                    else { ebxToRemove.Add(entry); }
+                    if (m_resourceManager.IsEncrypted(entry.Sha1))
+                    {
+                        entry.Type = "EncryptedAsset";
+                    }
+                    else
+                    {
+                        ebxToRemove.Add(entry);
+                    }
                 }
 
-                // SWBF2/BFV
-                if (ProfilesLibrary.DataVersion == (int)ProfileVersion.StarWarsBattlefrontII || ProfilesLibrary.DataVersion == (int)ProfileVersion.Battlefield5 || ProfilesLibrary.DataVersion == (int)ProfileVersion.StarWarsSquadrons)
+                // SWBF2/BFV/SWS
+                if (ProfilesLibrary.IsLoaded(ProfileVersion.StarWarsBattlefrontII, ProfileVersion.Battlefield5, ProfileVersion.StarWarsSquadrons))
                 {
                     // need to work out bundle here (as bundles are hashed names only)
                     if (TypeLibrary.IsSubClassOf(entry.Type, "BlueprintBundle") || TypeLibrary.IsSubClassOf(entry.Type, "SubWorldData"))
                     {
-                        BundleEntry be = bundles[entry.Bundles[0]];
+                        BundleEntry be = m_bundles[entry.Bundles[0]];
 
                         be.Name = entry.Name;
                         if (!be.Name.StartsWith("win32/", StringComparison.OrdinalIgnoreCase))
+                        {
                             be.Name = "win32/" + be.Name;
+                        }
                         be.Blueprint = entry;
                     }
-                    else if ((ProfilesLibrary.DataVersion == (int)ProfileVersion.Battlefield5 && TypeLibrary.IsSubClassOf(entry.Type, "UIItemDescriptionAsset")) ||
-                        ProfilesLibrary.DataVersion == (int)ProfileVersion.StarWarsBattlefrontII && TypeLibrary.IsSubClassOf(entry.Type, "UIMetaDataAsset") ||
-                        ProfilesLibrary.DataVersion == (int)ProfileVersion.StarWarsSquadrons && TypeLibrary.IsSubClassOf(entry.Type, "UIMetaDataAsset"))
+                    else if ((ProfilesLibrary.IsLoaded(ProfileVersion.Battlefield5) && TypeLibrary.IsSubClassOf(entry.Type, "UIItemDescriptionAsset")) ||
+                        ProfilesLibrary.IsLoaded(ProfileVersion.StarWarsBattlefrontII) && TypeLibrary.IsSubClassOf(entry.Type, "UIMetaDataAsset") ||
+                        ProfilesLibrary.IsLoaded(ProfileVersion.StarWarsSquadrons) && TypeLibrary.IsSubClassOf(entry.Type, "UIMetaDataAsset"))
                     {
-                        string bname = "win32/" + entry.Name.ToLower() + "_bundle";
-                        int h = Fnv1.HashString(bname);
-                        BundleEntry be = bundles.Find((BundleEntry a) => a.Name.Equals(h.ToString("x8")));
+                        string bundleName = "win32/" + entry.Name.ToLower() + "_bundle";
+                        int h = Fnv1.HashString(bundleName);
+                        BundleEntry be = m_bundles.Find((BundleEntry a) => a.Name.Equals(h.ToString("x8")));
 
                         if (be != null)
-                            be.Name = bname;
+                        {
+                            be.Name = bundleName;
+                        }
                     }
                 }
 
@@ -866,7 +497,9 @@ namespace FrostySdk.Managers
             }
 
             foreach (EbxAssetEntry entry in ebxToRemove)
-                ebxList.Remove(entry.Name);
+            {
+                m_ebxList.Remove(entry.Name);
+            }
             ebxToRemove.Clear();
 
             WriteToCache();
@@ -875,83 +508,87 @@ namespace FrostySdk.Managers
 
         public uint GetModifiedCount()
         {
-            uint modifiedEbx = (uint)ebxList.Values.Count((EbxAssetEntry entry) => entry.IsModified);
-            uint modifiedRes = (uint)resList.Values.Count((ResAssetEntry entry) => entry.IsModified);
-            uint modifiedChunks = (uint)chunkList.Values.Count((ChunkAssetEntry entry) => entry.IsModified);
+            uint modifiedEbx = (uint)m_ebxList.Values.Count((EbxAssetEntry entry) => entry.IsModified);
+            uint modifiedRes = (uint)m_resList.Values.Count((ResAssetEntry entry) => entry.IsModified);
+            uint modifiedChunks = (uint)m_chunkList.Values.Count((ChunkAssetEntry entry) => entry.IsModified);
             uint modifiedCustom = 0;
-            foreach (ICustomAssetManager mgr in customAssetManagers.Values)
+            foreach (ICustomAssetManager mgr in m_customAssetManagers.Values)
+            {
                 modifiedCustom += (uint)mgr.EnumerateAssets(modifiedOnly: true).Count();
+            }
+
             return modifiedEbx + modifiedRes + modifiedChunks + modifiedCustom;
         }
 
         public uint GetDirtyCount()
         {
-            uint dirtyEbx = (uint)ebxList.Values.Count((EbxAssetEntry entry) => entry.IsDirty);
-            uint dirtyRes = (uint)resList.Values.Count((ResAssetEntry entry) => entry.IsDirty);
-            uint dirtyChunks = (uint)chunkList.Values.Count((ChunkAssetEntry entry) => entry.IsDirty);
+            uint dirtyEbx = (uint)m_ebxList.Values.Count((EbxAssetEntry entry) => entry.IsDirty);
+            uint dirtyRes = (uint)m_resList.Values.Count((ResAssetEntry entry) => entry.IsDirty);
+            uint dirtyChunks = (uint)m_chunkList.Values.Count((ChunkAssetEntry entry) => entry.IsDirty);
             uint dirtyCustom = 0;
-            foreach (ICustomAssetManager mgr in customAssetManagers.Values)
+            foreach (ICustomAssetManager mgr in m_customAssetManagers.Values)
+            {
                 dirtyCustom += (uint)mgr.EnumerateAssets(modifiedOnly: true).Count((AssetEntry a) => a.IsDirty);
+            }
+
             return dirtyEbx + dirtyRes + dirtyChunks + dirtyCustom;
         }
 
         public uint GetEbxCount(string ebxType)
         {
-            return (uint)ebxList.Values.Count((EbxAssetEntry entry) => (entry.Type != null && entry.Type.Equals(ebxType)));
+            return (uint)m_ebxList.Values.Count((EbxAssetEntry entry) => (entry.Type != null && entry.Type.Equals(ebxType)));
         }
 
         public uint GetEbxCount()
         {
-            return (uint)ebxList.Count;
+            return (uint)m_ebxList.Count;
         }
 
         public uint GetResCount(uint resType)
         {
-            return (uint)resList.Values.Count((ResAssetEntry entry) => entry.ResType == resType);
+            return (uint)m_resList.Values.Count((ResAssetEntry entry) => entry.ResType == resType);
         }
 
         public void Reset()
         {
             // clear modifications
-            List<EbxAssetEntry> ebxValues = ebxList.Values.ToList();
-            List<ResAssetEntry> resValues = resList.Values.ToList();
-            List<ChunkAssetEntry> chunkValues = chunkList.Values.ToList();
+            List<EbxAssetEntry> ebxValues = m_ebxList.Values.ToList();
+            List<ResAssetEntry> resValues = m_resList.Values.ToList();
+            List<ChunkAssetEntry> chunkValues = m_chunkList.Values.ToList();
 
             foreach (EbxAssetEntry entry in ebxValues)
-                RevertAsset(entry, suppressOnModify: false);
-            foreach (ResAssetEntry entry in resValues)
-                RevertAsset(entry, suppressOnModify: false);
-            foreach (ChunkAssetEntry entry in chunkValues)
-                RevertAsset(entry, suppressOnModify: false);
-
-            foreach (ICustomAssetManager mgr in customAssetManagers.Values)
             {
-                foreach (AssetEntry entry in mgr.EnumerateAssets(modifiedOnly: true))
-                    RevertAsset(entry, suppressOnModify: false);
+                RevertAsset(entry, suppressOnModify: false);
+            }
+            foreach (ResAssetEntry entry in resValues)
+            {
+                RevertAsset(entry, suppressOnModify: false);
+            }
+            foreach (ChunkAssetEntry entry in chunkValues)
+            {
+                RevertAsset(entry, suppressOnModify: false);
             }
 
-            //foreach(BundleEntry bundle in bundles.Where(b => b.Added).ToList())
-            //{
-            //    bundles.Remove(bundle);
-            //}
-            bundles.RemoveAll(b => b.Added);
-        }
-
-        public void RevertBundle(BundleEntry entry)
-        {
-            if (entry.Added)
+            foreach (ICustomAssetManager mgr in m_customAssetManagers.Values)
             {
-                bundles.Remove(entry);
+                foreach (AssetEntry entry in mgr.EnumerateAssets(modifiedOnly: true))
+                {
+                    RevertAsset(entry, suppressOnModify: false);
+                }
             }
         }
 
         public void RevertAsset(AssetEntry entry, bool dataOnly = false, bool suppressOnModify = true)
         {
             if (!entry.IsModified)
+            {
                 return;
+            }
 
             foreach (AssetEntry linkedEntry in entry.LinkedAssets)
+            {
                 RevertAsset(linkedEntry, dataOnly, suppressOnModify);
+            }
 
             // clear modified data
             entry.ClearModifications();
@@ -967,23 +604,25 @@ namespace FrostySdk.Managers
                 {
                     if (entry is EbxAssetEntry ebxEntry)
                     {
-                        ebxGuidList.Remove(ebxEntry.Guid);
-                        ebxList.Remove(ebxEntry.Name);
+                        m_ebxGuidList.Remove(ebxEntry.Guid);
+                        m_ebxList.Remove(ebxEntry.Name);
                     }
                     else if (entry is ResAssetEntry resEntry)
                     {
-                        resRidList.Remove(resEntry.ResRid);
-                        resList.Remove(resEntry.Name);
+                        m_resRidList.Remove(resEntry.ResRid);
+                        m_resList.Remove(resEntry.Name);
                     }
                     else if (entry is ChunkAssetEntry chunkEntry)
                     {
-                        chunkList.Remove(chunkEntry.Id);
+                        m_chunkList.Remove(chunkEntry.Id);
                     }
                 }
 
                 entry.IsDirty = false;
                 if (!entry.IsAdded && !suppressOnModify)
+                {
                     entry.OnModified();
+                }
             }
         }
 
@@ -994,19 +633,19 @@ namespace FrostySdk.Managers
         public void AddChunk(ChunkAssetEntry entry)
         {
             entry.IsAdded = true;
-            chunkList.Add(entry.Id, entry);
+            m_chunkList.Add(entry.Id, entry);
         }
         public void AddRes(ResAssetEntry entry)
         {
             entry.IsAdded = true;
-            resList.Add(entry.Name.ToLower(), entry);
-            resRidList.Add(entry.ResRid, entry);
+            m_resList.Add(entry.Name.ToLower(), entry);
+            m_resRidList.Add(entry.ResRid, entry);
         }
         public void AddEbx(EbxAssetEntry entry)
         {
             entry.IsAdded = true;
-            ebxList.Add(entry.Name.ToLower(), entry);
-            ebxGuidList.Add(entry.Guid, entry);
+            m_ebxList.Add(entry.Name.ToLower(), entry);
+            m_ebxGuidList.Add(entry.Guid, entry);
         }
         #endregion
 
@@ -1016,9 +655,11 @@ namespace FrostySdk.Managers
         /// </summary>
         public BundleEntry AddBundle(string name, BundleType type, int sbIndex)
         {
-            int bindex = bundles.FindIndex((BundleEntry be) => be.Name == name);
+            int bindex = m_bundles.FindIndex((BundleEntry be) => be.Name == name);
             if (bindex != -1)
-                return bundles[bindex];
+            {
+                return m_bundles[bindex];
+            }
 
             BundleEntry bentry = new BundleEntry
             {
@@ -1027,7 +668,7 @@ namespace FrostySdk.Managers
                 Type = type,
                 Added = true
             };
-            bundles.Add(bentry);
+            m_bundles.Add(bentry);
 
             return bentry;
         }
@@ -1037,16 +678,18 @@ namespace FrostySdk.Managers
         /// </summary>
         public SuperBundleEntry AddSuperBundle(string name)
         {
-            int sbindex = superBundles.FindIndex((SuperBundleEntry sbe) => sbe.Name.Equals(name));
+            int sbindex = m_superBundles.FindIndex((SuperBundleEntry sbe) => sbe.Name.Equals(name));
             if (sbindex != -1)
-                return superBundles[sbindex];
+            {
+                return m_superBundles[sbindex];
+            }
 
             SuperBundleEntry sbentry = new SuperBundleEntry
             {
                 Name = name,
                 Added = true
             };
-            superBundles.Add(sbentry);
+            m_superBundles.Add(sbentry);
 
             return sbentry;
         }
@@ -1057,8 +700,10 @@ namespace FrostySdk.Managers
         public EbxAssetEntry AddEbx(string name, EbxAsset asset, params int[] bundles)
         {
             string keyName = name.ToLower();
-            if (ebxList.ContainsKey(keyName))
-                return ebxList[keyName];
+            if (m_ebxList.ContainsKey(keyName))
+            {
+                return m_ebxList[keyName];
+            }
 
             EbxAssetEntry entry = new EbxAssetEntry
             {
@@ -1075,17 +720,16 @@ namespace FrostySdk.Managers
                 buffer = writer.ToByteArray();
             }
 
+            entry.AddedBundles.AddRange(bundles);
             entry.ModifiedEntry.DataObject = asset;
             entry.ModifiedEntry.OriginalSize = 0;
             entry.ModifiedEntry.Sha1 = Sha1.Zero;
             entry.ModifiedEntry.IsInline = false;
-            entry.ModifiedEntry.IsDirty = true;
             entry.IsDirty = true;
             entry.IsAdded = true;
-            entry.AddedBundles.AddRange(bundles);
 
-            ebxList.Add(keyName, entry);
-            ebxGuidList.Add(entry.Guid, entry);
+            m_ebxList.Add(keyName, entry);
+            m_ebxGuidList.Add(entry.Guid, entry);
 
             return entry;
         }
@@ -1096,8 +740,10 @@ namespace FrostySdk.Managers
         public ResAssetEntry AddRes(string name, ResourceType resType, byte[] resMeta, byte[] buffer, params int[] bundles)
         {
             name = name.ToLower();
-            if (resList.ContainsKey(name))
-                return resList[name];
+            if (m_resList.ContainsKey(name))
+            {
+                return m_resList[name];
+            }
 
             ResAssetEntry entry = new ResAssetEntry
             {
@@ -1108,24 +754,28 @@ namespace FrostySdk.Managers
                 IsAdded = true,
                 IsDirty = true
             };
+            CompressionType compressType = ProfilesLibrary.IsLoaded(ProfileVersion.Fifa18, ProfileVersion.Fifa20,
+                ProfileVersion.Fifa21, ProfileVersion.Madden22,
+                ProfileVersion.Fifa22, ProfileVersion.Madden23) ? CompressionType.Oodle : CompressionType.Default;
 
-            while (resRidList.ContainsKey(entry.ResRid))
+            while (m_resRidList.ContainsKey(entry.ResRid))
+            {
                 entry.ResRid = Utils.GenerateResourceId();
+            }
 
+            entry.AddedBundles.AddRange(bundles);
             entry.ModifiedEntry = new ModifiedAssetEntry
             {
-                Data = Utils.CompressFile(buffer),
+                Data = Utils.CompressFile(buffer, resType: resType, compressionOverride: compressType),
                 OriginalSize = buffer.Length,
                 IsInline = false,
                 ResMeta = entry.ResMeta
             };
 
             entry.ModifiedEntry.Sha1 = GenerateSha1(entry.ModifiedEntry.Data);
-            entry.ModifiedEntry.IsDirty = true;
-            entry.AddedBundles.AddRange(bundles);
 
-            resList.Add(entry.Name, entry);
-            resRidList.Add(entry.ResRid, entry);
+            m_resList.Add(entry.Name, entry);
+            m_resRidList.Add(entry.ResRid, entry);
 
             return entry;
         }
@@ -1135,8 +785,10 @@ namespace FrostySdk.Managers
         /// </summary>
         public Guid AddChunk(byte[] buffer, Guid? overrideGuid = null, Texture texture = null, params int[] bundles)
         {
-            ChunkAssetEntry entry = new ChunkAssetEntry {IsAdded = true, IsDirty = true};
-            CompressionType compressType = (ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa18) ? CompressionType.Oodle : CompressionType.Default;
+            ChunkAssetEntry entry = new ChunkAssetEntry { IsAdded = true, IsDirty = true };
+            CompressionType compressType = ProfilesLibrary.IsLoaded(ProfileVersion.Fifa18, ProfileVersion.Fifa20,
+                ProfileVersion.Fifa21, ProfileVersion.Madden22,
+                ProfileVersion.Fifa22, ProfileVersion.Madden23) ? CompressionType.Oodle : CompressionType.Default;
 
             entry.ModifiedEntry = new ModifiedAssetEntry
             {
@@ -1154,7 +806,6 @@ namespace FrostySdk.Managers
                 entry.ModifiedEntry.RangeStart = texture.RangeStart;
                 entry.ModifiedEntry.RangeEnd = texture.RangeEnd;
                 entry.ModifiedEntry.FirstMip = texture.FirstMip;
-                entry.ModifiedEntry.IsDirty = true;
             }
 
 
@@ -1171,7 +822,7 @@ namespace FrostySdk.Managers
                 entry.Id = new Guid(guidBuf);
             }
 
-            chunkList.Add(entry.Id, entry);
+            m_chunkList.Add(entry.Id, entry);
             return entry.Id;
         }
         #endregion
@@ -1182,19 +833,25 @@ namespace FrostySdk.Managers
         /// </summary>
         public bool ModifyChunk(Guid chunkId, byte[] buffer, Texture texture = null)
         {
-            if (!chunkList.ContainsKey(chunkId))
+            if (!m_chunkList.ContainsKey(chunkId))
+            {
                 return false;
+            }
 
-            ChunkAssetEntry entry = chunkList[chunkId];
-            CompressionType compressType = (ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa18 || ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa20) ? CompressionType.Oodle : CompressionType.Default;
-            if ((ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa19) && texture != null)
-                compressType = CompressionType.Oodle;
-
+            ChunkAssetEntry entry = m_chunkList[chunkId];
+            CompressionType compressType = ProfilesLibrary.IsLoaded(ProfileVersion.Fifa18, ProfileVersion.Fifa20,
+                ProfileVersion.Fifa21, ProfileVersion.Madden22,
+                ProfileVersion.Fifa22, ProfileVersion.Madden23) ? CompressionType.Oodle : CompressionType.Default;
 
             if (entry.ModifiedEntry == null)
+            {
                 entry.ModifiedEntry = new ModifiedAssetEntry();
+            }
 
-            entry.ModifiedEntry.Data = (texture != null) ? Utils.CompressTexture(buffer, texture: texture, compressionOverride: compressType) : Utils.CompressFile(buffer, compressionOverride: compressType);
+            entry.ModifiedEntry.Data = (texture != null)
+                ? Utils.CompressTexture(buffer, texture: texture, compressionOverride: compressType)
+                : Utils.CompressFile(buffer, compressionOverride: compressType);
+
             entry.ModifiedEntry.Sha1 = GenerateSha1(entry.ModifiedEntry.Data);
             entry.ModifiedEntry.LogicalSize = (uint)buffer.Length;
 
@@ -1205,7 +862,6 @@ namespace FrostySdk.Managers
                 entry.ModifiedEntry.RangeStart = texture.RangeStart;
                 entry.ModifiedEntry.RangeEnd = (uint)entry.ModifiedEntry.Data.Length;
                 entry.ModifiedEntry.FirstMip = texture.FirstMip;
-                entry.ModifiedEntry.IsDirty = true;
             }
 
             entry.IsDirty = true;
@@ -1218,40 +874,48 @@ namespace FrostySdk.Managers
         /// </summary>
         public void ModifyRes(ulong resRid, byte[] buffer, byte[] meta = null)
         {
-            if (!resRidList.ContainsKey(resRid))
+            if (!m_resRidList.ContainsKey(resRid))
+            {
                 return;
+            }
 
-            ResAssetEntry entry = resRidList[resRid];
-            CompressionType compressType = (ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa18 || ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa20) ? CompressionType.Oodle : CompressionType.Default;
+            ResAssetEntry entry = m_resRidList[resRid];
+            CompressionType compressType = ProfilesLibrary.IsLoaded(ProfileVersion.Fifa18, ProfileVersion.Fifa20,
+                ProfileVersion.Fifa21, ProfileVersion.Madden22,
+                ProfileVersion.Fifa22, ProfileVersion.Madden23) ? CompressionType.Oodle : CompressionType.Default;
 
             if (entry.ModifiedEntry == null)
+            {
                 entry.ModifiedEntry = new ModifiedAssetEntry();
+            }
 
             entry.ModifiedEntry.Data = Utils.CompressFile(buffer, resType: (ResourceType)entry.ResType, compressionOverride: compressType);
             entry.ModifiedEntry.OriginalSize = buffer.Length;
             entry.ModifiedEntry.Sha1 = GenerateSha1(entry.ModifiedEntry.Data);
-            entry.ModifiedEntry.IsDirty = true;
 
             if (meta != null)
+            {
                 entry.ModifiedEntry.ResMeta = meta;
+            }
 
             entry.IsDirty = true;
         }
         public void ModifyRes(ulong resRid, Resource resource)
         {
-            if (!resRidList.ContainsKey(resRid))
+            if (!m_resRidList.ContainsKey(resRid))
+            {
                 return;
+            }
 
             object modifiedResource = resource.SaveModifiedResource();
-            if (modifiedResource != null && !resRidList[resRid].IsAdded)
+            if (modifiedResource != null && !m_resRidList[resRid].IsAdded)
             {
-                ResAssetEntry entry = resRidList[resRid];
+                ResAssetEntry entry = m_resRidList[resRid];
                 if (entry.ModifiedEntry == null)
                     entry.ModifiedEntry = new ModifiedAssetEntry();
 
                 entry.ModifiedEntry.DataObject = modifiedResource;
                 entry.ModifiedEntry.ResMeta = resource.ResourceMeta;
-                entry.ModifiedEntry.IsDirty = true;
                 entry.IsDirty = true;
             }
             else
@@ -1265,40 +929,48 @@ namespace FrostySdk.Managers
         /// </summary>
         public void ModifyRes(string resName, byte[] buffer, byte[] meta = null)
         {
-            if (!resList.ContainsKey(resName))
+            if (!m_resList.ContainsKey(resName))
+            {
                 return;
+            }
 
-            ResAssetEntry entry = resList[resName];
-            CompressionType compressType = (ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa18) ? CompressionType.Oodle : CompressionType.Default;
+            ResAssetEntry entry = m_resList[resName];
+            CompressionType compressType = ProfilesLibrary.IsLoaded(ProfileVersion.Fifa18, ProfileVersion.Fifa20,
+                ProfileVersion.Fifa21, ProfileVersion.Madden22,
+                ProfileVersion.Fifa22, ProfileVersion.Madden23) ? CompressionType.Oodle : CompressionType.Default;
 
             if (entry.ModifiedEntry == null)
+            {
                 entry.ModifiedEntry = new ModifiedAssetEntry();
+            }
 
             entry.ModifiedEntry.Data = Utils.CompressFile(buffer, resType: (ResourceType)entry.ResType, compressionOverride: compressType);
             entry.ModifiedEntry.OriginalSize = buffer.Length;
             entry.ModifiedEntry.Sha1 = GenerateSha1(entry.ModifiedEntry.Data);
-            entry.ModifiedEntry.IsDirty = true;
 
             if (meta != null)
+            {
                 entry.ModifiedEntry.ResMeta = meta;
+            }
 
             entry.IsDirty = true;
         }
         public void ModifyRes(string resName, Resource resource)
         {
-            if (!resList.ContainsKey(resName))
+            if (!m_resList.ContainsKey(resName))
+            {
                 return;
+            }
 
             object modifiedResource = resource.SaveModifiedResource();
-            if (modifiedResource != null && !resList[resName].IsAdded)
+            if (modifiedResource != null && !m_resList[resName].IsAdded)
             {
-                ResAssetEntry entry = resList[resName];
+                ResAssetEntry entry = m_resList[resName];
                 if (entry.ModifiedEntry == null)
                     entry.ModifiedEntry = new ModifiedAssetEntry();
 
                 entry.ModifiedEntry.DataObject = modifiedResource;
                 entry.ModifiedEntry.ResMeta = resource.ResourceMeta;
-                entry.ModifiedEntry.IsDirty = true;
                 entry.IsDirty = true;
             }
             else
@@ -1313,13 +985,17 @@ namespace FrostySdk.Managers
         public void ModifyEbx(string name, EbxAsset asset)
         {
             name = name.ToLower();
-            if (!ebxList.ContainsKey(name))
+            if (!m_ebxList.ContainsKey(name))
+            {
                 return;
+            }
 
-            EbxAssetEntry entry = ebxList[name];
+            EbxAssetEntry entry = m_ebxList[name];
 
             if (entry.ModifiedEntry == null)
+            {
                 entry.ModifiedEntry = new ModifiedAssetEntry();
+            }
 
             object modifiedResource = asset.SaveModifiedResource();
             entry.ModifiedEntry.DataObject = modifiedResource ?? asset;
@@ -1328,7 +1004,6 @@ namespace FrostySdk.Managers
             entry.ModifiedEntry.IsTransientModified = asset.TransientEdit;
             entry.ModifiedEntry.DependentAssets.Clear();
             entry.ModifiedEntry.DependentAssets.AddRange(asset.Dependencies);
-            entry.ModifiedEntry.IsDirty = true;
             entry.IsDirty = true;
         }
 
@@ -1337,38 +1012,69 @@ namespace FrostySdk.Managers
         /// </summary>
         public void ModifyCustomAsset(string type, string name, byte[] data)
         {
-            if (!customAssetManagers.ContainsKey(type))
+            if (!m_customAssetManagers.ContainsKey(type))
+            {
                 return;
-            customAssetManagers[type].ModifyAsset(name, data);
+            }
+            m_customAssetManagers[type].ModifyAsset(name, data);
         }
         #endregion
 
         #region -- Enumeration Functions --
         public IEnumerable<SuperBundleEntry> EnumerateSuperBundles(bool modifiedOnly = false)
         {
-            foreach (SuperBundleEntry sbentry in superBundles)
+            foreach (SuperBundleEntry sbentry in m_superBundles)
             {
                 if (modifiedOnly && !sbentry.Added)
+                {
                     continue;
+                }
                 yield return sbentry;
             }
         }
 
         public IEnumerable<BundleEntry> EnumerateBundles(BundleType type = BundleType.None, bool modifiedOnly = false)
         {
-            foreach (BundleEntry bentry in bundles)
+            foreach (BundleEntry bentry in m_bundles)
             {
                 if (type != BundleType.None && bentry.Type != type)
+                {
                     continue;
+                }
+
                 if (modifiedOnly && !bentry.Added)
+                {
                     continue;
+                }
                 yield return bentry;
+            }
+        }
+        
+        public IEnumerable<BundleEntry> EnumerateMarkedBundles(List<BundleEntry> bundles = null)
+        {
+            if (bundles != null)
+            {
+                foreach (BundleEntry bentry in bundles)
+                {
+                    yield return bentry;
+                }
+            }
+        }
+        
+        public IEnumerable<EbxAssetEntry> EnumerateMarkedEbx(List<EbxAssetEntry> entries = null)
+        {
+            if (entries != null)
+            {
+                foreach (EbxAssetEntry entry in entries)
+                {
+                    yield return entry;
+                }
             }
         }
 
         public IEnumerable<EbxAssetEntry> EnumerateEbx(BundleEntry bentry)
         {
-            int bindex = bundles.IndexOf(bentry);
+            int bindex = m_bundles.IndexOf(bentry);
             return EnumerateEbx("", false, false, true, bindex);
         }
 
@@ -1378,9 +1084,9 @@ namespace FrostySdk.Managers
             if (bundleSubPath != "")
             {
                 bundleSubPath = bundleSubPath.ToLower();
-                for (int i = 0; i < bundles.Count; i++)
+                for (int i = 0; i < m_bundles.Count; i++)
                 {
-                    if (bundles[i].Name.Equals(bundleSubPath) || bundles[i].Name.StartsWith(bundleSubPath + "/"))
+                    if (m_bundles[i].Name.Equals(bundleSubPath) || m_bundles[i].Name.StartsWith(bundleSubPath + "/"))
                         bundleIndices.Add(i);
                 }
             }
@@ -1390,11 +1096,8 @@ namespace FrostySdk.Managers
 
         protected IEnumerable<EbxAssetEntry> EnumerateEbx(string type, bool modifiedOnly, bool includeLinked, bool includeHidden, params int[] bundles)
         {
-            foreach (EbxAssetEntry entry in ebxList.Values)
+            foreach (EbxAssetEntry entry in m_ebxList.Values)
             {
-                //if (!includeHidden && (entry.Type == "LayerData"||entry.Type=="WorldPartData"))
-                //    continue;
-
                 if (modifiedOnly)
                 {
                     if (!entry.IsModified)
@@ -1432,7 +1135,7 @@ namespace FrostySdk.Managers
 
         public IEnumerable<ResAssetEntry> EnumerateRes(BundleEntry bentry)
         {
-            int bindex = bundles.IndexOf(bentry);
+            int bindex = m_bundles.IndexOf(bentry);
             if (bindex == -1)
                 yield break;
             foreach (ResAssetEntry entry in EnumerateRes(0, false, bindex))
@@ -1445,9 +1148,9 @@ namespace FrostySdk.Managers
             if (bundleSubPath != "")
             {
                 bundleSubPath = bundleSubPath.ToLower();
-                for (int i = 0; i < bundles.Count; i++)
+                for (int i = 0; i < m_bundles.Count; i++)
                 {
-                    if (bundles[i].Name.Equals(bundleSubPath) || bundles[i].Name.StartsWith(bundleSubPath + "/"))
+                    if (m_bundles[i].Name.Equals(bundleSubPath) || m_bundles[i].Name.StartsWith(bundleSubPath + "/"))
                         bundleIndices.Add(i);
                 }
                 if (bundleIndices.Count == 0)
@@ -1460,7 +1163,7 @@ namespace FrostySdk.Managers
 
         protected IEnumerable<ResAssetEntry> EnumerateRes(uint resType, bool modifiedOnly, params int[] bundles)
         {
-            foreach (ResAssetEntry entry in resList.Values)
+            foreach (ResAssetEntry entry in m_resList.Values)
             {
                 if (modifiedOnly && !entry.IsDirectlyModified)
                     continue;
@@ -1492,10 +1195,10 @@ namespace FrostySdk.Managers
 
         public IEnumerable<ChunkAssetEntry> EnumerateChunks(BundleEntry bentry)
         {
-            int bindex = bundles.IndexOf(bentry);
+            int bindex = m_bundles.IndexOf(bentry);
             if (bindex == -1)
                 yield break;
-            foreach (ChunkAssetEntry entry in chunkList.Values)
+            foreach (ChunkAssetEntry entry in m_chunkList.Values)
             {
                 if (entry.Bundles.Contains(bindex))
                     yield return entry;
@@ -1504,7 +1207,7 @@ namespace FrostySdk.Managers
 
         public IEnumerable<ChunkAssetEntry> EnumerateChunks(bool modifiedOnly = false)
         {
-            foreach (ChunkAssetEntry entry in chunkList.Values)
+            foreach (ChunkAssetEntry entry in m_chunkList.Values)
             {
                 if (modifiedOnly && !entry.IsDirectlyModified)
                     continue;
@@ -1514,60 +1217,60 @@ namespace FrostySdk.Managers
 
         public IEnumerable<AssetEntry> EnumerateCustomAssets(string type, bool modifiedOnly = false)
         {
-            if (!customAssetManagers.ContainsKey(type))
+            if (!m_customAssetManagers.ContainsKey(type))
                 yield break;
-            foreach (AssetEntry entry in customAssetManagers[type].EnumerateAssets(modifiedOnly))
+            foreach (AssetEntry entry in m_customAssetManagers[type].EnumerateAssets(modifiedOnly))
                 yield return entry;
         }
         #endregion
 
         #region -- Get Functions --
-        public int GetSuperBundleId(SuperBundleEntry sbentry) 
-            => superBundles.FindIndex((SuperBundleEntry sbe) => sbe.Name.Equals(sbentry.Name));
+        public int GetSuperBundleId(SuperBundleEntry sbentry)
+            => m_superBundles.FindIndex((SuperBundleEntry sbe) => sbe.Name.Equals(sbentry.Name));
 
-        public int GetSuperBundleId(string sbname) 
-            => superBundles.FindIndex((SuperBundleEntry sbe) => sbe.Name.Equals(sbname, StringComparison.OrdinalIgnoreCase));
+        public int GetSuperBundleId(string sbname)
+            => m_superBundles.FindIndex((SuperBundleEntry sbe) => sbe.Name.Equals(sbname, StringComparison.OrdinalIgnoreCase));
 
-        public SuperBundleEntry GetSuperBundle(int id) 
-            => id >= superBundles.Count ? null : superBundles[id];
+        public SuperBundleEntry GetSuperBundle(int id)
+            => id >= m_superBundles.Count ? null : m_superBundles[id];
 
-        public int GetBundleId(BundleEntry bentry) 
-            => bundles.FindIndex((BundleEntry be) => be.Name.Equals(bentry.Name));
+        public int GetBundleId(BundleEntry bentry)
+            => m_bundles.FindIndex((BundleEntry be) => be.Name.Equals(bentry.Name));
 
-        public int GetBundleId(string name) 
-            => bundles.FindIndex((BundleEntry be) => be.Name.Equals(name));
+        public int GetBundleId(string name)
+            => m_bundles.FindIndex((BundleEntry be) => be.Name.Equals(name));
 
-        public BundleEntry GetBundleEntry(int bundleId) 
-            => bundleId >= bundles.Count ? null : bundles[bundleId];
+        public BundleEntry GetBundleEntry(int bundleId)
+            => bundleId >= m_bundles.Count ? null : m_bundles[bundleId];
 
-        public AssetEntry GetCustomAssetEntry(string type, string key) 
-            => !customAssetManagers.ContainsKey(type) ? null : customAssetManagers[type].GetAssetEntry(key);
+        public AssetEntry GetCustomAssetEntry(string type, string key)
+            => !m_customAssetManagers.ContainsKey(type) ? null : m_customAssetManagers[type].GetAssetEntry(key);
 
-        public T GetCustomAssetEntry<T>(string type, string key) where T : AssetEntry 
+        public T GetCustomAssetEntry<T>(string type, string key) where T : AssetEntry
             => (T)GetCustomAssetEntry(type, key);
 
-        public EbxAssetEntry GetEbxEntry(Guid ebxGuid) 
-            => !ebxGuidList.ContainsKey(ebxGuid) ? null : ebxGuidList[ebxGuid];
+        public EbxAssetEntry GetEbxEntry(Guid ebxGuid)
+            => !m_ebxGuidList.ContainsKey(ebxGuid) ? null : m_ebxGuidList[ebxGuid];
 
         public EbxAsset GetEbx(string name, bool getUnmodifiedData = false) => GetEbx(GetEbxEntry(name), getUnmodifiedData);
 
         public EbxAssetEntry GetEbxEntry(string name)
         {
             name = name.ToLower();
-            return !ebxList.ContainsKey(name) ? null : ebxList[name];
+            return !m_ebxList.ContainsKey(name) ? null : m_ebxList[name];
         }
 
-        public ResAssetEntry GetResEntry(ulong resRid) => !resRidList.ContainsKey(resRid) ? null : resRidList[resRid];
+        public ResAssetEntry GetResEntry(ulong resRid) => !m_resRidList.ContainsKey(resRid) ? null : m_resRidList[resRid];
 
         public ResAssetEntry GetResEntry(string name)
         {
             name = name.ToLower();
-            return !resList.ContainsKey(name) ? null : resList[name];
+            return !m_resList.ContainsKey(name) ? null : m_resList[name];
         }
 
-        public ChunkAssetEntry GetChunkEntry(Guid id) => !chunkList.ContainsKey(id) ? null : chunkList[id];
+        public ChunkAssetEntry GetChunkEntry(Guid id) => !m_chunkList.ContainsKey(id) ? null : m_chunkList[id];
 
-        public Stream GetCustomAsset(string type, AssetEntry entry) => !customAssetManagers.ContainsKey(type) ? null : customAssetManagers[type].GetAsset(entry);
+        public Stream GetCustomAsset(string type, AssetEntry entry) => !m_customAssetManagers.ContainsKey(type) ? null : m_customAssetManagers[type].GetAsset(entry);
 
         public T GetEbxAs<T>(EbxAssetEntry entry) where T : EbxAsset, new()
         {
@@ -1581,13 +1284,15 @@ namespace FrostySdk.Managers
                 return null;
 
             bool patched = false;
-            if (ProfilesLibrary.DataVersion == (int)ProfileVersion.Anthem || ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa20 || ProfilesLibrary.DataVersion == (int)ProfileVersion.PlantsVsZombiesBattleforNeighborville)
+            if (ProfilesLibrary.IsLoaded(ProfileVersion.Anthem,
+                    ProfileVersion.Fifa20,
+                    ProfileVersion.PlantsVsZombiesBattleforNeighborville))
             {
                 if (entry.ExtraData.CasPath.StartsWith("native_patch"))
                     patched = true;
             }
 
-            using (EbxReader reader = EbxReader.CreateReader(GetAsset(entry), fs, patched))
+            using (EbxReader reader = EbxReader.CreateReader(GetAsset(entry), m_fileSystem, patched))
             {
                 T asset = reader.ReadAsset<T>();
                 if (modifiedResource != null)
@@ -1600,21 +1305,31 @@ namespace FrostySdk.Managers
         {
             // return modified data as a data object
             if ((entry.ModifiedEntry?.DataObject as EbxAsset) != null && !getUnmodifiedData)
+            {
                 return entry.ModifiedEntry.DataObject as EbxAsset;
+            }
 
             Stream ebxStream = GetAsset(entry);
             if (ebxStream == null)
-                return null;
-
-            bool patched = false;
-            if (ProfilesLibrary.DataVersion == (int)ProfileVersion.Anthem || ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa20 || ProfilesLibrary.DataVersion == (int)ProfileVersion.PlantsVsZombiesBattleforNeighborville)
             {
-                if (entry.ExtraData.CasPath.StartsWith("native_patch"))
-                    patched = true;
+                return null;
             }
 
-            using (EbxReader reader = EbxReader.CreateReader(GetAsset(entry), fs, patched))
+            bool patched = false;
+            if (ProfilesLibrary.IsLoaded(ProfileVersion.Anthem,
+                    ProfileVersion.Fifa20,
+                    ProfileVersion.PlantsVsZombiesBattleforNeighborville))
+            {
+                if (entry.ExtraData.CasPath.StartsWith("native_patch"))
+                {
+                    patched = true;
+                }
+            }
+
+            using (EbxReader reader = EbxReader.CreateReader(GetAsset(entry), m_fileSystem, patched))
+            {
                 return reader.ReadAsset<EbxAsset>();
+            }
         }
 
         /// <summary>
@@ -1640,16 +1355,20 @@ namespace FrostySdk.Managers
 
         public T GetResAs<T>(ResAssetEntry entry, ModifiedResource modifiedData = null) where T : Resource, new()
         {
-            var stream = GetAsset(entry);
+            Stream stream = GetAsset(entry);
             if (stream == null)
+            {
                 return default;
+            }
 
             using (NativeReader reader = new NativeReader(stream))
             {
                 if (modifiedData == null)
                 {
                     if (entry.ModifiedEntry?.DataObject != null)
+                    {
                         modifiedData = entry.ModifiedEntry.DataObject as ModifiedResource;
+                    }
                 }
 
                 T retVal = new T();
@@ -1667,43 +1386,43 @@ namespace FrostySdk.Managers
                 case AssetDataLocation.Cas:
                     return (entry.ExtraData != null)
                         ? null
-                        : rm.GetRawResourceData(entry.Sha1);
+                        : m_resourceManager.GetRawResourceData(entry.Sha1);
 
                 case AssetDataLocation.SuperBundle:
-                    return rm.GetRawResourceData(((entry.ExtraData.IsPatch) ? "native_patch/" : "native_data/") + superBundles[entry.ExtraData.SuperBundleId].Name + ".sb", entry.ExtraData.DataOffset, entry.Size);
+                    return m_resourceManager.GetRawResourceData(((entry.ExtraData.IsPatch) ? "native_patch/" : "native_data/") + m_superBundles[entry.ExtraData.SuperBundleId].Name + ".sb", entry.ExtraData.DataOffset, entry.Size);
 
                 case AssetDataLocation.Cache:
-                    return rm.GetRawResourceData(entry.ExtraData.DataOffset, entry.Size);
+                    return m_resourceManager.GetRawResourceData(entry.ExtraData.DataOffset, entry.Size);
 
                 case AssetDataLocation.CasNonIndexed:
-                    return rm.GetRawResourceData(entry.ExtraData.CasPath, entry.ExtraData.DataOffset, entry.Size);
+                    return m_resourceManager.GetRawResourceData(entry.ExtraData.CasPath, entry.ExtraData.DataOffset, entry.Size);
             }
 
             return null;
         }
 
-        private Stream GetAsset(AssetEntry entry)
+        public Stream GetAsset(AssetEntry entry)
         {
             // return modified data
             if (entry.ModifiedEntry != null && entry.ModifiedEntry.Data != null)
-                return rm.GetResourceData(entry.ModifiedEntry.Data);
+                return m_resourceManager.GetResourceData(entry.ModifiedEntry.Data);
 
             // otherwise, find and return original data
             switch (entry.Location)
             {
                 case AssetDataLocation.Cas:
                     return (entry.ExtraData != null)
-                        ? rm.GetResourceData(entry.ExtraData.BaseSha1, entry.ExtraData.DeltaSha1)
-                        : rm.GetResourceData(entry.Sha1);
+                        ? m_resourceManager.GetResourceData(entry.ExtraData.BaseSha1, entry.ExtraData.DeltaSha1)
+                        : m_resourceManager.GetResourceData(entry.Sha1);
 
                 case AssetDataLocation.SuperBundle:
-                    return rm.GetResourceData(((entry.ExtraData.IsPatch) ? "native_patch/" : "native_data/") + superBundles[entry.ExtraData.SuperBundleId].Name + ".sb", entry.ExtraData.DataOffset, entry.Size);
+                    return m_resourceManager.GetResourceData(((entry.ExtraData.IsPatch) ? "native_patch/" : "native_data/") + m_superBundles[entry.ExtraData.SuperBundleId].Name + ".sb", entry.ExtraData.DataOffset, entry.Size);
 
                 case AssetDataLocation.Cache:
-                    return rm.GetResourceData(entry.ExtraData.DataOffset, entry.Size);
+                    return m_resourceManager.GetResourceData(entry.ExtraData.DataOffset, entry.Size);
 
                 case AssetDataLocation.CasNonIndexed:
-                    return rm.GetResourceData(entry.ExtraData.CasPath, entry.ExtraData.DataOffset, entry.Size);
+                    return m_resourceManager.GetResourceData(entry.ExtraData.CasPath, entry.ExtraData.DataOffset, entry.Size);
             }
 
             return null;
@@ -1745,13 +1464,15 @@ namespace FrostySdk.Managers
             {
                 ResourceType resType = (ResourceType)res.GetValue<long>("resType");
                 if (ProfilesLibrary.IsResTypeIgnored(resType))
+                {
                     continue;
+                }
 
                 ResAssetEntry entry = AddRes(res);
                 if (entry.Sha1 != res.GetValue<Sha1>("sha1") && res.GetValue<int>("casPatchType") != 0)
                 {
                     // Remove old resrid ref
-                    resRidList.Remove(entry.ResRid);
+                    m_resRidList.Remove(entry.ResRid);
 
                     // Update asset
                     entry.Sha1 = res.GetValue<Sha1>("sha1");
@@ -1762,7 +1483,7 @@ namespace FrostySdk.Managers
                     entry.OriginalSize = res.GetValue<long>("originalSize");
 
                     // Add new resrid ref
-                    resRidList.Add(entry.ResRid, entry);
+                    m_resRidList.Add(entry.ResRid, entry);
                 }
 
                 if (res.GetValue<bool>("cache") && entry.Location != AssetDataLocation.Cache)
@@ -1778,10 +1499,8 @@ namespace FrostySdk.Managers
             if (sb.GetValue<DbObject>("chunks") == null)
                 return;
 
-            //int idx = 0;
             foreach (DbObject chunk in sb.GetValue<DbObject>("chunks"))
             {
-                //DbObject chunkMeta = sb.GetValue<DbObject>("chunkMeta")[idx++] as DbObject;
                 ChunkAssetEntry entry = AddChunk(chunk/*, chunkMeta*/);
 
                 if (chunk.GetValue<bool>("cache") && entry.Location != AssetDataLocation.Cache)
@@ -1796,8 +1515,6 @@ namespace FrostySdk.Managers
                     entry.RangeEnd = chunk.GetValue<uint>("rangeEnd");
                     entry.BundledSize = chunk.GetValue<uint>("bundledSize");
                     entry.IsInline = chunk.HasValue("idata");
-                    //entry.H32 = chunkMeta.GetValue<int>("h32");
-                    //entry.FirstMip = chunkMeta.GetValue<DbObject>("meta").GetValue<int>("firstMip");
                 }
                 else if (entry.LogicalSize == 0)
                 {
@@ -1815,12 +1532,12 @@ namespace FrostySdk.Managers
 
         private DbObject ProcessTocChunks(string superBundleName, BinarySbDataHelper helper, bool isBase = false)
         {
-            string filename = fs.ResolvePath(superBundleName);
+            string filename = m_fileSystem.ResolvePath(superBundleName);
             if (filename == "")
                 return null;
 
             DbObject toc = null;
-            using (DbReader reader = new DbReader(new FileStream(filename, FileMode.Open, FileAccess.Read), fs.CreateDeobfuscator()))
+            using (DbReader reader = new DbReader(new FileStream(filename, FileMode.Open, FileAccess.Read), m_fileSystem.CreateDeobfuscator()))
                 toc = reader.ReadDbObject();
 
             return ProcessTocChunks(toc, superBundleName, helper, isBase);
@@ -1845,10 +1562,10 @@ namespace FrostySdk.Managers
                     Guid chunkId = chunk.GetValue<Guid>("id");
                     ChunkAssetEntry entry = null;
 
-                    if (chunkList.ContainsKey(chunkId))
+                    if (m_chunkList.ContainsKey(chunkId))
                     {
-                        entry = chunkList[chunkId];
-                        chunkList.Remove(chunkId);
+                        entry = m_chunkList[chunkId];
+                        m_chunkList.Remove(chunkId);
 
                         // remove cache data (if exists)
                         helper.RemoveChunkData(entry.Id.ToString());
@@ -1860,6 +1577,8 @@ namespace FrostySdk.Managers
 
                     entry.Id = chunk.GetValue<Guid>("id");
                     entry.Sha1 = chunk.GetValue<Sha1>("sha1");
+                    entry.FirstMip = -1;
+                    entry.SuperBundles.Add(m_superBundles.Count - 1);
 
                     if (chunk.GetValue<long>("size") != 0)
                     {
@@ -1869,11 +1588,11 @@ namespace FrostySdk.Managers
                         entry.ExtraData = new AssetExtraData
                         {
                             DataOffset = chunk.GetValue<long>("offset"),
-                            SuperBundleId = superBundles.Count - 1,
+                            SuperBundleId = m_superBundles.Count - 1,
                             IsPatch = superBundleName.StartsWith("native_patch")
                         };
                     }
-                    chunkList.Add(entry.Id, entry);
+                    m_chunkList.Add(entry.Id, entry);
                 }
             }
 
@@ -1884,8 +1603,8 @@ namespace FrostySdk.Managers
         {
             string name = ebx.GetValue<string>("name").ToLower();
 
-            if (ebxList.ContainsKey(name))
-                return ebxList[name];
+            if (m_ebxList.ContainsKey(name))
+                return m_ebxList[name];
 
             EbxAssetEntry entry = new EbxAssetEntry
             {
@@ -1897,7 +1616,7 @@ namespace FrostySdk.Managers
                 Location = AssetDataLocation.Cas
             };
 
-            entry.BaseSha1 = rm.GetBaseSha1(entry.Sha1);
+            entry.BaseSha1 = m_resourceManager.GetBaseSha1(entry.Sha1);
 
             if (ebx.HasValue("cas"))
             {
@@ -1907,8 +1626,8 @@ namespace FrostySdk.Managers
                 {
                     DataOffset = ebx.GetValue<long>("offset"),
                     CasPath = (ebx.HasValue("catalog"))
-                        ? fs.GetFilePath(ebx.GetValue<int>("catalog"), ebx.GetValue<int>("cas"), ebx.HasValue("patch"))
-                        : fs.GetFilePath(ebx.GetValue<int>("cas"))
+                        ? m_fileSystem.GetFilePath(ebx.GetValue<int>("catalog"), ebx.GetValue<int>("cas"), ebx.HasValue("patch"))
+                        : m_fileSystem.GetFilePath(ebx.GetValue<int>("cas"))
                 };
             }
             else if (ebx.GetValue<bool>("sb"))
@@ -1918,14 +1637,14 @@ namespace FrostySdk.Managers
                 entry.ExtraData = new AssetExtraData
                 {
                     DataOffset = ebx.GetValue<long>("offset"),
-                    SuperBundleId = superBundles.Count - 1
+                    SuperBundleId = m_superBundles.Count - 1
                 };
             }
             else if (ebx.GetValue<bool>("cache"))
             {
                 entry.Location = AssetDataLocation.Cache;
 
-                entry.ExtraData = new AssetExtraData {DataOffset = 0xdeadbeef};
+                entry.ExtraData = new AssetExtraData { DataOffset = 0xdeadbeef };
             }
             else if (ebx.GetValue<int>("casPatchType") == 2)
             {
@@ -1951,7 +1670,7 @@ namespace FrostySdk.Managers
             //    }
             //}
 
-            ebxList.Add(name, entry);
+            m_ebxList.Add(name, entry);
             return entry;
         }
 
@@ -1959,8 +1678,8 @@ namespace FrostySdk.Managers
         {
             string name = res.GetValue<string>("name");
 
-            if (resList.ContainsKey(name))
-                return resList[name];
+            if (m_resList.ContainsKey(name))
+                return m_resList[name];
 
             ResAssetEntry entry = new ResAssetEntry
             {
@@ -1975,7 +1694,7 @@ namespace FrostySdk.Managers
                 Location = AssetDataLocation.Cas
             };
 
-            entry.BaseSha1 = rm.GetBaseSha1(entry.Sha1);
+            entry.BaseSha1 = m_resourceManager.GetBaseSha1(entry.Sha1);
 
             if (res.HasValue("cas"))
             {
@@ -1985,8 +1704,8 @@ namespace FrostySdk.Managers
                 {
                     DataOffset = res.GetValue<long>("offset"),
                     CasPath = (res.HasValue("catalog"))
-                        ? fs.GetFilePath(res.GetValue<int>("catalog"), res.GetValue<int>("cas"), res.HasValue("patch"))
-                        : fs.GetFilePath(res.GetValue<int>("cas"))
+                        ? m_fileSystem.GetFilePath(res.GetValue<int>("catalog"), res.GetValue<int>("cas"), res.HasValue("patch"))
+                        : m_fileSystem.GetFilePath(res.GetValue<int>("cas"))
                 };
             }
             else if (res.GetValue<bool>("sb"))
@@ -1996,14 +1715,14 @@ namespace FrostySdk.Managers
                 entry.ExtraData = new AssetExtraData
                 {
                     DataOffset = res.GetValue<long>("offset"),
-                    SuperBundleId = superBundles.Count - 1
+                    SuperBundleId = m_superBundles.Count - 1
                 };
             }
             else if (res.GetValue<bool>("cache"))
             {
                 entry.Location = AssetDataLocation.Cache;
 
-                entry.ExtraData = new AssetExtraData {DataOffset = 0xdeadbeef};
+                entry.ExtraData = new AssetExtraData { DataOffset = 0xdeadbeef };
             }
             else if (res.GetValue<int>("casPatchType") == 2)
             {
@@ -2014,9 +1733,9 @@ namespace FrostySdk.Managers
                 };
             }
 
-            resList.Add(name, entry);
+            m_resList.Add(name, entry);
             if (entry.ResRid != 0)
-                resRidList.Add(entry.ResRid, entry);
+                m_resRidList.Add(entry.ResRid, entry);
 
             return entry;
         }
@@ -2025,8 +1744,10 @@ namespace FrostySdk.Managers
         {
             Guid chunkId = chunk.GetValue<Guid>("id");
 
-            if (chunkList.ContainsKey(chunkId))
-                return chunkList[chunkId];
+            if (m_chunkList.ContainsKey(chunkId))
+            {
+                return m_chunkList[chunkId];
+            }
 
             ChunkAssetEntry entry = new ChunkAssetEntry
             {
@@ -2054,8 +1775,8 @@ namespace FrostySdk.Managers
                 {
                     DataOffset = chunk.GetValue<long>("offset"),
                     CasPath = (chunk.HasValue("catalog"))
-                        ? fs.GetFilePath(chunk.GetValue<int>("catalog"), chunk.GetValue<int>("cas"), chunk.HasValue("patch"))
-                        : fs.GetFilePath(chunk.GetValue<int>("cas"))
+                        ? m_fileSystem.GetFilePath(chunk.GetValue<int>("catalog"), chunk.GetValue<int>("cas"), chunk.HasValue("patch"))
+                        : m_fileSystem.GetFilePath(chunk.GetValue<int>("cas"))
                 };
             }
             else if (chunk.GetValue<bool>("sb"))
@@ -2065,17 +1786,17 @@ namespace FrostySdk.Managers
                 entry.ExtraData = new AssetExtraData
                 {
                     DataOffset = chunk.GetValue<long>("offset"),
-                    SuperBundleId = superBundles.Count - 1
+                    SuperBundleId = m_superBundles.Count - 1
                 };
             }
             else if (chunk.GetValue<bool>("cache"))
             {
                 entry.Location = AssetDataLocation.Cache;
 
-                entry.ExtraData = new AssetExtraData {DataOffset = 0xdeadbeef};
+                entry.ExtraData = new AssetExtraData { DataOffset = 0xdeadbeef };
             }
 
-            chunkList.Add(chunkId, entry);
+            m_chunkList.Add(chunkId, entry);
             return entry;
         }
         #endregion
@@ -2083,20 +1804,20 @@ namespace FrostySdk.Managers
         #region -- Misc Functions -- 
         public void SendManagerCommand(string type, string command, params object[] value)
         {
-            if (customAssetManagers.ContainsKey(type))
-                customAssetManagers[type].OnCommand(command, value);
+            if (m_customAssetManagers.ContainsKey(type))
+                m_customAssetManagers[type].OnCommand(command, value);
         }
 
         private bool ReadFromCache(out List<EbxAssetEntry> prePatchCache)
         {
             prePatchCache = null;
-            if (!File.Exists(fs.CacheName + ".cache"))
+            if (!File.Exists(m_fileSystem.CacheName + ".cache"))
                 return false;
 
-            WriteToLog("Loading Data (" + fs.CacheName + ".cache)");
-            bool bIsPatched = false;
+            WriteToLog("Loading data (" + m_fileSystem.CacheName + ".cache)");
+            bool isPatched = false;
 
-            using (NativeReader reader = new NativeReader(new FileStream(fs.CacheName + ".cache", FileMode.Open, FileAccess.Read)))
+            using (NativeReader reader = new NativeReader(new FileStream(m_fileSystem.CacheName + ".cache", FileMode.Open, FileAccess.Read)))
             {
                 ulong magic = reader.ReadULong();
                 if (magic != CacheMagic)
@@ -2111,25 +1832,31 @@ namespace FrostySdk.Managers
                     return false;
 
                 uint head = reader.ReadUInt();
-                if (head != fs.Head)
+                if (head != m_fileSystem.Head)
                 {
-                    bIsPatched = true;
-                    prePatchCache = new List<EbxAssetEntry>();  
+                    isPatched = true;
+                    prePatchCache = new List<EbxAssetEntry>();
                 }
 
                 int count = reader.ReadInt();
 
                 // SWBF2/BFV
-                if (ProfilesLibrary.DataVersion == (int)ProfileVersion.StarWarsBattlefrontII || ProfilesLibrary.DataVersion == (int)ProfileVersion.Battlefield5 || ProfilesLibrary.DataVersion == (int)ProfileVersion.StarWarsSquadrons)
+                if (ProfilesLibrary.IsLoaded(ProfileVersion.StarWarsBattlefrontII, ProfileVersion.Battlefield5, ProfileVersion.StarWarsSquadrons))
                 {
-                    superBundles.Add(new SuperBundleEntry() { Name = "<none>" });
+                    if (!isPatched)
+                    {
+                        m_superBundles.Add(new SuperBundleEntry() { Name = "<none>" });
+                    }
                 }
                 else
                 {
                     for (int i = 0; i < count; i++)
                     {
-                        SuperBundleEntry sbentry = new SuperBundleEntry {Name = reader.ReadNullTerminatedString()};
-                        superBundles.Add(sbentry);
+                        SuperBundleEntry sbentry = new SuperBundleEntry { Name = reader.ReadNullTerminatedString() };
+                        if (!isPatched)
+                        {
+                            m_superBundles.Add(sbentry);
+                        }
                     }
                 }
 
@@ -2150,8 +1877,8 @@ namespace FrostySdk.Managers
                     if (bentry.Name.StartsWith("win32/Win32"))
                         bentry.Name = bentry.Name.Remove(0, 6);
 
-                    if(!bIsPatched)
-                        bundles.Add(bentry);
+                    if (!isPatched)
+                        m_bundles.Add(bentry);
                 }
 
                 // ebx
@@ -2163,7 +1890,7 @@ namespace FrostySdk.Managers
                         Name = reader.ReadNullTerminatedString(),
                         Sha1 = reader.ReadSha1()
                     };
-                    entry.BaseSha1 = rm.GetBaseSha1(entry.Sha1);
+                    entry.BaseSha1 = m_resourceManager.GetBaseSha1(entry.Sha1);
                     entry.Size = reader.ReadLong();
                     entry.OriginalSize = reader.ReadLong();
                     entry.Location = (AssetDataLocation)reader.ReadInt();
@@ -2194,7 +1921,7 @@ namespace FrostySdk.Managers
                     for (int j = 0; j < subCount; j++)
                         entry.DependentAssets.Add(reader.ReadGuid());
 
-                    if (bIsPatched)
+                    if (isPatched)
                     {
                         entry.Guid = ebxGuid;
                         prePatchCache.Add(entry);
@@ -2204,11 +1931,11 @@ namespace FrostySdk.Managers
                         if (ebxGuid != Guid.Empty)
                         {
                             entry.Guid = ebxGuid;
-                            if (ebxGuidList.ContainsKey(entry.Guid))
+                            if (m_ebxGuidList.ContainsKey(entry.Guid))
                                 continue;
-                            ebxGuidList.Add(ebxGuid, entry);
+                            m_ebxGuidList.Add(ebxGuid, entry);
                         }
-                        ebxList.Add(entry.Name, entry);
+                        m_ebxList.Add(entry.Name, entry);
                     }
                 }
 
@@ -2230,7 +1957,7 @@ namespace FrostySdk.Managers
                         ResMeta = reader.ReadBytes(reader.ReadInt())
                     };
 
-                    entry.BaseSha1 = rm.GetBaseSha1(entry.Sha1);
+                    entry.BaseSha1 = m_resourceManager.GetBaseSha1(entry.Sha1);
 
                     bool hasExtraData = reader.ReadBoolean();
                     if (hasExtraData)
@@ -2250,11 +1977,11 @@ namespace FrostySdk.Managers
                     for (int j = 0; j < subCount; j++)
                         entry.Bundles.Add(reader.ReadInt());
 
-                    if (!bIsPatched)
+                    if (!isPatched)
                     {
-                        resList.Add(entry.Name, entry);
+                        m_resList.Add(entry.Name, entry);
                         if (entry.ResRid != 0)
-                            resRidList.Add(entry.ResRid, entry);
+                            m_resRidList.Add(entry.ResRid, entry);
                     }
                 }
 
@@ -2276,7 +2003,7 @@ namespace FrostySdk.Managers
                         LogicalSize = reader.ReadUInt()
                     };
 
-                    entry.BaseSha1 = rm.GetBaseSha1(entry.Sha1);
+                    entry.BaseSha1 = m_resourceManager.GetBaseSha1(entry.Sha1);
 
                     // these two values are actually read wrong from the initial scan, this is because
                     // the chunk meta is not stored in the same layout as the chunks (which the inital
@@ -2293,6 +2020,12 @@ namespace FrostySdk.Managers
                     entry.H32 = 0;
                     entry.FirstMip = -1;
 
+                    int sbCount = reader.ReadInt();
+                    for (int j = 0; j < sbCount; j++)
+                    {
+                        entry.SuperBundles.Add(reader.ReadInt());
+                    }
+                    
                     bool hasExtraData = reader.ReadBoolean();
                     if (hasExtraData)
                     {
@@ -2311,27 +2044,26 @@ namespace FrostySdk.Managers
                     for (int j = 0; j < subCount; j++)
                         entry.Bundles.Add(reader.ReadInt());
 
-                    if(!bIsPatched)
-                        chunkList.Add(entry.Id, entry);
+                    if (!isPatched)
+                        m_chunkList.Add(entry.Id, entry);
                 }
             }
 
-            return !bIsPatched;
+            return !isPatched;
         }
 
         private void WriteToCache()
         {
-            FileInfo fi = new FileInfo(fs.CacheName + ".cache");
+            FileInfo fi = new FileInfo(m_fileSystem.CacheName + ".cache");
             if (!Directory.Exists(fi.DirectoryName))
                 Directory.CreateDirectory(fi.DirectoryName);
 
-            int lastPercent = -1;
             using (NativeWriter writer = new NativeWriter(new FileStream(fi.FullName, FileMode.Create)))
             {
                 writer.Write(CacheMagic);
                 writer.Write(CacheVersion);
                 writer.Write(Fnv1.HashString(ProfilesLibrary.ProfileName));
-                writer.Write(fs.Head);
+                writer.Write(m_fileSystem.Head);
 
                 if (ProfilesLibrary.DataVersion == (int)ProfileVersion.StarWarsBattlefrontII || ProfilesLibrary.DataVersion == (int)ProfileVersion.Battlefield5 || ProfilesLibrary.DataVersion == (int)ProfileVersion.StarWarsSquadrons)
                 {
@@ -2339,156 +2071,125 @@ namespace FrostySdk.Managers
                 }
                 else
                 {
-                    WriteToLog("Writing to cache (Superbundles)");
-
-                    writer.Write(superBundles.Count);
-                    for (int i = 0; i < superBundles.Count; i++)
-                    {
-                        writer.WriteNullTerminatedString(superBundles[i].Name);
-                        WriteProgress(i, superBundles.Count, ref lastPercent);
-                    }
+                    writer.Write(m_superBundles.Count);
+                    foreach (SuperBundleEntry sbentry in m_superBundles)
+                        writer.WriteNullTerminatedString(sbentry.Name);
                 }
 
-                WriteToLog("Writing to cache (Bundles)");
-                lastPercent = -1;
-
-                writer.Write(bundles.Count);
-                for (int i = 0; i < bundles.Count; i++)
+                writer.Write(m_bundles.Count);
+                foreach (BundleEntry bentry in m_bundles)
                 {
-                    writer.WriteNullTerminatedString(bundles[i].Name);
-                    writer.Write(bundles[i].SuperBundleId);
-
-                    WriteProgress(i, bundles.Count, ref lastPercent);
+                    writer.WriteNullTerminatedString(bentry.Name);
+                    writer.Write(bentry.SuperBundleId);
                 }
 
-                WriteToLog("Writing to cache (EBX)");
-
-                writer.Write(ebxList.Values.Count);
-                // [DAI fix] was ElementAt(i), which rescans the dictionary each time (quadratic)
-                lastPercent = -1;
-                int ebxIndex = 0;
-                foreach (EbxAssetEntry ebx in ebxList.Values)
+                writer.Write(m_ebxList.Values.Count);
+                foreach (EbxAssetEntry entry in m_ebxList.Values)
                 {
-                    writer.WriteNullTerminatedString(ebx.Name);
-                    writer.Write(ebx.Sha1);
-                    writer.Write(ebx.Size);
-                    writer.Write(ebx.OriginalSize);
-                    writer.Write((int)ebx.Location);
-                    writer.Write(ebx.IsInline);
-                    writer.WriteNullTerminatedString(ebx.Type ?? "");
-                    writer.Write(ebx.Guid);
-                    writer.Write(ebx.ExtraData != null);
-                    if (ebx.ExtraData != null)
+                    writer.WriteNullTerminatedString(entry.Name);
+                    writer.Write(entry.Sha1);
+                    writer.Write(entry.Size);
+                    writer.Write(entry.OriginalSize);
+                    writer.Write((int)entry.Location);
+                    writer.Write(entry.IsInline);
+
+                    writer.WriteNullTerminatedString(entry.Type ?? "");
+                    writer.Write(entry.Guid);
+
+                    writer.Write(entry.ExtraData != null);
+                    if (entry.ExtraData != null)
                     {
-                        writer.Write(ebx.ExtraData.BaseSha1);
-                        writer.Write(ebx.ExtraData.DeltaSha1);
-                        writer.Write(ebx.ExtraData.DataOffset);
-                        writer.Write(ebx.ExtraData.SuperBundleId);
-                        writer.Write(ebx.ExtraData.IsPatch);
-                        writer.WriteNullTerminatedString(ebx.ExtraData.CasPath);
-                    }
-                    writer.Write(ebx.Bundles.Count);
-                    foreach (int baseBundleId in ebx.Bundles)
-                    {
-                        writer.Write(baseBundleId);
-                    }
-                    writer.Write(ebx.DependentAssets.Count);
-                    foreach (Guid dependencyGuid in ebx.EnumerateDependencies())
-                    {
-                        writer.Write(dependencyGuid);
+                        writer.Write(entry.ExtraData.BaseSha1);
+                        writer.Write(entry.ExtraData.DeltaSha1);
+                        writer.Write(entry.ExtraData.DataOffset);
+                        writer.Write(entry.ExtraData.SuperBundleId);
+                        writer.Write(entry.ExtraData.IsPatch);
+                        writer.WriteNullTerminatedString(entry.ExtraData.CasPath);
                     }
 
-                    WriteProgress(ebxIndex++, ebxList.Count, ref lastPercent);
+                    writer.Write(entry.Bundles.Count);
+                    foreach (int bentry in entry.Bundles)
+                        writer.Write(bentry);
+
+                    writer.Write(entry.DependentAssets.Count);
+                    foreach (Guid guid in entry.EnumerateDependencies())
+                        writer.Write(guid);
                 }
 
-                WriteToLog("Writing to cache (RES)");
-
-                writer.Write(resList.Values.Count);
-                lastPercent = -1;
-                int resIndex = 0;
-                foreach (ResAssetEntry res in resList.Values)
+                writer.Write(m_resList.Values.Count);
+                foreach (ResAssetEntry entry in m_resList.Values)
                 {
-                    writer.WriteNullTerminatedString(res.Name);
-                    writer.Write(res.Sha1);
-                    writer.Write(res.Size);
-                    writer.Write(res.OriginalSize);
-                    writer.Write((int)res.Location);
-                    writer.Write(res.IsInline);
-                    writer.Write(res.ResRid);
-                    writer.Write(res.ResType);
-                    writer.Write(res.ResMeta.Length);
-                    writer.Write(res.ResMeta);
-                    writer.Write(res.ExtraData != null);
-                    if (res.ExtraData != null)
+                    writer.WriteNullTerminatedString(entry.Name);
+                    writer.Write(entry.Sha1);
+                    writer.Write(entry.Size);
+                    writer.Write(entry.OriginalSize);
+                    writer.Write((int)entry.Location);
+                    writer.Write(entry.IsInline);
+
+                    writer.Write(entry.ResRid);
+                    writer.Write(entry.ResType);
+                    writer.Write(entry.ResMeta.Length);
+                    writer.Write(entry.ResMeta);
+
+                    writer.Write(entry.ExtraData != null);
+                    if (entry.ExtraData != null)
                     {
-                        writer.Write(res.ExtraData.BaseSha1);
-                        writer.Write(res.ExtraData.DeltaSha1);
-                        writer.Write(res.ExtraData.DataOffset);
-                        writer.Write(res.ExtraData.SuperBundleId);
-                        writer.Write(res.ExtraData.IsPatch);
-                        writer.WriteNullTerminatedString(res.ExtraData.CasPath);
-                    }
-                    writer.Write(res.Bundles.Count);
-                    foreach (int baseBundleId in res.Bundles)
-                    {
-                        writer.Write(baseBundleId);
+                        writer.Write(entry.ExtraData.BaseSha1);
+                        writer.Write(entry.ExtraData.DeltaSha1);
+                        writer.Write(entry.ExtraData.DataOffset);
+                        writer.Write(entry.ExtraData.SuperBundleId);
+                        writer.Write(entry.ExtraData.IsPatch);
+                        writer.WriteNullTerminatedString(entry.ExtraData.CasPath);
                     }
 
-                    WriteProgress(resIndex++, resList.Count, ref lastPercent);
+                    writer.Write(entry.Bundles.Count);
+                    foreach (int bentry in entry.Bundles)
+                        writer.Write(bentry);
                 }
 
-                WriteToLog("Writing to cache (CHUNK)");
-
-                writer.Write(chunkList.Count);
-                lastPercent = -1;
-                int chunkIndex = 0;
-                foreach (ChunkAssetEntry chunk in chunkList.Values)
+                writer.Write(m_chunkList.Count);
+                foreach (ChunkAssetEntry entry in m_chunkList.Values)
                 {
-                    writer.Write(chunk.Id);
-                    writer.Write(chunk.Sha1);
-                    writer.Write(chunk.Size);
-                    writer.Write((int)chunk.Location);
-                    writer.Write(chunk.IsInline);
-                    writer.Write(chunk.BundledSize);
-                    writer.Write(chunk.RangeStart);
-                    writer.Write(chunk.RangeEnd);
-                    writer.Write(chunk.LogicalOffset);
-                    writer.Write(chunk.LogicalSize);
-                    writer.Write(chunk.H32);
-                    writer.Write(chunk.FirstMip);
-                    writer.Write(chunk.ExtraData != null);
-                    if (chunk.ExtraData != null)
+                    writer.Write(entry.Id);
+                    writer.Write(entry.Sha1);
+                    writer.Write(entry.Size);
+                    writer.Write((int)entry.Location);
+                    writer.Write(entry.IsInline);
+
+                    writer.Write(entry.BundledSize);
+                    writer.Write(entry.RangeStart);
+                    writer.Write(entry.RangeEnd);
+                    writer.Write(entry.LogicalOffset);
+                    writer.Write(entry.LogicalSize);
+                    writer.Write(entry.H32);
+                    writer.Write(entry.FirstMip);
+                    writer.Write(entry.SuperBundles.Count);
+                    foreach (int sbId in entry.SuperBundles)
                     {
-                        writer.Write(chunk.ExtraData.BaseSha1);
-                        writer.Write(chunk.ExtraData.DeltaSha1);
-                        writer.Write(chunk.ExtraData.DataOffset);
-                        writer.Write(chunk.ExtraData.SuperBundleId);
-                        writer.Write(chunk.ExtraData.IsPatch);
-                        writer.WriteNullTerminatedString(chunk.ExtraData.CasPath);
-                    }
-                    writer.Write(chunk.Bundles.Count);
-                    foreach (int baseBundleId in chunk.Bundles)
-                    {
-                        writer.Write(baseBundleId);
+                        writer.Write(sbId);
                     }
 
-                    WriteProgress(chunkIndex++, chunkList.Count, ref lastPercent);
+                    writer.Write(entry.ExtraData != null);
+                    if (entry.ExtraData != null)
+                    {
+                        writer.Write(entry.ExtraData.BaseSha1);
+                        writer.Write(entry.ExtraData.DeltaSha1);
+                        writer.Write(entry.ExtraData.DataOffset);
+                        writer.Write(entry.ExtraData.SuperBundleId);
+                        writer.Write(entry.ExtraData.IsPatch);
+                        writer.WriteNullTerminatedString(entry.ExtraData.CasPath);
+                    }
+
+                    writer.Write(entry.Bundles.Count);
+                    foreach (int bentry in entry.Bundles)
+                        writer.Write(bentry);
                 }
             }
         }
 
-        // [DAI fix] report whole-percent steps only; one update per entry flooded the UI thread
-        private void WriteProgress(int index, int count, ref int lastPercent)
-        {
-            int percent = (int)((long)index * 100 / count);
-            if (percent == lastPercent)
-                return;
+        private void WriteToLog(string text, params object[] vars) => m_logger?.Log(text, vars);
 
-            lastPercent = percent;
-            WriteToLog(string.Format("progress:{0}", (double)index / count * 100.0));
-        }
-
-        private void WriteToLog(string text, params object[] vars) => logger?.Log(text, vars);
+        private void ReportProgress(int current, int total) => m_logger?.Log("progress:" + current / (float)total * 100d);
 
         private static Sha1 GenerateSha1(byte[] buffer)
         {
@@ -2509,7 +2210,7 @@ namespace FrostySdk.Managers
                 { "FifaAssetLoader", typeof(FifaAssetLoader) },
                 { "EdgeAssetLoader", typeof(EdgeAssetLoader) },
                 { "AnthemAssetLoader", typeof(AnthemAssetLoader) },
-                { "PVZAssetLoader", typeof(PVZAssetLoader) }
+                { "CasAssetLoader", typeof(CasAssetLoader) }
             };
 
             return loaderTypes[name].Name;

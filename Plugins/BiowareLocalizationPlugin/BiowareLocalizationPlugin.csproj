@@ -10,6 +10,7 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <UseWPF>true</UseWPF>
     <OutputType>Library</OutputType>
+    <PathMap>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)'))=$(MSBuildProjectName)</PathMap>
   </PropertyGroup>
   
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Developer - Debug|x64' ">
@@ -39,7 +40,11 @@
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command='xcopy /Y "$(TargetPath)" "$(SolutionDir)$(OutDir)Plugins\"' />
     <Exec Command='xcopy /Y "$(TargetPath)" "$(SolutionDir)..\FrostyModManager\$(OutDir)Plugins\"' />
-	</Target>
+  </Target>
+  
+  <ItemGroup>
+    <None Remove="Images\LocalizedStringViewer.png" />
+  </ItemGroup>
   
   <ItemGroup>
     <ProjectReference Include="..\..\FrostyControls\FrostyControls.csproj">
@@ -58,5 +63,9 @@
       <Private>false</Private>
     </ProjectReference>
 	<Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Resource Include="Images\LocalizedStringViewer.png" />
   </ItemGroup>
 </Project>

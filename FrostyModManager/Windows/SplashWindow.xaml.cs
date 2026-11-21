@@ -3,27 +3,151 @@ using Frosty.Core;
 using Frosty.Core.Legacy;
 using Frosty.Core.Windows;
 using FrostySdk;
+using FrostySdk.Converters;
 using FrostySdk.Interfaces;
 using FrostySdk.IO;
 using FrostySdk.Managers;
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media.Imaging;
+using System.Windows.Shell;
 
 namespace FrostyModManager.Windows
 {
     /// <summary>
     /// Interaction logic for SplashWindow.xaml
     /// </summary>
-    public partial class SplashWindow : Window
+    public partial class SplashWindow
     {
+        private class SplashWindowLogger : ILogger, ILoadingListLogger, INotifyPropertyChanged
+        {
+            private SplashWindow parent;
+
+            private double progress;
+            private string status;
+            private string loadingList = "";
+
+            public event PropertyChangedEventHandler PropertyChanged;
+
+            /// <summary>
+            /// The progress of the current task.
+            /// </summary>
+            public double Progress {
+                get {
+                    return progress;
+                }
+                set {
+                    if (value != progress)
+                    {
+                        progress = value;
+                        NotifyPropertyChanged();
+                    }
+                }
+            }
+
+            /// <summary>
+            /// The splash window's status.
+            /// </summary>
+            public string Status {
+                get {
+                    return status;
+                }
+                set {
+                    if (value != status)
+                    {
+                        status = value;
+                        NotifyPropertyChanged();
+                    }
+                }
+            }
+
+            public string LoadingList {
+                get {
+                    return loadingList;
+                }
+                set {
+                    if (value != loadingList)
+                    {
+                        loadingList = value;
+                        NotifyPropertyChanged();
+                    }
+                }
+            }
+
+            public SplashWindowLogger(SplashWindow inParent)
+            {
+                parent = inParent;
+
+                // Utilize DataBindings to eliminate need for Dispatcher
+                BindingOperations.SetBinding(parent.logTextBox, TextBlock.TextProperty, new Binding("Status")
+                {
+                    Source = this
+                });
+                BindingOperations.SetBinding(parent.loadingListTextBlock, TextBlock.TextProperty, new Binding("LoadingList")
+                {
+                    Source = this
+                });
+                BindingOperations.SetBinding(parent.progressBar, ProgressBar.ValueProperty, new Binding("Progress")
+                {
+                    Source = this
+                });
+
+                parent.TaskbarItemInfo.ProgressState = TaskbarItemProgressState.Normal;
+
+                BindingOperations.SetBinding(parent.TaskbarItemInfo, TaskbarItemInfo.ProgressValueProperty, new Binding("Progress")
+                {
+                    Converter = new DelegateBasedValueConverter(),
+                    ConverterParameter = new Func<object, object>(delegate (object value) {
+                        return (double)value / 100.0;
+                    }),
+                    Source = this,
+                });
+            }
+
+            private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            }
+
+            public void Log(string text, params object[] vars)
+            {
+                string fullText = string.Format(text, vars);
+
+                if (fullText.StartsWith("progress:"))
+                {
+                    fullText = fullText.Replace("progress:", "");
+                    Progress = double.Parse(fullText);
+                }
+                else
+                {
+                    Status = fullText;
+                }
+            }
+
+            public void LogLoadingList(string text) => LoadingList = text;
+
+            public void LogError(string text, params object[] vars)
+            {
+            }
+
+            public void LogWarning(string text, params object[] vars)
+            {
+            }
+        }
+
         public SplashWindow()
         {
             InitializeComponent();
-            versionTextBlock.Text = App.Version;
+
+            versionTextBlock.Text = Frosty.Core.App.Version;
 
             // [DAI fix] the window grows while data loads; keep it centered
             SizeChanged += (s, e) =>
@@ -37,6 +161,7 @@ namespace FrostyModManager.Windows
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            // load encryption key for profiles that require it
             if (ProfilesLibrary.RequiresKey)
             {
                 byte[] keyData = null;
@@ -63,31 +188,55 @@ namespace FrostyModManager.Windows
 
                 // add primary encryption key
                 byte[] key = new byte[0x10];
-                Array.Copy(keyData, key, 0x10);
-                KeyManager.Instance.AddKey("Key1", key);
+
+                try
+                {
+                    Array.Copy(keyData, key, 0x10);
+                    KeyManager.Instance.AddKey("Key1", key);
+                }
+                catch
+                {
+                    File.Delete(ProfilesLibrary.CacheName + ".key");
+                    FrostyMessageBox.Show("Encryption key is invalid. Unable to load profile.", "Frosty Editor");
+                    Close();
+                    return;
+                }
 
                 if (keyData.Length > 0x10)
                 {
-                    // add additional encryption keys
-                    key = new byte[0x10];
-                    Array.Copy(keyData, 0x10, key, 0, 0x10);
-                    KeyManager.Instance.AddKey("Key2", key);
+                    try
+                    {
+                        // add additional encryption keys
+                        key = new byte[0x10];
+                        Array.Copy(keyData, 0x10, key, 0, 0x10);
+                        KeyManager.Instance.AddKey("Key2", key);
 
-                    key = new byte[0x4000];
-                    Array.Copy(keyData, 0x20, key, 0, 0x4000);
-                    KeyManager.Instance.AddKey("Key3", key);
+                        key = new byte[0x4000];
+                        Array.Copy(keyData, 0x20, key, 0, 0x4000);
+                        KeyManager.Instance.AddKey("Key3", key);
+                    }
+                    catch
+                    {
+                        File.Delete(ProfilesLibrary.CacheName + ".key");
+                        FrostyMessageBox.Show("Encryption key is invalid. Unable to load profile.", "Frosty Editor");
+                        Close();
+                        return;
+                    }
                 }
             }
 
             Config.Save();
-            //Config.Save(App.configFilename);
+
+            App.Logger.Log("Loading profile for " + ProfilesLibrary.DisplayName);
 
             profileTextBlock.Text = ProfilesLibrary.DisplayName;
             bannerImage.Source = LoadBanner(ProfilesLibrary.Banner);
 
             DirectoryInfo di = new DirectoryInfo("Caches");
             if (!Directory.Exists(di.FullName))
+            {
                 Directory.CreateDirectory(di.FullName);
+            }
 
             // move any existing cache/sbdata.cas file over to the new caches directory
             foreach (var cacheName in Directory.EnumerateFiles(new FileInfo(Assembly.GetEntryAssembly().FullName).DirectoryName, "*.cache"))
@@ -95,59 +244,51 @@ namespace FrostyModManager.Windows
                 FileInfo fi = new FileInfo(cacheName);
                 File.Move(fi.FullName, ".\\Caches\\" + fi.Name);
 
-                string sbDataName = fi.FullName.Replace(".cache", "_sbdata.cas");
+                string sbDataName = fi.FullName.Replace(".cache", ".sbdata");
                 if (File.Exists(sbDataName))
-                    File.Move(sbDataName, ".\\Caches\\" + fi.Name.Replace(".cache", "_sbdata.cas"));
+                    File.Move(sbDataName, ".\\Caches\\" + fi.Name.Replace(".cache", ".sbdata"));
             }
-
-            TypeLibrary.Initialize();
-
-            // load filesystem to gather details on game version
-            string basePath = Config.Get<string>("GamePath", "", ConfigScope.Game);
-            //string basePath = Config.Get<string>("Init", "GamePath", "");
-            Frosty.Core.App.FileSystem = new FileSystem(basePath);
-            foreach (FileSystemSource source in ProfilesLibrary.Sources)
-                Frosty.Core.App.FileSystem.AddSource(source.Path, source.SubDirs);
-            Frosty.Core.App.FileSystem.Initialize(KeyManager.Instance.GetKey("Key1"));
 
             ILogger logger = new SplashWindowLogger(this);
+            AssetManagerImportResult result = new AssetManagerImportResult();
+
+            // load data from game or cache
+            await LoadData(logger, KeyManager.Instance.GetKey("Key1"), result);
 
             // check to make sure SDK is up to date
-            if (!File.Exists(Frosty.Core.App.FileSystem.CacheName + ".cache"))
+            if (TypeLibrary.GetSdkVersion() != Frosty.Core.App.FileSystemManager.Head)
             {
-                // load data from game or cache
-                await LoadData(logger);
-
-                if (TypeLibrary.GetSdkVersion() != Frosty.Core.App.FileSystem.Head)
+                var skipSdkUpdate = new List<ProfileVersion>
                 {
-                    // requires updating
-                    SdkUpdateWindow sdkWin = new SdkUpdateWindow(this);
-                    sdkWin.ShowDialog();
+                    ProfileVersion.Anthem
+                };
+
+                // requires updating
+                if (!skipSdkUpdate.Contains((ProfileVersion)ProfilesLibrary.DataVersion) && UpdateSdk())
+                {
+                    Close();
                 }
-            }
-
-            // clear out all global managers
-            Frosty.Core.App.AssetManager = null;
-            Frosty.Core.App.ResourceManager = null;
-            Frosty.Core.App.FileSystem = null;
-            GC.Collect();
-
-            foreach (var startupAction in App.PluginManager.StartupActions)
-            {
-                await Task.Run(() => { startupAction.Action(logger); });
+                if (ProfilesLibrary.EbxVersion > 4)
+                {
+                    // initialze assetmanager anyways
+                    await FinishLoadingData(logger, result);
+                }
             }
 
             // show the main editor window
             MainWindow win = new MainWindow();
-            App.Current.MainWindow = win;
+            Application.Current.MainWindow = win;
             win.Show();
+
+            App.Logger.Log("Initialization complete");
+            App.NotificationManager.Show("Initialization complete");
 
             Close();
         }
 
-        private BitmapImage LoadBanner(byte[] banner)
+        private static BitmapImage LoadBanner(byte[] banner)
         {
-            if (banner == null||banner.Length == 0)
+            if (banner == null || banner.Length == 0)
                 return null;
             BitmapImage bmp = new BitmapImage();
             using (MemoryStream ms = new MemoryStream(banner))
@@ -163,23 +304,100 @@ namespace FrostyModManager.Windows
             return bmp;
         }
 
-        private async Task<int> LoadData(ILogger logger)
+        private static async Task<int> LoadData(ILogger logger, byte[] key, AssetManagerImportResult result)
         {
             await Task.Run(() =>
             {
-                // need to load the managers into the global core app class as the SDK updater
-                // requires them to be valid
+                string basePath = Config.Get<string>("GamePath", null, ConfigScope.Game);
 
-                Frosty.Core.App.ResourceManager = new ResourceManager(Frosty.Core.App.FileSystem);
+                Frosty.Core.App.FileSystemManager = new FileSystemManager(basePath);
+                foreach (FileSystemSource source in ProfilesLibrary.Sources)
+                {
+                    Frosty.Core.App.FileSystemManager.AddSource(source.Path, source.SubDirs);
+                }
+                Frosty.Core.App.FileSystemManager.Initialize(key);
+
+                Frosty.Core.App.ResourceManager = new ResourceManager(Frosty.Core.App.FileSystemManager);
                 Frosty.Core.App.ResourceManager.SetLogger(logger);
                 Frosty.Core.App.ResourceManager.Initialize();
 
-                Frosty.Core.App.AssetManager = new AssetManager(Frosty.Core.App.FileSystem, Frosty.Core.App.ResourceManager);
-                if (ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa17 || ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa18 || ProfilesLibrary.DataVersion == (int)ProfileVersion.Madden19 || ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa19 || ProfilesLibrary.DataVersion == (int)ProfileVersion.Madden20 || ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa20 || ProfilesLibrary.DataVersion == (int)ProfileVersion.PlantsVsZombiesBattleforNeighborville)
-                    Frosty.Core.App.AssetManager.RegisterCustomAssetManager("legacy", typeof(LegacyFileManager));
-                Frosty.Core.App.AssetManager.SetLogger(logger);
+                Frosty.Core.App.AssetManager = new AssetManager(Frosty.Core.App.FileSystemManager, Frosty.Core.App.ResourceManager);
 
-                Frosty.Core.App.AssetManager.Initialize(additionalStartup: false);
+                // Initialize plugin extensions
+                TypeLibrary.Initialize();
+                App.PluginManager.Initialize();
+
+                // load legacy asset manager if profile uses legacy system
+                if (ProfilesLibrary.IsLoaded(ProfileVersion.Fifa17,
+                        ProfileVersion.Fifa18,
+                        ProfileVersion.Madden19,
+                        ProfileVersion.Fifa19,
+                        ProfileVersion.Madden20,
+                        ProfileVersion.Fifa20,
+                        ProfileVersion.PlantsVsZombiesBattleforNeighborville))
+                {
+                    Frosty.Core.App.AssetManager.RegisterCustomAssetManager("legacy", typeof(LegacyFileManager));
+                }
+                else if (ProfilesLibrary.IsLoaded(ProfileVersion.Fifa21, ProfileVersion.Madden22, ProfileVersion.Fifa22,
+                    ProfileVersion.Madden23, ProfileVersion.Fifa23))
+                {
+                    Frosty.Core.App.AssetManager.RegisterCustomAssetManager("legacy", typeof(LegacyFileManagerV2));
+                }
+
+                // ensure mods folder is created
+                DirectoryInfo di = new DirectoryInfo("Mods/" + ProfilesLibrary.ProfileName);
+                if (!di.Exists)
+                {
+                    Directory.CreateDirectory(di.FullName);
+                }
+
+                // newer ebx formats need the SDK for the types, so update the SDK before generating the cache
+                if (ProfilesLibrary.EbxVersion > 4)
+                {
+                    if (TypeLibrary.GetSdkVersion() != Frosty.Core.App.FileSystemManager.Head)
+                    {
+                        return;
+                    }
+                }
+
+                Frosty.Core.App.AssetManager.SetLogger(logger);
+                Frosty.Core.App.AssetManager.Initialize(false, result);
+            });
+
+            return 0;
+        }
+
+        private void Grid_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            DragMove();
+        }
+
+        private bool UpdateSdk()
+        {
+            SdkUpdateWindow sdkWin = new SdkUpdateWindow(this);
+            if (sdkWin.ShowDialog() == true)
+            {
+                return true;
+            }
+
+            if (TypeLibrary.GetSdkVersion() == 0)
+            {
+                MessageBoxResult result = FrostyMessageBox.Show("Missing SDK.\nPlease generate a SDK for this game.", "Frosty", MessageBoxButton.OK);
+                if (result == MessageBoxResult.OK)
+                {
+                    return UpdateSdk();
+                }
+                return true;
+            }
+            return false;
+        }
+
+        private static async Task<int> FinishLoadingData(ILogger logger, AssetManagerImportResult result)
+        {
+            await Task.Run(() =>
+            {
+                Frosty.Core.App.AssetManager.SetLogger(logger);
+                Frosty.Core.App.AssetManager.Initialize(false, result);
             });
 
             return 0;

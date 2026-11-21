@@ -1,11 +1,11 @@
-﻿using FrostySdk;
-using FrostySdk.IO;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using FrostySdk;
+using FrostySdk.IO;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Frosty.Core
 {
@@ -56,6 +56,15 @@ namespace Frosty.Core
                 {
                     if (Packs.ContainsKey(option))
                         Packs.Remove(option);
+                }
+            }
+
+            internal void Rename(string option, string newOption, ConfigScope scope = ConfigScope.Game) {
+                if (scope == ConfigScope.Pack && Packs.ContainsKey(option))
+                {
+                    Packs.TryGetValue(option, out var value);
+                    Packs.Add(newOption, value);
+                    Packs.Remove(option);
                 }
             }
 
@@ -181,6 +190,13 @@ namespace Frosty.Core
                 Current.GlobalOptions.Remove(option);
         }
 
+        public static void Rename(string option, string newoption, ConfigScope scope = ConfigScope.Global, string profile = null) {
+            if (scope == ConfigScope.Game || scope == ConfigScope.Pack)
+                Current.Games[profile ?? ProfilesLibrary.ProfileName].Rename(option, newoption, scope);
+            else if (Current.GlobalOptions.ContainsKey(option))
+                Current.GlobalOptions.Remove(option);
+        }
+
         /// <summary>
         /// Determines whether the <see cref="Config"/> contains the specified key.
         /// </summary>
@@ -216,11 +232,15 @@ namespace Frosty.Core
 
             if (retrievedValue != null)
             {
+                if (retrievedValue is String s)
+                {
+                    retrievedValue = !string.IsNullOrEmpty(s) ? retrievedValue : null;
+                }
                 // check if the object is or derives from a JToken (i.e raw JSON objects)
-                if (retrievedValue is JToken)
+                else if (retrievedValue is JToken t)
                 {
                     // utilize the JToken converter rather than the convert class' converter
-                    retrievedValue = ((JToken)retrievedValue).ToObject(typeof(T));
+                    retrievedValue = t.ToObject(typeof(T));
                 }
                 else
                 {
@@ -230,7 +250,7 @@ namespace Frosty.Core
                 }
             }
 
-            return (T)(retrievedValue != null ? retrievedValue : defaultValue);
+            return (T)(retrievedValue ?? defaultValue);
         }
 
         // indexer
@@ -475,7 +495,11 @@ namespace Frosty.Core
         public static void Load(string path = "")
         {
             if (path == "")
-                path = App.PluginManager.ManagerType == PluginManagerType.Editor ? $"{App.GlobalSettingsPath}/editor_config.json" : $"{App.GlobalSettingsPath}/manager_config.json";
+            {
+                path = (App.PluginManager == null || App.PluginManager.ManagerType == PluginManagerType.Editor)
+                    ? $"{App.GlobalSettingsPath}/editor_config.json"
+                    : $"{App.GlobalSettingsPath}/manager_config.json";
+            }
 
             using (StreamReader reader = new StreamReader(path))
             {

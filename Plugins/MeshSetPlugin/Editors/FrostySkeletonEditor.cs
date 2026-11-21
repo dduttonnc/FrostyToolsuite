@@ -5,6 +5,7 @@ using FrostySdk.Managers;
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using FrostySdk.Managers.Entries;
 
 namespace MeshSetPlugin.Editors
 {
@@ -88,7 +89,9 @@ namespace MeshSetPlugin.Editors
         {
             AssetEntry selectedItem = dataExplorer.SelectedAsset;
             if (selectedItem == null)
+            {
                 return;
+            }
 
             //label.Text = selectedItem.Name;
             popupComboBox.IsDropDownOpen = false;

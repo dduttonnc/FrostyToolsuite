@@ -106,7 +106,9 @@ namespace MeshSetPlugin.Fbx
         ~FbxNative()
         {
             if (bNeedsFreeing)
+            {
                 FbxUtils.FbxFree(pHandle);
+            }
         }
     }
 
@@ -181,7 +183,9 @@ namespace MeshSetPlugin.Fbx
             }
 
             if (bDisposing)
+            {
                 GC.SuppressFinalize(this);
+            }
         }
     }
 
@@ -208,7 +212,9 @@ namespace MeshSetPlugin.Fbx
         {
             IntPtr Ptr = GetWriterFormatDescriptionInternal(pHandle, pFileFormat);
             if (Ptr == IntPtr.Zero)
+            {
                 return "";
+            }
 
             return FbxUtils.IntPtrToString(Ptr);
         }
@@ -258,7 +264,9 @@ namespace MeshSetPlugin.Fbx
             }
 
             if (bDisposing)
+            {
                 GC.SuppressFinalize(this);
+            }
         }
 
         public override int GetHashCode()
@@ -283,7 +291,9 @@ namespace MeshSetPlugin.Fbx
         public static bool operator !=(FbxObject a, FbxObject b)
         {
             if (ReferenceEquals(a, null))
+            {
                 return !ReferenceEquals(b, null);
+            }
 
             return !a.Equals(b);
         }
@@ -734,7 +744,9 @@ namespace MeshSetPlugin.Fbx
             get
             {
                 for (int i = 0; i < ChildCount; i++)
+                {
                     yield return GetChild(i);
+                }
             }
         }
 
@@ -782,7 +794,9 @@ namespace MeshSetPlugin.Fbx
                 {
                     FbxNodeAttribute attr = new FbxNodeAttribute(ptr);
                     if (attr.AttributeType == type)
+                    {
                         return attr;
+                    }
                 }
             }
             return null;
@@ -796,7 +810,9 @@ namespace MeshSetPlugin.Fbx
         public FbxAMatrix EvaluateGlobalTransform(FbxTime time = null, EPivotSet pivotSet = EPivotSet.eSourcePivot, bool applyTarget = false, bool forceEval = false)
         {
             if (time == null)
+            {
                 time = FbxTime.FBXSDK_TIME_INFINITE;
+            }
 
             IntPtr ptr = EvaluateGlobalTransformInternal(pHandle, time.Handle, pivotSet, applyTarget, forceEval);
             return new FbxAMatrix(ptr);
@@ -877,7 +893,9 @@ namespace MeshSetPlugin.Fbx
             get
             {
                 for (int i = 0; i < ClusterCount; i++)
+                {
                     yield return GetCluster(i);
+                }
             }
         }
 
@@ -1031,7 +1049,9 @@ namespace MeshSetPlugin.Fbx
         {
             IntPtr ptr = GetControlPointIndicesInternal(pHandle);
             if (ptr == IntPtr.Zero)
+            {
                 return null;
+            }
 
             int[] outBuf = new int[ControlPointIndicesCount];
             Marshal.Copy(ptr, outBuf, 0, ControlPointIndicesCount);
@@ -1043,7 +1063,9 @@ namespace MeshSetPlugin.Fbx
         {
             IntPtr ptr = GetControlPointWeightsInternal(pHandle);
             if (ptr == IntPtr.Zero)
+            {
                 return null;
+            }
 
             double[] outBuf = new double[ControlPointIndicesCount];
             Marshal.Copy(ptr, outBuf, 0, ControlPointIndicesCount);
@@ -1201,7 +1223,9 @@ namespace MeshSetPlugin.Fbx
         public FbxNode GetNode(int index)
         {
             if (index >= NodeCount)
+            {
                 return null;
+            }
 
             IntPtr ptr = GetNodeInternal(pHandle, index);
             return ptr == IntPtr.Zero ? null : new FbxNode(ptr);
@@ -1329,7 +1353,9 @@ namespace MeshSetPlugin.Fbx
             {
                 FbxLayerElementUV layer = GetElementUV(i, FbxLayerElement.EType.eUnknown);
                 if (layer.Name == name)
+                {
                     return layer;
+                }
             }
             return null;
         }
@@ -1346,7 +1372,9 @@ namespace MeshSetPlugin.Fbx
             {
                 FbxLayerElementVertexColor layer = GetElementVertexColor(i);
                 if (layer.Name == name)
+                {
                     return layer;
+                }
             }
             return null;
         }
@@ -1395,6 +1423,22 @@ namespace MeshSetPlugin.Fbx
 
         [DllImport("thirdparty/libfbxsdk", EntryPoint = "?ComputeEdgeSmoothingFromNormals@FbxGeometryConverter@fbxsdk@@QEBA_NPEAVFbxMesh@2@@Z")]
         private static extern bool ComputeEdgeSmoothingFromNormalsInternal(IntPtr handle, IntPtr mesh);
+        
+        [DllImport("thirdparty/libfbxsdk", EntryPoint = "?MergeMeshes@FbxGeometryConverter@fbxsdk@@QEAAPEAVFbxNode@2@AEAV?$FbxArray@PEAVFbxNode@fbxsdk@@$0BA@@2@PEBDPEAVFbxScene@2@@Z")]
+        //[DllImport("thirdparty/libfbxsdk", EntryPoint = "?MergeMeshes@FbxGeometryConverter@fbxsdk@@QEAAPEAVFbxNode@2@AEAV?$FbxArray@PEAVFbxNode@fbxsdk@@@2@PEBDPEAVFbxScene@2@@Z")]
+        private static extern IntPtr MergeMeshesInternal(IntPtr handle, IntPtr pMeshNodes, [MarshalAs(UnmanagedType.LPStr)] string pNodeName, IntPtr pScene);
+        
+        [DllImport("thirdparty/libfbxsdk", EntryPoint = "??0?$FbxArray@PEAVKFCurve@fbxsdk@@$0BA@@fbxsdk@@QEAA@H@Z")]
+        //[DllImport("thirdparty/libfbxsdk", EntryPoint = "??0?$FbxArray@PEAVKFCurve@fbxsdk@@@fbxsdk@@QEAA@H@Z")]
+        private static extern void FbxNodeArrayConstruct(IntPtr handle, int initialSize);
+        
+        [DllImport("thirdparty/libfbxsdk", EntryPoint = "??1?$FbxArray@PEAVKFCurve@fbxsdk@@$0BA@@fbxsdk@@QEAA@XZ")]
+        //[DllImport("thirdparty/libfbxsdk", EntryPoint = "??1?$FbxArray@PEAVKFCurve@fbxsdk@@@fbxsdk@@QEAA@XZ")]
+        private static extern void FbxNodeArrayDestroy(IntPtr handle);
+        
+        [DllImport("thirdparty/libfbxsdk", EntryPoint = "?Add@?$FbxArray@PEAVKFCurve@fbxsdk@@$0BA@@fbxsdk@@QEAAHAEBQEAVKFCurve@2@@Z")]
+        //[DllImport("thirdparty/libfbxsdk", EntryPoint = "?Add@?$FbxArray@PEAVKFCurve@fbxsdk@@@fbxsdk@@QEAAHAEBQEAVKFCurve@2@@Z")]
+        private static extern int FbxNodeArrayAdd(IntPtr handle, ref IntPtr nodePtr);
 
         public FbxGeometryConverter(FbxManager mgr)
         {
@@ -1405,6 +1449,27 @@ namespace MeshSetPlugin.Fbx
         public bool ComputeEdgeSmoothingFromNormals(FbxMesh pMesh)
         {
             return ComputeEdgeSmoothingFromNormalsInternal(pHandle, pMesh.Handle);
+        }
+        
+        public FbxNode MergeMeshes(IEnumerable<FbxNode> meshNodes, FbxScene scene, string mergedNodeName = "MergedNode")
+        {
+            const int arrayNativeSize = 24;
+            IntPtr arrayHandle = FbxUtils.FbxMalloc(arrayNativeSize);
+            
+            FbxNodeArrayConstruct(arrayHandle, 0);
+            
+            foreach (FbxNode node in meshNodes)
+            {
+                IntPtr nodeHandle = node.Handle;
+                FbxNodeArrayAdd(arrayHandle, ref nodeHandle);
+            }
+            
+            IntPtr result = MergeMeshesInternal(pHandle, arrayHandle, mergedNodeName, scene.Handle);
+            
+            FbxNodeArrayDestroy(arrayHandle);
+            FbxUtils.FbxFree(arrayHandle);
+            
+            return result == IntPtr.Zero ? null : new FbxNode(result);
         }
 
         public void Dispose()
@@ -1440,9 +1505,6 @@ namespace MeshSetPlugin.Fbx
 
         [DllImport("thirdparty/libfbxsdk", EntryPoint = "?GetPolygonVertex@FbxMesh@fbxsdk@@QEBAHHH@Z")]
         private static extern int GetPolygonIndexInternal(IntPtr handle, int pPolygonIndex, int pPositionInPolygon);
-
-        [DllImport("thirdparty/libfbxsdk", EntryPoint = "?GetPolygonVertexIndex@FbxMesh@fbxsdk@@QEBAHH@Z")]
-        private static extern int GetPolygonVertexIndexInternal(IntPtr handle, int pPolygonIndex);
 
         [DllImport("thirdparty/libfbxsdk", EntryPoint = "?IsTriangleMesh@FbxMesh@fbxsdk@@QEBA_NXZ")]
         private static extern bool IsTriangleMeshInternal(IntPtr handle);
@@ -1512,11 +1574,6 @@ namespace MeshSetPlugin.Fbx
         public int GetPolygonIndex(int index, int position)
         {
             return GetPolygonIndexInternal(pHandle, index, position);
-        }
-
-        public int GetPolygonVertexIndex(int index)
-        {
-            return GetPolygonVertexIndexInternal(pHandle, index);
         }
 
         public bool IsTriangleMesh()
@@ -1867,7 +1924,10 @@ namespace MeshSetPlugin.Fbx
             {
                 IntPtr Ptr = GetDirectArrayInternal(pHandle);
                 if (Ptr == IntPtr.Zero)
+                {
                     return null;
+                }
+
                 return new FbxLayerElementArray(Ptr);
             }
         }
@@ -1878,7 +1938,10 @@ namespace MeshSetPlugin.Fbx
             {
                 IntPtr Ptr = GetIndexArrayInternal(pHandle);
                 if (Ptr == IntPtr.Zero)
+                {
                     return null;
+                }
+
                 return new FbxLayerElementArray(Ptr);
             }
         }

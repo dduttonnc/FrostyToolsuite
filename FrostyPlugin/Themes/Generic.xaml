@@ -17,6 +17,9 @@
         <!-- Icons -->
         <ResourceDictionary Source="/FrostyCore;component/Themes/Icons.xaml"/>
         
+        <!-- Controls -->
+        <ResourceDictionary Source="/FrostyCore;component/Themes/Controls/Notification.xaml"/>
+        
     </ResourceDictionary.MergedDictionaries>
 
     <Path x:Key="Icon" Data="M 66.669922 4.7421875 L 53.285156 18.126953 L 57.832031 35.804688 L 43.941406 28.482422 L 44.699219 43.380859 L 31.0625 30.501953 L 13.132812 35.046875 L 17.929688 54.494141 L 35.355469 58.533203 L 22.476562 67.119141 L 34.849609 74.443359 L 17.425781 79.494141 L 13.384766 97.171875 L 32.830078 102.98047 L 44.699219 90.353516 L 45.457031 105.75781 L 57.578125 99.193359 L 53.791016 117.62695 L 67.427734 129.49609 L 80.306641 115.10156 L 76.771484 98.181641 L 90.662109 104.74805 L 90.408203 91.869141 L 104.04492 104.24414 L 121.4707 99.697266 L 116.92578 80.503906 L 98.490234 75.201172 L 111.11719 67.119141 L 98.742188 59.796875 L 117.42969 54.746094 L 121.97656 37.068359 L 102.7832 30.753906 L 89.904297 43.634766 L 89.146484 27.976562 L 76.519531 34.542969 L 80.560547 17.117188 L 66.669922 4.7421875 z M 66.658203 25.910156 L 73.65625 37.314453 L 66.580078 62.201172 L 60.175781 37.300781 L 66.658203 25.910156 z M 31.072266 45.349609 L 44.464844 45.794922 L 63.214844 65.169922 L 38.125 58.027344 L 31.072266 45.349609 z M 88.75 46.509766 L 102.76758 47.3125 L 95.892578 58.384766 L 70.892578 64.455078 L 88.75 46.509766 z M 63.035156 68.830078 L 45.177734 87.3125 L 30.714844 87.3125 L 37.677734 75.349609 L 63.035156 68.830078 z M 71.160156 69.277344 L 95.982422 76.242188 L 103.48242 88.294922 L 89.822266 88.5625 L 71.160156 69.277344 z M 66.785156 71.419922 L 73.839844 96.330078 L 66.607422 108.02734 L 59.910156 95.974609 L 66.785156 71.419922 z"/>
@@ -235,7 +238,7 @@
 
                         <GridSplitter x:Name="gs" Grid.Row="2" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Height="3" Background="{StaticResource ControlBackground}" ResizeDirection="Rows"/>
 
-                        <ListView x:Name="PART_AssetListView" Grid.Row="3" HorizontalContentAlignment="Stretch" SelectionMode="Single" />
+                        <ListView x:Name="PART_AssetListView" Grid.Row="3" HorizontalContentAlignment="Stretch" SelectionMode="Extended" ScrollViewer.CanContentScroll="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling" />
                         <Grid Grid.Row="2" Visibility="Hidden">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="3*"/>
@@ -342,6 +345,19 @@
                 <Setter Property="Background" Value="{StaticResource WindowBackground}"/>
                 <Setter Property="Foreground" Value="{StaticResource FontColor}"/>
                 <Setter Property="CaretBrush" Value="{StaticResource FontColor}"/>
+                <Setter Property="ContextMenu">
+                    <Setter.Value>
+                        <ContextMenu>
+                            <MenuItem Header="Cut"
+                                      InputGestureText="Ctrl+X"
+                                      Command="ApplicationCommands.Cut" />
+                            <MenuItem Header="Copy"
+                                      Command="ApplicationCommands.Copy" />
+                            <MenuItem Header="Paste"
+                                      Command="ApplicationCommands.Paste" />
+                        </ContextMenu>
+                    </Setter.Value>
+                </Setter>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="{x:Type TextBox}">
@@ -459,6 +475,13 @@
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
+            </Style>
+            <Style TargetType="{x:Type ToolTip}" BasedOn="{StaticResource {x:Type ToolTip}}">
+                <Style.Triggers>
+                    <Trigger Property="Content" Value="">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                    </Trigger>
+                </Style.Triggers>
             </Style>
         </Style.Resources>
         <Setter Property="IsExpanded" Value="{Binding Path=IsExpanded}"/>
@@ -811,7 +834,7 @@
                                                             <Separator Margin="1,0,1,0"/>
                                                         </Border>
 
-                                                        <ctrl:FrostyWatermarkTextBox x:Name="PART_FilterTextBox" Height="24" Margin="1,0,1,1" WatermarkText="Filter" VerticalContentAlignment="Center" BorderThickness="1"/>
+                                                        <ctrl:FrostyWatermarkTextBox x:Name="PART_FilterTextBox" Height="24" Margin="2,-8,1,2" WatermarkText="Filter" VerticalContentAlignment="Center" BorderThickness="1"/>
 
                                                         <Border x:Name="PART_TBBorder" Height="22">
                                                             <TextBlock x:Name="PART_TextBlock" VerticalAlignment="Center" Text="Select Class" Margin="4,0,0,0" Foreground="{StaticResource FontColor}" Opacity="0.5" FontFamily="MS Reference Sans Serif"/>
@@ -1059,6 +1082,41 @@
             </Setter.Value>
         </Setter>
     </Style>
+    
+    <Style TargetType="{x:Type editors:FrostyFolderPathControl}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type editors:FrostyFolderPathControl}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="55"/>
+                        </Grid.ColumnDefinitions>
+
+                        <ctrl:FrostyEllipsedTextBox IsReadOnly="True" Text="{Binding Path=Text, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWay}" Foreground="{StaticResource FontColor}" ToolTip="{Binding Path=Text, RelativeSource={RelativeSource TemplatedParent}}"/>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button x:Name="PART_BrowseButton" Width="17" Margin="1" ToolTip="Select Folder">
+                                <Button.Content>
+                                    <Image Source="/FrostyCore;component/Images/More.png" Width="14"/>
+                                </Button.Content>
+                            </Button>
+                            <Button x:Name="PART_OpenButton" Width="17" Margin="1" ToolTip="Open Folder">
+                                <Button.Content>
+                                    <Image Source="/FrostyCore;component/Images/Open.png" Width="14"/>
+                                </Button.Content>
+                            </Button>
+                            <Button x:Name="PART_ClearButton" Width="17" Margin="1" ToolTip="Clear Path">
+                                <Button.Content>
+                                    <Path Width="10" Height="10" Fill="#f7f7f7" Stretch="Uniform" Data="{Binding Path=Data, Source={StaticResource RemoveButtonIcon}}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                </Button.Content>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
 
     <Style TargetType="{x:Type editors:FrostyLocalizedStringReferenceControl}">
         <Setter Property="Padding" Value="0"/>
@@ -1207,9 +1265,9 @@
 
     <Style TargetType="{x:Type editors:FrostyRotationControl}" BasedOn="{StaticResource {x:Type editors:FrostyVectorControl}}">
         <Setter Property="ControlType" Value="Vec3"/>
-        <Setter Property="XLabel" Value="X"/>
-        <Setter Property="YLabel" Value="Y"/>
-        <Setter Property="ZLabel" Value="Z"/>
+        <Setter Property="XLabel" Value="Y"/>
+        <Setter Property="YLabel" Value="P"/>
+        <Setter Property="ZLabel" Value="R"/>
     </Style>
 
     <!-- FrostyAssetListView -->
@@ -1221,7 +1279,7 @@
                         <conv:AssetEntryToBitmapSourceConverter x:Key="AssetEntryToBitmapSourceConverter"/>
                     </ControlTemplate.Resources>
                     <Grid>
-                        <ListView x:Name="PART_AssetListView" Grid.Row="3" HorizontalContentAlignment="Stretch" SelectionMode="Single" ItemsSource="{TemplateBinding ItemsSource}">
+                        <ListView x:Name="PART_AssetListView" Grid.Row="3" HorizontalContentAlignment="Stretch" SelectionMode="Extended" ItemsSource="{TemplateBinding ItemsSource}" VirtualizingPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling">
                             <ListView.ItemContainerStyle>
                                 <Style TargetType="ListViewItem" BasedOn="{StaticResource baseListViewItemStyle}">
                                     <Setter Property="ContextMenu" Value="{Binding Path=AssetContextMenu, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type local:FrostyAssetListView}}}"/>
@@ -1248,6 +1306,11 @@
                                     </Setter>
                                 </Style>
                             </ListView.ItemContainerStyle>
+                            <ListView.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel />
+                                </ItemsPanelTemplate>
+                            </ListView.ItemsPanel>
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Width="{Binding Path=ActualWidth, ElementName=gridHelper1}" HeaderTemplate="{StaticResource assetListViewAscendingSorting}">
@@ -1317,7 +1380,7 @@
                             <RowDefinition Height="38"/>
                         </Grid.RowDefinitions>
 
-                        <local:FrostyPropertyGrid Grid.Row="0" x:Name="PART_PropertyGrid" ClassViewVisible="False" InitialWidth="150" Classes="{Binding Path=OptionsData, RelativeSource={RelativeSource AncestorType={x:Type local:FrostyImportExportBox}}}"/>
+                        <local:FrostyPropertyGrid Grid.Row="0" x:Name="PART_PropertyGrid" ClassViewVisible="False" InitialWidth="*" Classes="{Binding Path=OptionsData, RelativeSource={RelativeSource AncestorType={x:Type local:FrostyImportExportBox}}}"/>
 
                         <Border Grid.Row="1" Background="{StaticResource ListBackground}">
                             <Grid Margin="8">
@@ -1390,25 +1453,42 @@
                 <DataTemplate>
                     <DataTemplate.Resources>
                         <ctrl:WindowCloseCommand x:Key="CloseCommand"/>
+                        <local:ExceptionBoxClickCommand x:Key="exceptionBoxClickCommand" />
                     </DataTemplate.Resources>
 
                     <Grid Background="{StaticResource ListBackground}">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="26"/>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="38"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Exception has occured text -->
-                        <TextBlock Grid.Row="0" Text="An unhandled exception has occurred" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource FontColor}" FontFamily="Global User Interface" FontSize="14"/>
+                        <!-- Header -->
+                        <StackPanel Grid.Row="0" Margin="5,5,5,0">
+                            <TextBlock Margin="2" Text="An unhandled exception has occurred" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource FontColor}" FontFamily="Global User Interface" FontSize="16"/>
+                            <TextBlock Margin="2,0,2,2" Text="{Binding ExceptionMessageText, RelativeSource={RelativeSource AncestorType={x:Type local:FrostyExceptionBox}}}" TextWrapping="WrapWithOverflow" TextTrimming="None" TextAlignment="Center" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource FontColor}" FontFamily="Global User Interface"/>
+                        </StackPanel>
+                        
+                        <!-- Text -->
+                        <TabControl Grid.Row="1" Margin="8,0,8,0">
+                            <TabItem Header="Exception">
+                                <TextBox BorderThickness="1" Padding="4" Text="{Binding ExceptionText, RelativeSource={RelativeSource AncestorType={x:Type local:FrostyExceptionBox}}}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" IsReadOnly="True" FontFamily="Consolas"/>
+                            </TabItem>
+                            <TabItem Header="Log">
+                                <TextBox BorderThickness="1" Padding="4" Text="{Binding LogText, RelativeSource={RelativeSource AncestorType={x:Type local:FrostyExceptionBox}}}" FontFamily="Consolas" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/>
+                            </TabItem>
+                        </TabControl>
 
-                        <!-- Crash text -->
-                        <TextBox Grid.Row="1" Text="{Binding ExceptionText, RelativeSource={RelativeSource AncestorType={x:Type local:FrostyExceptionBox}}}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" IsReadOnly="True" FontFamily="Consolas" Margin="8,0,8,0" BorderThickness="1" Padding="4"/>
-
-                        <!-- Ok button -->
+                        <Border Grid.Row="2"/>
+                        <!-- Buttons -->
                         <StackPanel Grid.Row="2" Margin="8" FlowDirection="RightToLeft" Orientation="Horizontal">
-                            <Button Content="Ok" Width="75" Command="{StaticResource CloseCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"/>
+                            <Button Content="OK" Width="75" Command="{StaticResource CloseCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"/>
                             <!--<Button x:Name="PART_ReportCrashButton" Content="Report Crash" Width="100" Margin="5,0,0,0"/>-->
+                        </StackPanel>
+                        <StackPanel Grid.Row="2" Margin="8" FlowDirection="LeftToRight" Orientation="Horizontal">
+                            <Button x:Name="PART_CopyExceptionButton" Content="Copy Exception" Width="95" Margin="0,0,5,0" Command="{StaticResource exceptionBoxClickCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"/>
+                            <Button x:Name="PART_CopyLogButton" Content="Copy Log" Width="64" Margin="0,0,5,0" Command="{StaticResource exceptionBoxClickCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"/>
+                            <Button x:Name="PART_OpenFolder" Content="Open Logs Folder" Width="109" Margin="0,0,5,0" Command="{StaticResource exceptionBoxClickCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"/>
                         </StackPanel>
                     </Grid>
                 </DataTemplate>

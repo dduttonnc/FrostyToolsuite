@@ -1,49 +1,129 @@
-﻿using Frosty.Hash;
-using FrostySdk.Interfaces;
-using FrostySdk.IO;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text;
+using FrostySdk.IO;
+using System.Reflection;
+using Frosty.Hash;
+using FrostySdk.Interfaces;
 
 namespace FrostySdk
 {
+    public struct FileSystemSource
+    {
+        public string Path;
+        public bool SubDirs;
+    }
+
+    public enum ProfileVersion
+    {
+        NeedForSpeedRivals = 20131115,
+        Battlefield4 = 20141117,
+        DragonAgeInquisition = 20141118,
+        NeedForSpeed = 20151103,
+        StarWarsBattlefront = 20151117,
+        PlantsVsZombiesGardenWarfare = 20140225,
+        PlantsVsZombiesGardenWarfare2 = 20150223,
+        MirrorsEdgeCatalyst = 20160607,
+        Fifa17 = 20160927,
+        Battlefield1 = 20161021,
+        MassEffectAndromeda = 20170321,
+        Fifa18 = 20170929,
+        NeedForSpeedPayback = 20171110,
+        StarWarsBattlefrontII = 20171117,
+        Madden19 = 20180807,
+        Fifa19 = 20180914,
+        Battlefield5 = 20180628,
+        NeedForSpeedEdge = 20171210,
+        Anthem = 20181207,
+        Madden20 = 20190729,
+        PlantsVsZombiesBattleforNeighborville = 20190905,
+        Fifa20 = 20190911,
+        NeedForSpeedHeat = 20191101,
+        StarWarsSquadrons = 20201001,
+        Madden21 = 20200828,
+        Fifa21 = 20201009,
+        Madden22 = 20210820,
+        Fifa22 = 20210927,
+        Battlefield2042 = 20211119,
+        Madden23 = 20220819,
+        Fifa23 = 20220930,
+        NeedForSpeedUnbound = 20221129,
+        DeadSpace = 20230127,
+        DragonAgeTheVeilguard = 20241031
+    }
+
+    public static class GameVersions
+    {
+        public static readonly int[] DragonAgeTheVeilguardEA = {2355866, 3359200, 3373777, 3376665, 3377309};
+        public static readonly int[] DragonAgeTheVeilguardSteam = {2306651, 2355883, 2370459, 2373347, 2373991};
+    }
+    
+    public struct Profile
+    {
+        public string Name;
+        public string DisplayName;
+        public IProfile ProfileData;
+        public int DataVersion;
+        public string CacheName;
+        public string Deobfuscator;
+        public string AssetLoader;
+        public List<FileSystemSource> Sources;
+        public string SDKFilename;
+        public byte[] Banner;
+
+        public int EbxVersion;
+        public bool RequiresKey;
+        public bool MustAddChunks;
+        public bool EnableExecution;
+        public bool ContainsEAC;
+
+        public string DefaultDiffuse;
+        public string DefaultNormals;
+        public string DefaultMask;
+        public string DefaultTint;
+
+        public Dictionary<int, string> SharedBundles;
+        public List<uint> IgnoredResTypes;
+    }
+
     public static class ProfilesLibrary
     {
-        public static IProfile Profile => effectiveProfile.ProfileData;
-        public static string ProfileName => effectiveProfile.Name;
-        public static string DisplayName => effectiveProfile.DisplayName;
-        public static string CacheName => effectiveProfile.CacheName;
-        public static Type Deobfuscator => Type.GetType(DeobfuscatorNamespace + "." + effectiveProfile.Deobfuscator);
-        public static Type AssetLoader => Type.GetType(AssetLoaderNamespace + "+" + effectiveProfile.AssetLoader);
-        public static int DataVersion => effectiveProfile.DataVersion;
-        public static List<FileSystemSource> Sources => effectiveProfile.Sources;
-        public static string SDKFilename => effectiveProfile.SDKFilename;
-        public static byte[] Banner => effectiveProfile.Banner;
+        public static IProfile Profile => m_effectiveProfile.ProfileData;
+        public static string ProfileName => m_effectiveProfile.Name;
+        public static string DisplayName => m_effectiveProfile.DisplayName;
+        public static string CacheName => m_effectiveProfile.CacheName;
+        public static Type Deobfuscator => Type.GetType(m_deobfuscatorNamespace + "." + m_effectiveProfile.Deobfuscator);
+        public static Type AssetLoader => Type.GetType(m_assetLoaderNamespace + "+" + m_effectiveProfile.AssetLoader);
+        public static int DataVersion => m_effectiveProfile.DataVersion;
+        public static List<FileSystemSource> Sources => m_effectiveProfile.Sources;
+        public static string SDKFilename => m_effectiveProfile.SDKFilename;
+        public static byte[] Banner => m_effectiveProfile.Banner;
 
-        public static int EbxVersion => effectiveProfile.EbxVersion;
-        public static bool RequiresKey => effectiveProfile.RequiresKey;
-        public static bool MustAddChunks => effectiveProfile.MustAddChunks;
-        public static bool EnableExecution => effectiveProfile.EnableExecution;
-        public static bool ContainsEAC => effectiveProfile.ContainsEAC;
+        public static int EbxVersion => m_effectiveProfile.EbxVersion;
+        public static bool RequiresKey => m_effectiveProfile.RequiresKey;
+        public static bool MustAddChunks => m_effectiveProfile.MustAddChunks;
+        public static bool EnableExecution => m_effectiveProfile.EnableExecution;
+        public static bool ContainsEAC => m_effectiveProfile.ContainsEAC;
 
-        public static string DefaultDiffuse => effectiveProfile.DefaultDiffuse;
-        public static string DefaultNormals => effectiveProfile.DefaultNormals;
-        public static string DefaultMask => effectiveProfile.DefaultMask;
-        public static string DefaultTint => effectiveProfile.DefaultTint;
+        public static string DefaultDiffuse => m_effectiveProfile.DefaultDiffuse;
+        public static string DefaultNormals => m_effectiveProfile.DefaultNormals;
+        public static string DefaultMask => m_effectiveProfile.DefaultMask;
+        public static string DefaultTint => m_effectiveProfile.DefaultTint;
 
-        public static Dictionary<int, string> SharedBundles => effectiveProfile.SharedBundles;
+        public static bool HasLoadedProfile => m_effectiveProfile.ProfileData != null;
 
-        public static bool IsResTypeIgnored(Managers.ResourceType resType)
+        public static Dictionary<int, string> SharedBundles => m_effectiveProfile.SharedBundles;
+
+        public static bool IsResTypeIgnored(Managers.Entries.ResourceType resType)
         {
-            return effectiveProfile.IgnoredResTypes.Contains((uint)resType);
+            return m_effectiveProfile.IgnoredResTypes.Contains((uint)resType);
         }
 
-        private static Profile effectiveProfile;
-        private static readonly string DeobfuscatorNamespace = typeof(Deobfuscators.NullDeobfuscator).Namespace;
-        private static readonly string AssetLoaderNamespace = typeof(Managers.AssetManager).FullName;
-        private static readonly byte[][] ObfuscationKey =
+        private static Profile m_effectiveProfile;
+        private static readonly string m_deobfuscatorNamespace = typeof(Deobfuscators.NullDeobfuscator).Namespace;
+        private static readonly string m_assetLoaderNamespace = typeof(Managers.AssetManager).FullName;
+        private static readonly byte[][] m_obfuscationKey =
         {
             new byte[] { 0x46, 0x54, 0x76, 0x21, 0x37, 0x54 },
             new byte[] { 0x48, 0x52, 0x32, 0x45, 0x56, 0x29 },
@@ -53,9 +133,9 @@ namespace FrostySdk
             new byte[] { 0x56, 0x50, 0x4A, 0x25, 0x43, 0x59 },
         };
 
-        private static List<Profile> profiles = new List<Profile>();
+        private static readonly List<Profile> m_profiles = new List<Profile>();
 
-        public static void Initialize(IEnumerable<Profile> pluginProfiles)
+        public static void Initialize(IEnumerable<Profile> pluginProfiles = null)
         {
             List<string> keys = new List<string>();
             List<long> offsets = new List<long>();
@@ -124,35 +204,52 @@ namespace FrostySdk
                         profileStruct.ProfileData = new BaseFrostyProfile();
                     }
 
-                    profiles.Add(profileStruct);
+                    m_profiles.Add(profileStruct);
                 }
             }
-
-            // Add profiles from plugins
-            foreach (Profile profile in pluginProfiles)
-                profiles.Add(profile);
+            if (pluginProfiles != null)
+            {
+                // Add profiles from plugins
+                foreach (Profile profile in pluginProfiles)
+                    m_profiles.Add(profile);
+            }
         }
 
-        public static bool Initialize(string profileKey)
+        public static bool SelectProfile(string profileKey)
         {
-            Profile? profile = profiles.Find((Profile a) => a.Name.Equals(profileKey, StringComparison.OrdinalIgnoreCase));
-            if (!profile.HasValue)
-                return false;
-            effectiveProfile = profile.Value;
+            Profile? profile = m_profiles.Find((Profile a) => a.Name.Equals(profileKey, StringComparison.OrdinalIgnoreCase));
+            m_effectiveProfile = profile.Value;
+
+            return true;
+        }
+        
+        public static string GetProfileDisplayName(string profileKey)
+        {
+            Profile? profile = m_profiles.Find((Profile a) => a.Name.Equals(profileKey, StringComparison.OrdinalIgnoreCase));
+            m_effectiveProfile = profile.Value;
+
+            return m_effectiveProfile.DisplayName;
+        }
+
+        public static bool SelectProfile(ProfileVersion version)
+        {
+            Profile? profile = m_profiles.Find((Profile a) => (ProfileVersion)a.DataVersion == version);
+            m_effectiveProfile = profile.Value;
 
             return true;
         }
 
-        public static bool HasProfile(string profileKey)
+        public static Profile? GetProfileDefinition(ProfileVersion version)
         {
-            return profiles.FindIndex((Profile a) => a.Name.Equals(profileKey, StringComparison.OrdinalIgnoreCase)) != -1;
+            Profile? profile = m_profiles.Find((Profile a) => (ProfileVersion)a.DataVersion == version);
+            return profile;
         }
 
-        /// <summary>
-        /// Determines if a collection of <see cref="ProfileVersion"/> enumerations contains the <see cref="ProfileVersion"/> of the loaded profile.
-        /// </summary>
-        /// <param name="versions">The collection of <see cref="ProfileVersion"/> enumerations to be checked, passed as a list of parameters.</param>
-        /// <returns>A bool determining whether or not one of the specified profiles is loaded.</returns>
+        public static bool HasProfile(string profileKey)
+        {
+            return m_profiles.FindIndex((Profile a) => a.Name.Equals(profileKey, StringComparison.OrdinalIgnoreCase)) != -1;
+        }
+
         public static bool IsLoaded(params ProfileVersion[] versions)
         {
             return versions.Contains((ProfileVersion)DataVersion);
@@ -165,7 +262,7 @@ namespace FrostySdk
 
             for (int i = 0; i < length; i++)
             {
-                b[i] = (byte)(b[i] ^ ObfuscationKey[i % ObfuscationKey.Length][(i + ObfuscationKey.Length * (0x1000 | i)) % ObfuscationKey.Length]);
+                b[i] = (byte)(b[i] ^ m_obfuscationKey[i % m_obfuscationKey.Length][(i + m_obfuscationKey.Length * (0x1000 | i)) % m_obfuscationKey.Length]);
             }
             return Encoding.UTF8.GetString(b);
         }

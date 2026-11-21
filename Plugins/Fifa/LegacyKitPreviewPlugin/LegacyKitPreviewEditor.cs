@@ -21,6 +21,7 @@ using Frosty.Hash;
 using LegacyDatabasePlugin.IO;
 using LegacyDatabasePlugin.Database;
 using Frosty.Core.Misc;
+using FrostySdk.Managers.Entries;
 using ImageSource = System.Windows.Media.ImageSource;
 using MeshSetPlugin.Screens;
 using MeshSetPlugin.Render;
@@ -115,7 +116,7 @@ namespace LegacyKitPreviewPlugin
         {
             if (firstTimeLoad)
             {
-                FrostyTaskWindow.Show("Loading Database", "", (task) =>
+                FrostyTaskWindow.Show("Loading database", "", (task) =>
                 {
                     // load in main database
                     LegacyFileEntry dbEntry = App.AssetManager.GetCustomAssetEntry<LegacyFileEntry>("legacy", "data/db/fifa_ng_db.db");

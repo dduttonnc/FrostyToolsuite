@@ -4,6 +4,7 @@ using FrostySdk;
 using FrostySdk.IO;
 using FrostySdk.Managers;
 using System.Collections.Generic;
+using FrostySdk.Managers.Entries;
 
 namespace Frosty.Core.Mod
 {
@@ -22,7 +23,11 @@ namespace Frosty.Core.Mod
         public bool ShouldInline => (flags & 0x01) != 0;
         public bool IsTocChunk => (flags & 0x02) != 0;
         public bool HasHandler => handlerHash != 0;
-        public bool IsAdded => (flags & 0x08) != 0;
+        public bool IsAdded
+        {
+            get => (flags & 0x08) != 0;
+            set => flags |= 0x08;
+        }
 
         public IEnumerable<int> AddedBundles => bundlesToAdd;
 

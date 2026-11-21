@@ -1,0 +1,35 @@
+﻿<ctrl:FrostyDockableWindow x:Class="Frosty.Core.Windows.KeyPromptWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ctrl="clr-namespace:Frosty.Controls;assembly=FrostyControls"
+        mc:Ignorable="d"
+        Title="Enter Key" Height="244" Width="305"
+        ResizeMode="NoResize" Icon="/FrostyCore;component/AppIcon.ico"
+        WindowStartupLocation="CenterScreen">
+    
+    <Grid Background="{StaticResource WindowBackground}">
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="30"/>
+        </Grid.RowDefinitions>
+        
+        <StackPanel Grid.Row="0" Orientation="Vertical" Background="{StaticResource ListBackground}">
+            <TextBlock Text="The developers cannot provide the encryption key." Foreground="{StaticResource FontColor}"  VerticalAlignment="Center" Margin="6,7,6,1" FontWeight="Bold"/>
+            <TextBlock Text="This game requires an encryption key before you can access the game files." Foreground="{StaticResource FontColor}" VerticalAlignment="Center" Margin="6,15,4,0" TextWrapping="Wrap"/>
+            <TextBlock Text="Please enter the encryption key:" Foreground="{StaticResource FontColor}" VerticalAlignment="Center" Margin="6,18,6,6"/>
+            <TextBox x:Name="keyTextBox" Margin="4,0,4,4" BorderThickness="1" VerticalContentAlignment="Top" Height="66" TextWrapping="Wrap" TextAlignment="Justify" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
+        </StackPanel>
+
+        <Grid Grid.Row="1" Margin="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Column="0" x:Name="cancelButton" Content="Cancel" Width="50" Height="22" HorizontalAlignment="Left" Click="cancelButton_Click"/>
+            <Button Grid.Column="1" x:Name="doneButton" Content="Done" Width="50" Height="22" HorizontalAlignment="Right" Click="doneButton_Click"/>
+        </Grid>
+    </Grid>
+</ctrl:FrostyDockableWindow>

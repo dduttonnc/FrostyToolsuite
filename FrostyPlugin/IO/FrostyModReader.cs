@@ -29,7 +29,7 @@ namespace Frosty.Core.IO
             dataCount = ReadInt();
 
             string profileName = ReadSizedString(ReadByte());
-            if (profileName.ToLower() != ProfilesLibrary.ProfileName.ToLower())
+            if (profileName.ToLowerInvariant() != ProfilesLibrary.ProfileName.ToLowerInvariant())
                 return;
 
             GameVersion = ReadInt();
@@ -44,7 +44,8 @@ namespace Frosty.Core.IO
                 ReadNullTerminatedString(),
                 ReadNullTerminatedString(),
                 ReadNullTerminatedString(),
-                Version >= 5 ? ReadNullTerminatedString() : ""
+                Version >= 5 ? ReadNullTerminatedString() : "",
+                Version >= 7 ? ReadNullTerminatedString() : ""
                 );
         }
 
@@ -63,6 +64,7 @@ namespace Frosty.Core.IO
                     case ModResourceType.Res: resources[i] = new ResResource(); break;
                     case ModResourceType.Chunk: resources[i] = new ChunkResource(); break;
                     case ModResourceType.Bundle: resources[i] = new BundleResource(); break;
+                    case ModResourceType.FsFile: resources[i] = new FsFileResource(); break;
                 }
 
                 resources[i].Read(this);
