@@ -238,7 +238,7 @@ namespace FrostyEditor
                             win.Owner = Current.MainWindow;
                             if (win.ShowDialog() == true)
                             {
-                                System.Diagnostics.Process.Start("https://github.com/J-Lyt/FrostyToolsuite/releases/latest");
+                                System.Diagnostics.Process.Start(UpdateCheckerUtils.ReleasesUrl);
                             }
                         });
                     });
@@ -246,9 +246,8 @@ namespace FrostyEditor
             }
             catch (Exception e)
             {
-                System.Threading.Tasks.Task.Run(() => {
-                    FrostyMessageBox.Show("Frosty Update Checker returned with an error:\n\n" + e.Message, "Frosty Editor", MessageBoxButton.OK);
-                });
+                // [DAI fix] a failed update check is logged instead of shown at every startup
+                Frosty.Core.App.Logger?.Log("Update check skipped: {0}", e.Message);
             }
         }
 

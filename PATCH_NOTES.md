@@ -16,13 +16,11 @@ Bug Fixes:
 Misc:
 - Version is now 1.7, in the Mod Manager and the Editor
 - Updated Credits and About window with the fork history and links
+- Check for Updates now checks this fork's releases (github.com/dduttonnc/FrostyToolsuite); with no release or no connection it's only logged
 
 Technical Changes:
 - The DAI cache uses the 1.0.7 cache format, so the first launch rebuilds it
 - J-Lyt's SDK-style plugin projects have the correct project type in the solution, so Visual Studio 2022 can parse them
-
-Known Issues:
-- Check for Updates still checks J-Lyt's releases
 
 v1.0.6.4-dai.1 - 2026.11.19.0
 --------

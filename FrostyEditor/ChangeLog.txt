@@ -1,4 +1,23 @@
-﻿v1.0.7 - 2026.08.21.0
+﻿v1.7 - 2026.11.20.1
+--------
+Improvements:
+- Dragon Age: Inquisition and Dragon Age: The Veilguard in one Frosty Mod Manager
+- Much faster cache build and mod apply, using all CPU Threads (Options > Performance)
+- Added 'CPU Threads' and 'CPU Priority' options
+- Taller loading screen listing the superbundles being loaded, with progress
+- Added 'Reconfigure...' for converted .daimod mods with settings
+- Load order modes renamed to 'Bottom wins' and 'Top wins'
+
+Bug Fixes:
+- Fixed many Dragon Age: Inquisition .daimod import and mod apply issues (see PATCH_NOTES.md)
+- Fixed issue where old-format .fbmod files failed to load
+- Fixed issue where a mod that failed to load closed the Mod Manager
+
+Misc:
+- Check for Updates now checks github.com/dduttonnc/FrostyToolsuite, and a failed check is only logged
+- Updated Credits
+
+v1.0.7 - 2026.08.21.0
 --------
 Bug Fixes:
 - Fixed issue where ProjectReader/Writer did not use RIFF

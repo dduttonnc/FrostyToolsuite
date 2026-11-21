@@ -29,11 +29,14 @@ namespace Frosty.Core.Windows
         {
             try
             {
-                string changeLogRaw = await new HttpClient().GetStringAsync("https://raw.githubusercontent.com/J-Lyt/FrostyToolsuite/refs/heads/DragonAge/FrostyEditor/ChangeLog.txt");
+                string changeLogRaw = await new HttpClient().GetStringAsync(UpdateCheckerUtils.ChangeLogUrl);
 
-                int index = changeLogRaw.IndexOf("v1.0.7 - " + App.BuildVersion, StringComparison.Ordinal);
+                // [DAI fix] everything newer than this build's entry ("v<version> - <build date>"), or all of it
+                int index = changeLogRaw.IndexOf(" - " + App.BuildVersion, StringComparison.Ordinal);
+                if (index >= 0)
+                    index = changeLogRaw.LastIndexOf('\n', index) + 1;
 
-                string changeLog = changeLogRaw.Substring(0, index);
+                string changeLog = index > 0 ? changeLogRaw.Substring(0, index) : changeLogRaw;
 
                 changelogTextBox.Text = changeLog;
             }
