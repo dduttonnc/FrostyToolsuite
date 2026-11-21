@@ -34,7 +34,7 @@ Misc:
 
 Technical Changes:
 - The DAI cache uses the 1.0.7 cache format, so the first launch rebuilds it
-- J-Lyt's SDK-style plugin projects have the correct project type in the solution, so Visual Studio 2022 can parse them (DatapathFix itself stays old-style, so Visual Studio doesn't warn about its Veilguard configurations)
+- J-Lyt's SDK-style plugin projects have the correct project type in the solution, so Visual Studio 2022 can parse them (DatapathFix itself stays old-style, so Visual Studio doesn't warn about its Veilguard configurations, and the Release build no longer fails on a missing DatapathFix(DEBUG).exe)
 
 v1.0.6.4-dai.1 - 2026.11.19.0
 --------
