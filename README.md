@@ -1,18 +1,34 @@
-# FrostyToolsuite (Dragon Age: The Veilguard)
+# Frosty Toolsuite (Dragon Age: Inquisition and Dragon Age: The Veilguard)
 The most advanced modding platform for games running on DICE's Frostbite game engine.
+
+This version runs Dragon Age: Inquisition and Dragon Age: The Veilguard from one Frosty Mod Manager, with fixes for DAI `.daimod` mods and a much faster cache build and mod apply.
 
 <a title="Frosty Toolsuite" href="https://discord.gg/sB8ZUAT">
   <img alt="Frosty Toolsuite" src="https://img.shields.io/discord/333086156478480384?color=white&label=Frosty%20Toolsuite&logo=discord&logoColor=white&style=flat-square"></a>
 <a title="DAV Modding (Frosty)" href="https://discord.gg/pKF9ReTdAh">
   <img alt="DAV Modding (Frosty)" src="https://img.shields.io/discord/1322742362434437131?color=5255a4&label=DAV%20Modding%20(Frosty)&logo=discord&logoColor=white&style=flat-square"></a>
-<a title="Downloads" href="https://github.com/J-Lyt/FrostyToolsuite/releases">
-  <img alt="Downloads" src="https://img.shields.io/github/downloads/J-Lyt/FrostyToolsuite/total?color=white&label=Downloads&logo=github&style=flat-square"></a>
+<a title="Downloads" href="https://github.com/dduttonnc/FrostyToolsuite/releases">
+  <img alt="Downloads" src="https://img.shields.io/github/downloads/dduttonnc/FrostyToolsuite/total?color=white&label=Downloads&logo=github&style=flat-square"></a>
 
 ## Release
-Download the latest release from [releases](https://github.com/J-Lyt/FrostyToolsuite/releases/latest).
+Download the latest release from [releases](https://github.com/dduttonnc/FrostyToolsuite/releases/latest). What changed in each version is in [PATCH_NOTES.md](PATCH_NOTES.md).
 
 ## Build
 
-1. Clone Repository ``git clone https://github.com/J-Lyt/FrostyToolsuite.git --recurse-submodules``
-2. Open the solution (found under FrostyEditor) with **Visual Studio 2022**, and make sure the project is set to ``Developer - Debug`` or ``Release - Final``.
-3. Only build the projects themselves, never the solution.
+1. Clone the repository: ``git clone https://github.com/dduttonnc/FrostyToolsuite.git --recurse-submodules``
+2. Open the solution (found under FrostyEditor) with **Visual Studio 2022** or newer, and set the configuration to ``Developer - Debug`` or ``Release - Final``.
+3. Only build the projects themselves, never the solution. Build FrostySdk and FrostyModManager (or FrostyEditor) first, then the plugins you need.
+
+## Credits
+This is a fork of a fork. Thanks to everyone whose work it is built on:
+
+* **Original Frosty Toolsuite**: GalaxyMan2015 and the Frosty team, https://github.com/CadeEvs/FrostyToolsuite
+* **Frosty for Dragon Age: The Veilguard**: J-Lyt, https://github.com/J-Lyt/FrostyToolsuite
+* **Contributors along the way**: Mophead, Wannkunstbeikor, Brawltendo, Dyvinia, Zhpete, NoOneOfSignificance, AllyJaxx, MrJTGaming, Wavebend, CosmicDreamsofCode
+* **This version** (DAI and Veilguard in one build, DAI mod fixes, multithreading): dduttonnc
+* **Frosty Toolsuite v2**, the next generation, is at https://github.com/FrostyToolsuite/FrostyToolsuite
+
+The full list is in the About window of the Mod Manager and Editor.
+
+## License
+The Content, Name, Code, and all assets are licensed under a Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License. This version is published with permission from the Frosty team.

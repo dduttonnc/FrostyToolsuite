@@ -1,21 +1,80 @@
-﻿v1.7 - 2026.11.20.1
+﻿============================================================
+1. Frosty by dduttonnc
+============================================================
+One Frosty Mod Manager for Dragon Age: Inquisition and Dragon Age: The Veilguard. https://github.com/dduttonnc/FrostyToolsuite
+
+v1.7 - 2026.11.20.1
 --------
+One Frosty Mod Manager for Dragon Age: Inquisition and Dragon Age: The Veilguard. Built on J-Lyt's Veilguard Frosty (v1.0.7 - 2026.08.21.0) with every change from v1.0.6.4-dai.1 carried over. Full details: docs/CHANGELOG.md
+
 Improvements:
-- Dragon Age: Inquisition and Dragon Age: The Veilguard in one Frosty Mod Manager
-- Much faster cache build and mod apply, using all CPU Threads (Options > Performance)
-- Added 'CPU Threads' and 'CPU Priority' options
-- Taller loading screen listing the superbundles being loaded, with progress
-- Added 'Reconfigure...' for converted .daimod mods with settings
-- Load order modes renamed to 'Bottom wins' and 'Top wins'
+- Dragon Age: Inquisition can be selected again, alongside Dragon Age: The Veilguard
+- Faster Veilguard cache build: tocs and bundles of several superbundles now load at once on all CPU Threads
+- Veilguard now uses the taller loading screen, with the superbundle count, per-bundle progress and the list of superbundles being loaded
 
 Bug Fixes:
-- Fixed many Dragon Age: Inquisition .daimod import and mod apply issues (see PATCH_NOTES.md)
-- Fixed issue where old-format .fbmod files failed to load
-- Fixed issue where a mod that failed to load closed the Mod Manager
+- Fixed issue where DAI asked to regenerate its SDK, and the regeneration failed (all game SDKs are included in the build again)
+- Fixed issue where DAI mods were applied without the 1.0.6.4 fixes for binary superbundles, patched toc chunks, missing base tocs and new bundles
+- Fixed issue where old-format .fbmod files failed to load ("Object reference not set to an instance of an object")
+- Fixed issue where one mod or collection that failed to load closed the Mod Manager; it's now logged and skipped
 
 Misc:
-- Check for Updates now checks github.com/dduttonnc/FrostyToolsuite, and a failed check is only logged
-- Updated Credits
+- Version is now 1.7, in the Mod Manager and the Editor
+- Updated Credits and About window with the fork history and links
+- Check for Updates now checks this fork's releases (github.com/dduttonnc/FrostyToolsuite); with no release or no connection it's only logged
+
+Technical Changes:
+- The DAI cache uses the 1.0.7 cache format, so the first launch rebuilds it
+- J-Lyt's SDK-style plugin projects have the correct project type in the solution, so Visual Studio 2022 can parse them
+
+v1.0.6.4-dai.1 - 2026.11.19.0
+--------
+Dragon Age: Inquisition build on CadeEvs' Frosty 1.0.6.4.
+
+Improvements:
+- Much faster cache build: about 32 seconds instead of 10-15 minutes on an i9-9900K 16-thread CPU
+- Faster mod apply: unmodified base bundles are skipped and mod data loads on several cores
+- Added 'CPU Threads' and 'CPU Priority' options (Options > Performance), so Frosty doesn't take over the whole PC
+- Taller loading screen with the superbundle count, progress and the list of superbundles being loaded
+- Added 'Reconfigure...' to the right-click menu of converted .daimod mods that have settings
+- Configurable .daimod files keep a copy of the original and the chosen settings in 'DAI originals'
+- Re-importing an installed .daimod replaces it in place and starts from the last settings
+- Load order modes 'List' and 'Priority' renamed to 'Bottom wins' and 'Top wins'
+- Each .daimod import writes a summary to the log, and script 'LogLn' output goes to the log
+
+Bug Fixes:
+- Fixed issue where assets added by a .daimod were dropped
+- Fixed issue where add vs modify for .daimod entries wasn't decided from the game data
+- Fixed issue where .daimod archive offsets could point at the wrong data
+- Fixed issue where the last texture/audio chunk of a .daimod wasn't registered
+- Fixed issue where a texture's first mip was read with the wrong byte order
+- Fixed issue where .daimod remove actions were ignored
+- Fixed issue where size and hash weren't updated after a configuration script changed data
+- Fixed black or rainbow textures at a distance in converted .daimod files
+- Fixed infinite load screen with texture mods that have empty texture ranges
+- Fixed issue where removing two or more entries from one bundle removed the wrong ones
+- Fixed issue where chunk meta got out of step after a chunk was removed
+- Fixed crash when importing a .daimod with some resource types
+- Fixed issue where closing the .daimod settings window with X imported the mod unconfigured
+- Fixed crashes from .daimod script errors; they're now listed as import errors
+- Fixed issue where settings dropdowns passed the wrong value, and a value still being typed was lost
+- Fixed race conditions on shared mod data while loading mods
+
+Misc:
+- Version shows as 1.0.6.4-dai.1 in the title bar, splash screen, About window and log
+
+Technical Changes:
+- Added WorkerPool for loading and applying mods, limited by the CPU Threads option
+- Server garbage collection enabled
+- Cache data is compressed at zlib level 1, so cache files differ from older builds
+- Writing the cache is no longer quadratic, and progress updates are throttled
+
+NOTE: Re-import .daimod files after updating. The fixes only apply when a mod is imported.
+
+============================================================
+2. J-Lyt's Frosty
+============================================================
+Frosty for Dragon Age: The Veilguard, built on the original Frosty's unreleased 1.0.7. Every version is v1.0.7 plus a build date. https://github.com/J-Lyt/FrostyToolsuite
 
 v1.0.7 - 2026.08.21.0
 --------
@@ -398,7 +457,160 @@ Options:
 Misc:
 - When importing an ebx as .bin file, bypass the ebx writer entirely as a workaround to ebxwriter limitations
 
-Old Changelogs:
+============================================================
+3. Original Frosty Toolsuite
+============================================================
+The original Frosty Toolsuite by GalaxyMan2015 and the Frosty team. https://github.com/CadeEvs/FrostyToolsuite (v1.0.6.4 had no changelog entry of its own; that entry lists its changes from the repository)
+
+v1.0.6.4
+--------
+- Added startup action support to the Mod Manager (#332)
+- Added an icon for Steam shortcuts (#330)
+- Added post launch and minimize options to Manage ModData (#344)
+- Minor quality of life improvements when applying mods (#328)
+- Fixed property grid search crashes (#340)
+- Fixed issue when importing over a duplicated Atlas Texture (#334)
+- Fixed issue where EnumerateRes ignored added bundles (#331)
+- Fixed Remember Profile issue (#329)
+- Fixed thread unsafe HashSet when applying mods (#327)
+- Plugins are no longer compiled automatically, and fixed an xcopy issue (#337)
+
+v1.0.6.3
+--------
+- Improved performance of the EbxWriter
+- Improved import for collections (#317)
+- Added ReadOnly Star Wars Squadrons profile (#301)
+- Added full Battlefield V profile (#301)
+- Added option to manage ModData from the ModManager (#271, #314)
+- Added whitelist option for bundles (#275)
+- Added rename and duplicate pack options to the ModManager (#280)
+- Added MenuExtension support to ModManager (#311)
+- Added Math expressions in number textboxes (#291)
+- Fixed launching issues on Steam
+- Fixed bundle adding for manifest games
+- Fixed crashing issues (#260, #261)
+- Fixed small UI inconsistencies (#265, #267, #268)
+- Fixed issue where editor mods didnt get removed (#274)
+- Changed Rotations from YPR to XYZ (#304)
+
+Plugin Changes
+- Added support for more types to the duplication and bundle editor plugins (#276, #277)
+- Added importing support for composite meshes (#262)
+- Added importing support for raw ealayer3 audio
+- Fixed crashing issues when adding meshes to bundles (#313)
+- Fixed crashing issue when exporting certain textures
+
+v1.0.6.3 (Beta 2)
+--------
+- Fixed crashing issues when launching
+- Added MenuExtension support to ModManager (#311)
+- Added ReadOnly Star Wars Squadrons profile (#301)
+- Added full Battlefield V profile (#301)
+- Added Math expressions in number textboxes (#291) 
+
+Plugin Changes
+- Fixed issue with mesh importing composite meshes
+- Fixed crashing issues when adding meshes to bundles (#313)
+
+v1.0.6.3 (Beta 1)
+--------
+- Fixed crashing issues (#260, #261)
+- Fixed small UI inconsistencies (#265, #267, #268)
+- Fixed launching issues on Steam
+- Fixed bundle adding for manifest games
+- Fixed issue where editor mods didnt get removed (#274)
+- Improved performance of the EbxWriter
+- Changed Rotations from YPR to XYZ (#304)
+- Added option to manage ModData from the ModManager (#271)
+- Added whitelist option for bundles (#275)
+- Added rename and duplicate pack options to the ModManager (#280)
+
+Plugin Changes
+- Fixed crashing issue when exporting certain textures
+- Added importing support for composite meshes (#262)
+- Added support for more types to the duplication and bundle editor plugins (#276, #277)
+- Added importing support for raw ealayer3 audio
+
+v1.0.6.2
+--------
+- Fixed memory issue and writing of cat files
+- Fixed issue with bundle editing in older games
+- Fixed crashing issues
+- Improved applying speed in Mod Manager
+- Improved Loaded Plugins List in Editor
+- Added filter to PointerRef Editor
+- Added Recent Projects to Editor
+- Added option to change ordering of Mod Manager's Applied Mods list
+
+Plugin Changes
+- Fixed MeshSetEditor inverted tangets
+- Fixed issues with DAI texture edits
+- Fixed issue with texture duplication
+- Fixed issues with rivals meshes and textures
+- Fixed issues with ealayer3 sounds
+- Updated BWLocalizationPlugin
+- Added CompositeMeshAsset part exporting
+
+v1.0.6.2 (Beta 2)
+--------
+- Improved applying speed in Mod Manager (#159)
+- Fixed issue with bundle editing in older games (#240, #248)
+- Fixed crashing issues (#242)
+
+Plugin Changes
+- Fixed crash when the localization chunk doesnt exist but gets modified (#239)
+- Fixed issue with texture duplication (#243)
+- Fixed crash when loading sounds where one chunk doesnt exist (#245)
+- Fixed issues with rivals meshes and textures (#246)
+- Moved DifficultyWeaponTableData into its own plugin (#247)
+
+v1.0.6.2 (Beta 1)
+--------
+- Fixed memory issue and writing of cat files (#222)
+- Fixed about menu support link being cut off (#224)
+- Changed error text for loading a wrong project (#225)
+- Fixed issue with ealayer3 library (#235)
+
+Plugin Changes
+- Fixed crash when exporting textures (#223)
+- Added bundle box to Chunk/Res Editor (#226)
+- Fixed crash in BiowareLocalizationPlugin (#232)
+- Fixed issue for importing sounds (#236)
+
+v1.0.6.2 (Alpha 2)
+--------
+- Fixed issue with logging legacy mods (#217)
+
+Plugin Changes
+- Fixed issue copying over to Mod Manager (#219)
+
+v1.0.6.2 (Alpha 1)
+--------
+- Improved applying speed in Mod Manager (#159)
+- Improved Loaded Plugins List in Editor (#192)
+- Added filter to PointerRef Editor (#161)
+- Added Recent Projects to Editor (#174)
+- Added CompositeMeshAsset part exporting (#178)
+- Added option to change ordering of Mod Manager's Applied Mods list (#159)
+- Fixed cache being written twice (#167)
+- Fixed issues with DAI texture edits (#198)
+
+Plugin Changes
+- Added LaunchPlatformPlugin option for keeping platform open after game exit (#179)
+- Updated BWLocalizationPlugin (#211)
+- Fixed LaunchPlatformPlugin failing to launch Steam platform (#179)
+- Fixed MeshSetEditor inverted tangets (#155)
+- Fixed issue with importing over rigid meshes (#205)
+
+Technical Changes
+- Added additional information to update panel during cache writing (#167)
+- Fixed issues with CStringControl and FsLocalizationStringDatabase (#172)
+- Fixed issues with ealayer3 sounds (#214)
+
+v1.0.6.1
+--------
+- Fixed NFS: Heat profile being read only
+- Temporarily disabled Update Checker
 
 v1.0.6
 --------
@@ -422,6 +634,7 @@ v1.0.6
 - Added BoxedValueRef editing functionality
 - Added a new Type Editor for Event/Property/Link Connections in the Property Grid
 - Added pack zipping and loading
+- Added collections
 - Moved location of the Editor and Explorer menu items (Moved from Tools to View)
 - Moved to json format for Frosty Editor and Mod Manager configs
 - Moved config files to local folder under AppData for global access between builds
@@ -447,6 +660,38 @@ Plugin Changes
 - Added Startup Action extension
 - Added ExecutionAction extension
 
+v1.0.6 (Beta 5)
+--------
+- Added "ModDb" support when setting links during mod export process
+- Fixed crash when selecting description tab of collection
+- Fixed issues with Battlefield 1 mesh importing (#89)
+- Updated naming scheme for Flatten Hierarchy
+- Updated Mod Manager window width to account for Collections (#85)
+
+Technical Changes
+- Fixed RangeStart calculation for manifest chunks (#94)
+
+v1.0.6 (Beta 4)
+--------
+- Added ability to add legacy mods to collections (#73)
+- Fixed comparing mods.txt file when generating ModData (#73)
+- Fixed launching legacy mods (#73)
+- Fixed filtering available mods with collections (#73)
+- Fixed removing packs (#73)
+- Fixed crash when pressing the "Apply Mod(s)" button (#76)
+- Fixed update checking release versions
+
+v1.0.6 (Beta 3)
+--------
+- Added collections
+- Added version checking functionality
+- Added missing SoundEditor plugin
+
+Technical Changes
+- Fixed compression loading issue
+- Fixed character crash issue (#52)
+- Fixed localization issue (#55)
+
 v1.0.6 (Beta 2)
 --------
 - Modified Mod Manager loading process so mods no longer get removed from packs when the file cannot be found
@@ -468,7 +713,7 @@ v1.0.6 (Beta 1)
 - Added styling for ComboBox (#9)
 - Added more functionality for moving mods under the Applied Mods list (#3)
 - Added cancel functionality to actions tab in the Mod Manager (#37)
-- Added source code link to convenient links section in Editor (#18)
+- Added source code link to convient links section in Editor (#18)
 - Revamped styling for cancel functionality during loading process (#37)
 - Modified DisplayModuleInId option to be false by default
 - Fixed InitFs loading for Need for Speed: Rivals, Need for Speed: Online, and Battlefield 4 (#10)
@@ -806,14 +1051,14 @@ v1.0.3alpha3
 v1.0.3alpha2
 ------------
 - Fixed out of date SDK used in MEA
-- Disabled non-working import button from sounds
+- Disabled non working import button from sounds
 - Packaged fifaconfig workaround with editor
 
 v1.0.3alpha
 -----------
 - Fixed an issue with compressing certain files (Compression Failed error)
 - LZ4 compression now used to compress data for games that use it (MEC, SWBF)
-- Drastically reduced time and storage capacity it takes to apply mods for all games
+- Drastically reduced time and storage capacity it take to apply mods for all games
 - Implemented new texture formats for preview and export
 - Added Searching/Filtering of assets in the data explorer
 - Added the ability to save bookmarks
@@ -850,7 +1095,7 @@ v1.0.1
 - Ascii FBX, OBJ, and DAE options added to exporting meshes
 - Previewing and exporting 2d array, cubemap, 3d textures now work correctly
 - Disabled importing of 2d array, cubemap and 3d textures for now (original implementation would import them incorrectly)
-- Can view individual slices of multidimensional textures using the slices combobox
+- Can view individual slices of multi dimensional textures using the slices combobox
 - Added an exception window for all unhandled global exceptions
 
 v1.0.0 (Public Release)

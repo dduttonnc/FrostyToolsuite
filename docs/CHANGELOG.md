@@ -1,7 +1,15 @@
-# Frosty Mod Manager (dduttonnc fork): detailed changes
+# Frosty Toolsuite: detailed changes
 
-The short version is in [PATCH_NOTES.md](../PATCH_NOTES.md). This file lists every change with the
-reasons and the files involved. Every code change is marked with a `[DAI fix]` comment.
+Like [PATCH_NOTES.md](../PATCH_NOTES.md), this file has one section per Frosty program, newest first,
+because each has its own version numbers:
+
+1. [Frosty by dduttonnc](#1-frosty-by-dduttonnc): v1.7 and v1.0.6.4-dai.1, in full detail below.
+2. [J-Lyt's Frosty](#2-j-lyts-frosty): v1.0.7 builds.
+3. [Original Frosty Toolsuite](#3-original-frosty-toolsuite): v1.0.0 to v1.0.6.4.
+
+# 1. Frosty by dduttonnc
+
+Every code change in this section is marked with a `[DAI fix]` comment.
 
 ## 1.7: DAI and Veilguard in one build
 
@@ -298,7 +306,7 @@ Upstream PR #355 (branch `pr6-daimod-reconfigure`, based on #354).
 Branch `perf/cache-build-and-apply`; `perf/parallel-load` adds the multi-core loading below on top
 of it. No change to what gets written, only how fast.
 
-Cache build on a 16-thread CPU: originally 10-15 min, ~7 min with the safe fixes, 45 s with
+Cache build on an i9-9900K 16-thread CPU: originally 10-15 min, ~7 min with the safe fixes, 45 s with
 `perf/parallel-load`, about 32 s with `perf/splash-files` (cache identical to the 45 s build).
 Each step was checked in game (romances, textures, voice packs, item mods). Applying mods: 1m 24s.
 
@@ -414,3 +422,17 @@ bursts, and the non-DAI apply paths (Heat, manifest) are unchanged.
 * Re-import `.daimod` files after updating. Fixes only apply at import time.
 * Don't keep DAI Mod Manager output (e.g. `Update\Patch_ModManager Merge`) in the game folder. The
   game loads it over Frosty's data. If one was ever installed, delete Frosty's cache so it rebuilds.
+
+# 2. J-Lyt's Frosty
+
+Frosty for Dragon Age: The Veilguard, built on the original Frosty's unreleased 1.0.7. Its own
+notes are in section 2 of [PATCH_NOTES.md](../PATCH_NOTES.md); the code and commit history are at
+https://github.com/J-Lyt/FrostyToolsuite (branch `DragonAge`). Frosty by dduttonnc 1.7 starts from
+its build "v1.0.7 - 2026.08.21.0" (commit 68f741f).
+
+# 3. Original Frosty Toolsuite
+
+The original Frosty Toolsuite by GalaxyMan2015 and the Frosty team. Its notes are in section 3 of
+[PATCH_NOTES.md](../PATCH_NOTES.md); the code and commit history are at
+https://github.com/CadeEvs/FrostyToolsuite. Frosty by dduttonnc 1.0.6.4-dai.1 starts from its
+branch `1.0.6.4`.
