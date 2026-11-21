@@ -1,3 +1,17 @@
+# Frosty Toolsuite patch notes
+
+These notes cover three Frosty programs, each with its own version numbers. Newest first:
+
+1. [Frosty by dduttonnc](#1-frosty-by-dduttonnc): v1.7 and v1.0.6.4-dai.1
+2. [J-Lyt's Frosty](#2-j-lyts-frosty): v1.0.7 builds
+3. [Original Frosty Toolsuite](#3-original-frosty-toolsuite): v1.0.0 to v1.0.6.4
+
+Frosty by dduttonnc is built on J-Lyt's Frosty, which is built on the original Frosty Toolsuite. Detailed notes for section 1 are in [docs/CHANGELOG.md](docs/CHANGELOG.md).
+
+# 1. Frosty by dduttonnc
+
+One Frosty Mod Manager for Dragon Age: Inquisition and Dragon Age: The Veilguard. https://github.com/dduttonnc/FrostyToolsuite
+
 v1.7 - 2026.11.20.1
 --------
 One Frosty Mod Manager for Dragon Age: Inquisition and Dragon Age: The Veilguard. Built on J-Lyt's Veilguard Frosty (v1.0.7 - 2026.08.21.0) with every change from v1.0.6.4-dai.1 carried over. Full details: docs/CHANGELOG.md
@@ -66,9 +80,9 @@ Technical Changes:
 
 NOTE: Re-import .daimod files after updating. The fixes only apply when a mod is imported.
 
-Earlier versions
-================
-The v1.0.7 entries come from the 1.0.7 development branch and J-Lyt's Veilguard Frosty (https://github.com/J-Lyt/FrostyToolsuite). v1.0.6.3 and earlier come from the original Frosty Toolsuite (https://github.com/CadeEvs/FrostyToolsuite). Both are copied as their authors wrote them.
+# 2. J-Lyt's Frosty
+
+Frosty for Dragon Age: The Veilguard, built on the original Frosty's unreleased 1.0.7. Every version is v1.0.7 plus a build date. https://github.com/J-Lyt/FrostyToolsuite
 
 v1.0.7 - 2026.08.21.0
 --------
@@ -451,7 +465,22 @@ Options:
 Misc:
 - When importing an ebx as .bin file, bypass the ebx writer entirely as a workaround to ebxwriter limitations
 
-Old Changelogs:
+# 3. Original Frosty Toolsuite
+
+The original Frosty Toolsuite by GalaxyMan2015 and the Frosty team. https://github.com/CadeEvs/FrostyToolsuite (v1.0.6.4 had no changelog entry of its own; that entry lists its changes from the repository)
+
+v1.0.6.4
+--------
+- Added startup action support to the Mod Manager (#332)
+- Added an icon for Steam shortcuts (#330)
+- Added post launch and minimize options to Manage ModData (#344)
+- Minor quality of life improvements when applying mods (#328)
+- Fixed property grid search crashes (#340)
+- Fixed issue when importing over a duplicated Atlas Texture (#334)
+- Fixed issue where EnumerateRes ignored added bundles (#331)
+- Fixed Remember Profile issue (#329)
+- Fixed thread unsafe HashSet when applying mods (#327)
+- Plugins are no longer compiled automatically, and fixed an xcopy issue (#337)
 
 v1.0.6.3
 --------
