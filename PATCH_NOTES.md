@@ -2,7 +2,7 @@
 
 These notes cover three Frosty programs, each with its own version numbers. Newest first:
 
-1. [Frosty by dduttonnc](#1-frosty-by-dduttonnc): v1.7.1, v1.7 and v1.0.6.4-dai.1
+1. [Frosty by dduttonnc](#1-frosty-by-dduttonnc): v1.7.2, v1.7.1, v1.7 and v1.0.6.4-dai.1
 2. [J-Lyt's Frosty](#2-j-lyts-frosty): v1.0.7 builds
 3. [Original Frosty Toolsuite](#3-original-frosty-toolsuite): v1.0.0 to v1.0.6.4
 
@@ -12,8 +12,10 @@ Frosty by dduttonnc is built on J-Lyt's Frosty, which is built on the original F
 
 One Frosty Mod Manager for Dragon Age: Inquisition, Dragon Age: The Veilguard and Mass Effect: Andromeda. https://github.com/dduttonnc/FrostyToolsuite
 
-v1.7.2 (not released yet)
+v1.7.2 - 2026.11.24.2
 --------
+Dragon Age: Inquisition users: delete the game's ModData folder once after updating, so it is rebuilt at the smaller size. Full details: docs/CHANGELOG.md
+
 Improvements:
 - Dragon Age: Inquisition: ModData is much smaller and the main menu and saves load faster with mods that add new chunks (e.g. 4k Map textures). Brand-new chunks now go only into the global chunk list (chunks0), as DAI Mod Manager did; each of the 8 DLC chunk files used to get its own full copy of every one (about 5 GB of a 7.5 GB ModData in one 28-mod setup). Chunks that replace one of the game's own chunks still get their copy in the DLC chunk files, which the game needs
 

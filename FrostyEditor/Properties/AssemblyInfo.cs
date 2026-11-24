@@ -51,8 +51,8 @@ using System.Windows.Markup;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.7.0")]
-[assembly: AssemblyFileVersion("1.7.1.0")]
-[assembly: AssemblyInformationalVersion("1.7.1")]
+[assembly: AssemblyFileVersion("1.7.2.0")]
+[assembly: AssemblyInformationalVersion("1.7.2")]
 
 #if FROSTY_DEVELOPER
 [assembly: XmlnsDefinition("FrostyDeveloper", "FrostyEditor.Controls")]
