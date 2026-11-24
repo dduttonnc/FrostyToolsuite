@@ -505,7 +505,8 @@ namespace FrostyModManager
             {
             }
 
-            if (File.Exists($"{fs.BasePath}d3d11.dll") || File.Exists($"{fs.BasePath}DAVE.asi") && ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeTheVeilguard))
+            // [DAI fix] Veilguard only: d3d11.dll alone (e.g. ReShade) showed the Dex menu and tab for DAI and MEA
+            if (ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeTheVeilguard) && (File.Exists($"{fs.BasePath}d3d11.dll") || File.Exists($"{fs.BasePath}DAVE.asi")))
             {
                 RefreshDexMods();
 

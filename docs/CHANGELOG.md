@@ -17,6 +17,7 @@ Every code change in this section is marked with a `[DAI fix]` comment.
 |---|---|
 | DAI and MEA: `ProcessLegacyModResources` left the whole mod (`return`) when an old-format mod replaced an ebx, res or chunk that an earlier mod had changed through a handler, so its data was not in the archive list. 1.0.6.3 and 1.0.6.4 skipped only that asset (`continue`); restored. Veilguard has no old-format mods | `FrostyModSupport/FrostyModExecutor.cs` |
 | DAI and MEA: `LaunchGame` uses the `steam://run` link whenever `steam_appid.txt` is in the game folder, as 1.0.6.3 did. The 1.0.7 base only did that with the 'Use Steam protocol' option, which is off by default. Not applied when DatapathFix is enabled, because it handles the launch itself. Other games are unchanged. An empty `steam_appid.txt` now falls back to starting the exe instead of failing. Untested: no Steam copy was available | `FrostyModSupport/FrostyModExecutor.cs` |
+| The DAVExtender check read `d3d11.dll exists \|\| (DAVE.asi exists && Veilguard)`, so any game with a `d3d11.dll` (ReShade) got the Dex menu and tab. The Veilguard test now covers both files | `FrostyModManager/Windows/MainWindow.xaml.cs` |
 
 ## 1.7.2
 
