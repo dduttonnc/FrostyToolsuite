@@ -1,7 +1,7 @@
-# Frosty Toolsuite (Dragon Age: Inquisition and Dragon Age: The Veilguard)
+# Frosty Toolsuite (Dragon Age: Inquisition, Dragon Age: The Veilguard and Mass Effect: Andromeda)
 The most advanced modding platform for games running on DICE's Frostbite game engine.
 
-This version runs Dragon Age: Inquisition and Dragon Age: The Veilguard from one Frosty Mod Manager, with fixes for DAI `.daimod` mods and a much faster cache build and mod apply.
+This version runs Dragon Age: Inquisition, Dragon Age: The Veilguard and Mass Effect: Andromeda from one Frosty Mod Manager, with fixes for DAI `.daimod` mods and a much faster cache build and mod apply.
 
 <a title="Frosty Toolsuite" href="https://discord.gg/sB8ZUAT">
   <img alt="Frosty Toolsuite" src="https://img.shields.io/discord/333086156478480384?color=white&label=Frosty%20Toolsuite&logo=discord&logoColor=white&style=flat-square"></a>
@@ -25,7 +25,7 @@ This is a fork of a fork. Thanks to everyone whose work it is built on:
 * **Original Frosty Toolsuite**: GalaxyMan2015 and the Frosty team, https://github.com/CadeEvs/FrostyToolsuite
 * **Frosty for Dragon Age: The Veilguard**: J-Lyt, https://github.com/J-Lyt/FrostyToolsuite
 * **Contributors along the way**: Mophead, Wannkunstbeikor, Brawltendo, Dyvinia, Zhpete, NoOneOfSignificance, AllyJaxx, MrJTGaming, Wavebend, CosmicDreamsofCode
-* **This version** (DAI and Veilguard in one build, DAI mod fixes, multithreading): dduttonnc
+* **This version** (DAI, Veilguard and Mass Effect: Andromeda in one build, DAI and MEA mod fixes, multithreading): dduttonnc
 * **Frosty Toolsuite v2**, the next generation, is at https://github.com/FrostyToolsuite/FrostyToolsuite
 
 The full list is in the About window of the Mod Manager and Editor.

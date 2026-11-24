@@ -2,7 +2,7 @@
 
 These notes cover three Frosty programs, each with its own version numbers. Newest first:
 
-1. [Frosty by dduttonnc](#1-frosty-by-dduttonnc): v1.7 and v1.0.6.4-dai.1
+1. [Frosty by dduttonnc](#1-frosty-by-dduttonnc): v1.7.1, v1.7 and v1.0.6.4-dai.1
 2. [J-Lyt's Frosty](#2-j-lyts-frosty): v1.0.7 builds
 3. [Original Frosty Toolsuite](#3-original-frosty-toolsuite): v1.0.0 to v1.0.6.4
 
@@ -10,10 +10,12 @@ Frosty by dduttonnc is built on J-Lyt's Frosty, which is built on the original F
 
 # 1. Frosty by dduttonnc
 
-One Frosty Mod Manager for Dragon Age: Inquisition and Dragon Age: The Veilguard. https://github.com/dduttonnc/FrostyToolsuite
+One Frosty Mod Manager for Dragon Age: Inquisition, Dragon Age: The Veilguard and Mass Effect: Andromeda. https://github.com/dduttonnc/FrostyToolsuite
 
-v1.7.1 (not released yet)
+v1.7.1 - 2026.11.24.1
 --------
+Dragon Age: Inquisition users: delete the game's ModData folder once after updating. Mass Effect: Andromeda users: delete the MEA cache (Caches\masseffect.cache) once. Full details: docs/CHANGELOG.md
+
 Improvements:
 - Mass Effect: Andromeda is now a supported game: selecting it no longer shows the 'not supported' message
 - Other games are no longer blocked or called 'not supported': they show an 'untested with this version' note and can be opened anyway (the profile picker used to refuse them)
