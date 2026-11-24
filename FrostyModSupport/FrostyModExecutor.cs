@@ -3161,16 +3161,12 @@ namespace Frosty.ModSupport
             if (total <= 0x10000 || total != entry.LogicalSize)
                 return;
 
-            // the range keeps a minimum size of 0x10000, the logical offset doesn't
-            long first = 0, second = total, logicalOffset = 0;
-            for (int i = 0; i < layout.FirstMip; i++)
+            // the bundled part keeps a minimum size of 0x10000, so it can start before firstMip
+            long first = 0, second = total;
+            for (int i = 0; i < layout.FirstMip && second > 0x10000; i++)
             {
-                if (second > 0x10000)
-                {
-                    first += layout.MipSizes[i];
-                    second -= layout.MipSizes[i];
-                }
-                logicalOffset += layout.MipSizes[i];
+                first += layout.MipSizes[i];
+                second -= layout.MipSizes[i];
             }
             if (first == 0)
                 return;
@@ -3199,8 +3195,8 @@ namespace Frosty.ModSupport
             if (compressedPos != data.Length || uncompressedPos != total || splitPos < 0)
                 return;
 
-            entry.LogicalOffset = (uint)logicalOffset;
-            entry.LogicalSize = (uint)(total - logicalOffset);
+            entry.LogicalOffset = (uint)first;
+            entry.LogicalSize = (uint)(total - first);
             entry.RangeStart = (uint)splitPos;
             entry.RangeEnd = (uint)data.Length;
         }
