@@ -18,6 +18,7 @@ Bug Fixes:
 - Dragon Age: Inquisition and Mass Effect: Andromeda: an old-format mod (old .fbmod or converted .daimod) is no longer cut short while loading. When it replaced an asset that an earlier mod had already changed through a plugin (e.g. text edited with the Bioware Localization plugin), the rest of that mod was skipped; only that one asset is skipped now, as in 1.0.6.3
 - Dragon Age: Inquisition and Mass Effect: Andromeda: Steam copies launch through Steam again without ticking 'Use Steam protocol' in Options, as in 1.0.6.3, so mods load. Nothing changes when the DatapathFix plugin is enabled, and nothing changes for Dragon Age: The Veilguard. Untested: no Steam copy was available to test with
 - Dragon Age: Inquisition and Mass Effect: Andromeda: the DAVExtender(Dex) menu entry, the empty Dex Mods tab and the 'DAVExtender(Dex) is installed' log line no longer appear when d3d11.dll is in the game folder (e.g. ReShade). They are for Dragon Age: The Veilguard only
+- All games: a mod that refers to an asset the game does not have shows the '"X" is incompatible with the installed version of the game' message again and the launch is cancelled cleanly. Since the mod loading speedup the message was skipped and a general error box appeared instead
 
 v1.7.2 - 2026.11.24.2
 --------
