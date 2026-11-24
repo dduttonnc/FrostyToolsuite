@@ -1491,8 +1491,10 @@ namespace Frosty.ModSupport
                         {
                             ProcessModResources(mod);
                         }
-                        catch (AggregateException ae)
+                        // [DAI fix] the worker pool rethrows the error unwrapped, so catch both forms
+                        catch (Exception caught) when (caught is AggregateException || caught is NullEntryException)
                         {
+                            AggregateException ae = caught as AggregateException ?? new AggregateException(caught);
                             string nullEntryText = "\"{0}\" is incompatible with the installed version of the game.\n\nPlease remove it from the 'Applied Mods' list and try again.";
 
                             if (ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeTheVeilguard))
