@@ -16,6 +16,7 @@ Next version (not released yet)
 --------
 Improvements:
 - Mass Effect: Andromeda is now a supported game: selecting it no longer shows the 'not supported' message
+- Other games are no longer blocked or called 'not supported': they show an 'untested with this version' note and can be opened anyway (the profile picker used to refuse them)
 
 Bug Fixes:
 - Mass Effect: Andromeda: fixed texture mods leaving the streamed full-resolution copy of a texture unchanged, so save loads and area transitions hung (e.g. Beard Styles). Toc chunks were recorded under the previous superbundle, so chunks0 was never updated. The MEA cache must be rebuilt once
