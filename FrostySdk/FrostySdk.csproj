@@ -119,6 +119,7 @@
     <Compile Include="IO\EbxXmlWriter.cs" />
     <Compile Include="IO\LegacyBinarySbReader.cs" />
     <Compile Include="IO\NativeReader.cs" />
+    <Compile Include="DataVersions.cs" />
     <Compile Include="DbObject.cs" />
     <Compile Include="IO\NativeWriter.cs" />
     <Compile Include="Managers\AssetManager.cs" />

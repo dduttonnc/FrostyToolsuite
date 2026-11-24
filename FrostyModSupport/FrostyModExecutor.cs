@@ -1429,6 +1429,14 @@ namespace Frosty.ModSupport
                 }
             }
 
+            // [DAI fix] ModData from a Frosty version that applied this game's mods differently is rebuilt
+            string dataVersionPath = Path.Combine(modDataPath, m_patchPath, "moddata_version.txt");
+            if (!needsModding && (!File.Exists(dataVersionPath) || File.ReadAllText(dataVersionPath).Trim() != DataVersions.ModDataVersion.ToString()))
+            {
+                App.Logger.Log("ModData was created by an older version of Frosty, rebuilding");
+                needsModding = true;
+            }
+
             cancelToken.ThrowIfCancellationRequested();
             if (needsModding)
             {
@@ -2440,6 +2448,7 @@ namespace Frosty.ModSupport
 
                 // create the frosty mod list file
                 File.WriteAllText(Path.Combine(modDataPath, m_patchPath, "mods.json"), JsonConvert.SerializeObject(GenerateModInfoList(modPaths, rootPath), Formatting.Indented));
+                File.WriteAllText(dataVersionPath, DataVersions.ModDataVersion.ToString());
 
                 // stopwatch
                 watch.Stop();
