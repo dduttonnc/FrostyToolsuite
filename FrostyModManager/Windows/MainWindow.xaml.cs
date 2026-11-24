@@ -1664,6 +1664,93 @@ namespace FrostyModManager
             }
         }
 
+        private static bool DaiCheckProfile(string displayName, List<ImportErrorInfo> errors)
+        {
+            if (ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeInquisition))
+                return true;
+
+            errors.Add(new ImportErrorInfo() { filename = displayName, error = "Mod was not designed for this game." });
+            return false;
+        }
+
+        // an exception here used to escape the install task and close the Mod Manager
+        private FrostyMod DaiTryImportMod(FileInfo fi, string displayName, List<ImportErrorInfo> errors)
+        {
+            try
+            {
+                return DaiImportMod(fi, errors);
+            }
+            catch (Exception e)
+            {
+                App.Logger.Log("[DAI] Could not import " + displayName + ": " + e);
+                errors.Add(new ImportErrorInfo() { filename = displayName, error = "Mod could not be imported: " + e.Message });
+                return null;
+            }
+        }
+
+        // imported as if picked on its own, so Reconfigure keeps its own copy of the extracted file
+        private FrostyMod DaiImportFromArchive(SharpSevenZipDecompressor decompressor, List<CompressedFileInfo> daimods, List<string> archiveFbmods, List<ImportErrorInfo> errors)
+        {
+            FrostyMod lastMod = null;
+            string tempDir = Path.Combine(Path.GetTempPath(), "Frosty DAI import " + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            try
+            {
+                foreach (CompressedFileInfo cfi in daimods)
+                {
+                    if (!DaiCheckProfile(cfi.FullName, errors))
+                        continue;
+
+                    string name = DaiArchiveEntryName(cfi, daimods);
+                    string fbmodName = Path.GetFileNameWithoutExtension(name) + ".fbmod";
+                    if (archiveFbmods.Exists(m => string.Equals(m, fbmodName, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        errors.Add(new ImportErrorInfo() { filename = cfi.FullName, error = "Not installed: the archive also has a Frosty version of this mod (" + fbmodName + "), which was installed instead.", isWarning = true });
+                        continue;
+                    }
+
+                    string tempPath = Path.Combine(tempDir, name);
+                    try
+                    {
+                        decompressor.ExtractToFile(cfi, tempPath);
+                    }
+                    catch (Exception e)
+                    {
+                        errors.Add(new ImportErrorInfo() { filename = cfi.FullName, error = "Could not be extracted from the archive: " + e.Message });
+                        continue;
+                    }
+
+                    lastMod = DaiTryImportMod(new FileInfo(tempPath), cfi.FullName, errors) ?? lastMod;
+                }
+            }
+            finally
+            {
+                try
+                {
+                    Directory.Delete(tempDir, true);
+                }
+                catch (Exception e)
+                {
+                    App.Logger.Log("[DAI] Could not remove " + tempDir + " (" + e.Message + ")");
+                }
+            }
+            return lastMod;
+        }
+
+        // same-named .daimods in different folders of one archive (e.g. variants) would replace each other
+        private static string DaiArchiveEntryName(CompressedFileInfo cfi, List<CompressedFileInfo> daimods)
+        {
+            List<CompressedFileInfo> sameName = daimods.FindAll(d => string.Equals(d.Filename, cfi.Filename, StringComparison.OrdinalIgnoreCase));
+            if (sameName.Count == 1 || cfi.DirectoryName == "")
+                return cfi.Filename;
+
+            string folder = Path.GetFileName(cfi.DirectoryName);
+            if (sameName.Exists(d => d != cfi && string.Equals(Path.GetFileName(d.DirectoryName), folder, StringComparison.OrdinalIgnoreCase)))
+                folder = cfi.DirectoryName.Replace("\\", " - ");
+
+            return Path.GetFileNameWithoutExtension(cfi.Filename) + " (" + folder + ").daimod";
+        }
+
         private void DaiReconfigureMod(FrostyMod mod)
         {
             string title = mod.ModDetails.Title;
@@ -2258,6 +2345,7 @@ namespace FrostyModManager
                             List<string> collections = new List<string>();
                             List<int> format = new List<int>();
                             List<string> archives = new List<string>();
+                            List<CompressedFileInfo> daimods = new List<CompressedFileInfo>();
                             int fbpacks = 0;
 
                             // create decompressor
@@ -2329,6 +2417,11 @@ namespace FrostyModManager
                                     {
                                         archives.Add(compressedFi.Filename);
                                     }
+                                    else if (string.Equals(compressedFi.Extension, ".daimod", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        // [DAI fix] .daimods in archives used to be ignored
+                                        daimods.Add(compressedFi);
+                                    }
                                     else if (compressedFi.Filename == "manifest.json")
                                     {
                                         using (StreamReader reader = new StreamReader(compressedFi.Stream))
@@ -2343,7 +2436,7 @@ namespace FrostyModManager
                                 errors.Add(new ImportErrorInfo() { filename = fi.Name, error = "Failed to read Archive." });
                             }
 
-                            if (mods.Count == 0 && fbpacks == 0)
+                            if (mods.Count == 0 && fbpacks == 0 && daimods.Count == 0)
                             {
                                 // no point continuing with this archive
                                 errors.Add(new ImportErrorInfo() { filename = fi.Name, error = "Archive contains no installable mods.", isWarning = true });
@@ -2409,6 +2502,9 @@ namespace FrostyModManager
                                 }
                             }
 
+                            if (daimods.Count > 0)
+                                lastInstalledMod = DaiImportFromArchive((SharpSevenZipDecompressor)decompressor, daimods, mods, errors) ?? lastInstalledMod;
+
                             if (collections.Count > 0)
                             {
                                 // now actually decompress files
@@ -2441,7 +2537,8 @@ namespace FrostyModManager
                         {
                             // special handling for DAI mod files
                             // [DAI fix] moved to DaiImportMod / DaiConvertMod
-                            lastInstalledMod = DaiImportMod(fi, errors) ?? lastInstalledMod;
+                            if (DaiCheckProfile(fi.Name, errors))
+                                lastInstalledMod = DaiTryImportMod(fi, fi.Name, errors) ?? lastInstalledMod;
                         }
                         else
                         {

@@ -57,6 +57,20 @@ namespace FrostyModManager.Compression
             }
         }
 
+        // [DAI fix] streams to disk and matches the full path, so same-named files in different folders stay apart
+        public void ExtractToFile(CompressedFileInfo fileInfo, string filename)
+        {
+            using (var executor = new SharpSevenZipExtractor(archiveName))
+            {
+                var fileData = executor.ArchiveFileData.FirstOrDefault(x => !x.IsDirectory && x.FileName.Replace('/', '\\') == fileInfo.FullName);
+                if (fileData == null)
+                    throw new ArgumentException($"'{fileInfo.FullName}' could not be found in archive file '{archiveName}'.");
+
+                using (FileStream fs = new FileStream(filename, FileMode.Create, FileAccess.Write))
+                    executor.ExtractFile(fileData.Index, fs);
+            }
+        }
+
         public IEnumerable<CompressedFileInfo> EnumerateFiles()
         {
             using (var executor = new SharpSevenZipExtractor(archiveName))
