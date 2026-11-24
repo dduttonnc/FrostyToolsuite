@@ -1,5 +1,6 @@
 ﻿
 using Frosty.Core;
+using FrostySdk;
 using FrostySdk.IO;
 using System;
 using System.Collections;
@@ -20,6 +21,9 @@ namespace BiowareLocalizationPlugin.LocalizedResources
         {
             // prevent instantiation
         }
+
+        // [DAI fix] 1.1.1.2 write changes only apply to DAI, other games keep the 1.1.1.1 output
+        internal static bool IsDai => ProfilesLibrary.DataVersion == (int)ProfileVersion.DragonAgeInquisition;
 
         /// <summary>
         /// Reads the header information from the given reader and asset entry. (DAV+)
@@ -563,11 +567,15 @@ namespace BiowareLocalizationPlugin.LocalizedResources
         private static byte[] GetByteArrayFromBitList(List<bool> bitList)
         {
 
-            // Bytesize needs to be multiples of 4 bytes long!
-            int byteSize = (bitList.Count + 7) / 8;
+            int byteSize = bitList.Count / 8 + 1;
+            if (IsDai)
+            {
+                // Bytesize needs to be multiples of 4 bytes long!
+                byteSize = (bitList.Count + 7) / 8;
 
-            // next 4 bytesize alingment -> + 3 to get to or over the next 4 byte thershold, then null out the last 2 bits / ( dec 3 ) for the actual size.
-            byteSize = (byteSize + 3) & ~3;
+                // next 4 bytesize alingment -> + 3 to get to or over the next 4 byte thershold, then null out the last 2 bits / ( dec 3 ) for the actual size.
+                byteSize = (byteSize + 3) & ~3;
+            }
 
             BitArray ba = new BitArray(bitList.ToArray());
 
@@ -982,7 +990,10 @@ namespace BiowareLocalizationPlugin.LocalizedResources
                     // so we reduce the set of encodedTextPositions here a bit while keeping a link to the text id via the encodedText itself
                     // The original resource is compressed even further, with different texts being stored as overlapping sequences of the same bits
                     encodedText = new EncodedText(ResourceUtils.GetEncodedText(text, characterEncoding));
-                    dictionaryOfEncodedTexts[text] = encodedText;
+                    if (IsDai)
+                    {
+                        dictionaryOfEncodedTexts[text] = encodedText;
+                    }
                     uniqueTextPositions[encodedText] = new EncodedTextPosition(encodedText);
                 }
                 encodedTexts[entry.Key] = encodedText;

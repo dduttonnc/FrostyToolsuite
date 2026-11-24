@@ -530,7 +530,7 @@ namespace BiowareLocalizationPlugin.LocalizedResources
 
         public int CompareTo(TextID other)
         {
-            if (!IsVariant() && !other.IsVariant())
+            if (!ResourceUtils.IsDai || (!IsVariant() && !other.IsVariant()))
             {
                 return Id.CompareTo(other.Id);
             }

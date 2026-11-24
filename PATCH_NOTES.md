@@ -16,8 +16,10 @@ Not released yet
 --------
 Improvements:
 - All games: after a Frosty update, the cache and ModData are rebuilt automatically when the update changes what Frosty writes for that game, so they no longer need to be deleted by hand. Each game has its own data number, so an update for one game does not rebuild the others. This update rebuilds each mod pack's ModData once, on its next launch
+- Bioware Localization plugin: two new options on the 'Bioware Localization Options' page, 'Log verification texts' (debug logging) and 'Reuse original resource's text bits' (faster writing). Both are off by default
 
 Bug Fixes:
+- Dragon Age: Inquisition: the bundled Bioware Localization plugin is updated to 1.1.1.2 (by KrrKs), which text mods made for 1.1.1.2 need, e.g. Fixes of Russian localization. Texts changed by mods no longer go missing in game, mostly in non-English versions: female variants of a line are now stored right after the male line and the text data is padded, as the game expects. Mass Effect: Andromeda keeps the 1.1.1.1 behaviour, and Veilguard support is unchanged
 - Mass Effect: Andromeda: a cache built before 1.7.1 is now rebuilt automatically at the next start, so texture mods work without deleting Caches\masseffect.cache by hand
 - Dragon Age: Inquisition and Mass Effect: Andromeda: an old-format mod (old .fbmod or converted .daimod) is no longer cut short while loading. When it replaced an asset that an earlier mod had already changed through a plugin (e.g. text edited with the Bioware Localization plugin), the rest of that mod was skipped; only that one asset is skipped now, as in 1.0.6.3
 - Dragon Age: Inquisition and Mass Effect: Andromeda: Steam copies launch through Steam again without ticking 'Use Steam protocol' in Options, as in 1.0.6.3, so mods load. Nothing changes when the DatapathFix plugin is enabled, and nothing changes for Dragon Age: The Veilguard. Untested: no Steam copy was available to test with
