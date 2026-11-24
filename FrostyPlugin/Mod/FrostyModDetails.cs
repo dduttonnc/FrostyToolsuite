@@ -17,7 +17,8 @@ namespace Frosty.Core.Mod
         public ImageSource Icon { get; private set; }
         public List<ImageSource> Screenshots { get; } = new List<ImageSource>();
         public List<FrostyModRequirement> Requirements { get; } = new List<FrostyModRequirement>();
-        public bool HasDexResource => DexResourceName != "";
+        // [DAI fix] old .fbcollection files have no Dex field (null)
+        public bool HasDexResource => !string.IsNullOrEmpty(DexResourceName);
         public bool HasRootResource { get; set; }
         public int GridColumn => HasDexResource && HasRootResource ? 1 : 0;
         public bool HasLink => Link != "";
