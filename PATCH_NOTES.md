@@ -12,6 +12,16 @@ Frosty by dduttonnc is built on J-Lyt's Frosty, which is built on the original F
 
 One Frosty Mod Manager for Dragon Age: Inquisition and Dragon Age: The Veilguard. https://github.com/dduttonnc/FrostyToolsuite
 
+v1.7.1 (not released yet)
+--------
+Improvements:
+- Mass Effect: Andromeda is now a supported game: selecting it no longer shows the 'not supported' message
+- Other games are no longer blocked or called 'not supported': they show an 'untested with this version' note and can be opened anyway (the profile picker used to refuse them)
+
+Bug Fixes:
+- Mass Effect: Andromeda: fixed texture mods leaving the streamed full-resolution copy of a texture unchanged, so save loads and area transitions hung (e.g. Beard Styles). Toc chunks were recorded under the previous superbundle, so chunks0 was never updated. The MEA cache must be rebuilt once
+- Mass Effect: Andromeda: old-format texture mods are now split at the texture's first streamed mip, as Frosty's texture importer does, instead of putting the whole texture into the bundle
+
 v1.7 - 2026.11.21.1
 --------
 One Frosty Mod Manager for Dragon Age: Inquisition and Dragon Age: The Veilguard. Built on J-Lyt's Veilguard Frosty (v1.0.7 - 2026.08.21.0) with every change from v1.0.6.4-dai.1 carried over. Full details: docs/CHANGELOG.md
