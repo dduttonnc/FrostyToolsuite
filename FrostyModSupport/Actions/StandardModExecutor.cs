@@ -57,6 +57,33 @@ namespace Frosty.ModSupport
             private DbReader baseSbReader;
             private DbReader patchSbReader;
 
+            // [DAI fix] patch tocs keep their chunks sorted by the raw id bytes; chunks Frosty put at either end weren't always found
+            private static void SortTocChunks(DbObject toc)
+            {
+                DbObject chunks = toc.GetValue<DbObject>("chunks");
+                if (ProfilesLibrary.DataVersion != (int)ProfileVersion.DragonAgeInquisition || chunks == null || chunks.Count < 2)
+                    return;
+
+                List<KeyValuePair<byte[], DbObject>> sorted = new List<KeyValuePair<byte[], DbObject>>();
+                foreach (DbObject chunk in chunks)
+                    sorted.Add(new KeyValuePair<byte[], DbObject>(chunk.GetValue<Guid>("id").ToByteArray(), chunk));
+
+                sorted.Sort((a, b) =>
+                {
+                    for (int i = 0; i < 16; i++)
+                    {
+                        if (a.Key[i] != b.Key[i])
+                            return a.Key[i].CompareTo(b.Key[i]);
+                    }
+                    return 0;
+                });
+
+                DbObject sortedChunks = new DbObject(false);
+                foreach (KeyValuePair<byte[], DbObject> pair in sorted)
+                    sortedChunks.Add(pair.Value);
+                toc.SetValue("chunks", sortedChunks);
+            }
+
             // [DAI fix] DAI counts only the bundled range; the full chunk size made totalSize up to ~14 MB too big per texture bundle
             private static long BundledChunkSize(DbObject chunk)
             {
@@ -256,6 +283,7 @@ namespace Frosty.ModSupport
                                             writer.Write(parent.m_archiveData[entry.Sha1].Data);
                                         }
 
+                                        SortTocChunks(toc);
                                         using (DbWriter tocWriter = new DbWriter(new FileStream(sbFi.FullName.Replace(".sb", ".toc"), FileMode.Create), true))
                                             tocWriter.Write(toc);
 
@@ -1622,6 +1650,7 @@ namespace Frosty.ModSupport
                         Directory.CreateDirectory(fi.DirectoryName);
 
                         // write out modified toc file
+                        SortTocChunks(toc);
                         using (DbWriter writer = new DbWriter(new FileStream(fi.FullName, FileMode.Create), true))
                             writer.Write(toc);
                     }
