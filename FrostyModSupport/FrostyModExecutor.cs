@@ -1003,6 +1003,11 @@ namespace Frosty.ModSupport
                 }
             }
 
+            // [MEA fix] old mods store whole texture chunks; split them at the header's first mip like the importer does
+            Dictionary<Guid, LegacyTextureLayout> textureLayouts = ProfilesLibrary.IsLoaded(ProfileVersion.MassEffectAndromeda)
+                ? ReadLegacyTextureLayouts(modPath, resourceList)
+                : new Dictionary<Guid, LegacyTextureLayout>();
+
             // obtain resources to modify
             foreach (DbObject resource in resourceList)
             {
@@ -1227,6 +1232,9 @@ namespace Frosty.ModSupport
                             }
                         }
                     }
+
+                    if (entry.LogicalOffset == 0 && entry.RangeStart == 0 && textureLayouts.TryGetValue(entry.Id, out LegacyTextureLayout layout))
+                        SplitLegacyTextureChunk(layout, buffer, entry);
 
                     entry.Sha1 = Utils.GenerateSha1(buffer);
 
@@ -3084,6 +3092,117 @@ namespace Frosty.ModSupport
                     // do nothing
                 }
             }
+        }
+
+        private class LegacyTextureLayout
+        {
+            public int MipCount;
+            public int FirstMip;
+            public uint[] MipSizes = new uint[15];
+        }
+
+        // keyed by the chunk each texture header points at
+        private Dictionary<Guid, LegacyTextureLayout> ReadLegacyTextureLayouts(string modPath, DbObject resourceList)
+        {
+            Dictionary<Guid, LegacyTextureLayout> layouts = new Dictionary<Guid, LegacyTextureLayout>();
+
+            foreach (DbObject resource in resourceList)
+            {
+                if (resource.GetValue<string>("type") != "res" || !resource.HasValue("archiveIndex") || (uint)resource.GetValue<int>("resType") != (uint)ResourceType.Texture)
+                    continue;
+
+                // header version 12 and up (MEA uses 13)
+                byte[] resMeta = resource.GetValue<byte[]>("resMeta");
+                if (resMeta == null || resMeta.Length < 4 || BitConverter.ToUInt32(resMeta, 0) < 12)
+                    continue;
+
+                byte[] header;
+                try
+                {
+                    byte[] buffer = GetResourceData(modPath, resource.GetValue<int>("archiveIndex"), resource.GetValue<long>("archiveOffset"), (int)resource.GetValue<long>("compressedSize"));
+                    using (CasReader reader = new CasReader(new MemoryStream(buffer)))
+                        header = reader.Read();
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
+
+                // mipOffsets[2], type, format, poolId, flags (u16), width, height, depth, sliceCount (u16),
+                // mipCount (u8), firstMip (u8), chunkId, mipSizes[15]
+                if (header == null || header.Length < 108)
+                    continue;
+
+                LegacyTextureLayout layout = new LegacyTextureLayout
+                {
+                    MipCount = header[30],
+                    FirstMip = header[31]
+                };
+                for (int i = 0; i < 15; i++)
+                    layout.MipSizes[i] = BitConverter.ToUInt32(header, 48 + i * 4);
+
+                byte[] guidBytes = new byte[16];
+                Array.Copy(header, 32, guidBytes, 0, 16);
+                layouts[new Guid(guidBytes)] = layout;
+            }
+
+            return layouts;
+        }
+
+        // Same split as Utils.CompressTexture; leaves the entry alone if the data has no block boundary there.
+        private static void SplitLegacyTextureChunk(LegacyTextureLayout layout, byte[] data, ChunkAssetEntry entry)
+        {
+            if (layout.MipCount <= 1 || layout.MipCount > 15 || layout.FirstMip <= 0 || layout.FirstMip >= layout.MipCount)
+                return;
+
+            long total = 0;
+            for (int i = 0; i < layout.MipCount; i++)
+                total += layout.MipSizes[i];
+            if (total <= 0x10000 || total != entry.LogicalSize)
+                return;
+
+            // the range keeps a minimum size of 0x10000, the logical offset doesn't
+            long first = 0, second = total, logicalOffset = 0;
+            for (int i = 0; i < layout.FirstMip; i++)
+            {
+                if (second > 0x10000)
+                {
+                    first += layout.MipSizes[i];
+                    second -= layout.MipSizes[i];
+                }
+                logicalOffset += layout.MipSizes[i];
+            }
+            if (first == 0)
+                return;
+
+            long compressedPos = 0, uncompressedPos = 0, splitPos = -1;
+            while (compressedPos + 8 <= data.Length)
+            {
+                if (uncompressedPos == first)
+                    splitPos = compressedPos;
+
+                int p = (int)compressedPos;
+                int decompressedSize = ((data[p] << 24) | (data[p + 1] << 16) | (data[p + 2] << 8) | data[p + 3]) & 0x00FFFFFF;
+                int compressionType = data[p + 4];
+                int flags = data[p + 5];
+                int bufferSize = (data[p + 6] << 8) | data[p + 7];
+
+                if ((flags & 0x0F) != 0)
+                    bufferSize += (flags & 0x0F) << 16;
+                if ((compressionType & 0x7F) == 0x00)
+                    bufferSize = decompressedSize;
+
+                compressedPos += 8 + bufferSize;
+                uncompressedPos += decompressedSize;
+            }
+
+            if (compressedPos != data.Length || uncompressedPos != total || splitPos < 0)
+                return;
+
+            entry.LogicalOffset = (uint)logicalOffset;
+            entry.LogicalSize = (uint)(total - logicalOffset);
+            entry.RangeStart = (uint)splitPos;
+            entry.RangeEnd = (uint)data.Length;
         }
 
         private byte[] GetResourceData(string modFilename, int archiveIndex, long offset, int size)
