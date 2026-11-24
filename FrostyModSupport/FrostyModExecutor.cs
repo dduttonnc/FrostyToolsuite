@@ -2515,14 +2515,19 @@ namespace Frosty.ModSupport
             string gameExecutable = Path.Combine(basePath, $"{ProfilesLibrary.ProfileName}.exe");
             string dataPathArgument = $"-dataPath \"{modDataPath.Trim('\\')}\" {additionalArgs}";
 
-            if (Config.Get<bool>("UseSteamProtocol", false))
+            // [DAI fix] DAI and MEA Steam copies launch through Steam as in 1.0.6.3, unless DatapathFix handles the launch
+            bool steamCopy = (ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeInquisition) || ProfilesLibrary.IsLoaded(ProfileVersion.MassEffectAndromeda))
+                && File.Exists(Path.Combine(basePath, "steam_appid.txt"))
+                && !Config.Get<bool>("DatapathFixEnabled", false);
+
+            if (steamCopy || Config.Get<bool>("UseSteamProtocol", false))
             {
                 string steamAppIdFilePath = Path.Combine(basePath, "steam_appid.txt");
                 string steamAppId = null;
 
                 if (File.Exists(steamAppIdFilePath))
                 {
-                    steamAppId = File.ReadLines(steamAppIdFilePath).First();
+                    steamAppId = File.ReadLines(steamAppIdFilePath).FirstOrDefault();
                 }
 
                 if (string.IsNullOrEmpty(steamAppId) && ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeTheVeilguard))
