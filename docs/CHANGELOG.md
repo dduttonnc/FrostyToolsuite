@@ -11,6 +11,12 @@ because each has its own version numbers:
 
 Every code change in this section is marked with a `[DAI fix]` comment.
 
+## 1.7.2 (not released yet)
+
+| Change | Files |
+|---|---|
+| DAI: chunks in the `chunks` pseudo-bundle's add list were appended to every superbundle whose name contains "chunks": `win32/chunks0` (one cas copy) and the 8 binary DLC `chunkgroups/chunksNN` superbundles, which each got the full chunk data inline (1.0.6.4 did the same). The chunkgroups now only get added chunks that the asset manager already knows, i.e. that replace a game chunk. Those copies are needed: a replaced chunk keeps its vanilla entry in base `Data\Win32\chunks0.toc`, and with only the plain patch `chunks0` entry the game streamed the vanilla mips under the modded texture header (Cullen 4k Armor Textures showed sparkles in a test that left them out). Brand-new chunks (4k Map textures, Scarless Cullen, Creation Magic Expanded) are in no vanilla toc and only go into `win32/chunks0` | `FrostyModSupport/Actions/StandardModExecutor.cs` |
+
 ## 1.7.1
 
 Shows as **1.7.1 - 2026.11.24.1**. Release tag: `2026.11.24.1`. DAI users delete ModData once; MEA users delete the MEA cache once.
