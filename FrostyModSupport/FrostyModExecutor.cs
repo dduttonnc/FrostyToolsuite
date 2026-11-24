@@ -1072,7 +1072,8 @@ namespace Frosty.ModSupport
 
                         if (!m_archiveData.ContainsKey(existingEntry.Sha1))
                         {
-                            return;
+                            // [DAI fix] skip this asset only, as 1.0.6.3 did; return dropped the rest of the mod
+                            continue;
                         }
 
                         m_archiveData[existingEntry.Sha1].RefCount--;
@@ -1129,7 +1130,8 @@ namespace Frosty.ModSupport
 
                         if (!m_archiveData.ContainsKey(existingEntry.Sha1))
                         {
-                            return;
+                            // [DAI fix] skip this asset only, as 1.0.6.3 did; return dropped the rest of the mod
+                            continue;
                         }
 
                         m_archiveData[existingEntry.Sha1].RefCount--;
@@ -1188,7 +1190,8 @@ namespace Frosty.ModSupport
 
                         if (!m_archiveData.ContainsKey(existingEntry.Sha1))
                         {
-                            return;
+                            // [DAI fix] skip this asset only, as 1.0.6.3 did; return dropped the rest of the mod
+                            continue;
                         }
 
                         m_archiveData[existingEntry.Sha1].RefCount--;

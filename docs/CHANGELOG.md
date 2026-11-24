@@ -11,6 +11,12 @@ because each has its own version numbers:
 
 Every code change in this section is marked with a `[DAI fix]` comment.
 
+## Not released yet
+
+| Change | Files |
+|---|---|
+| DAI and MEA: `ProcessLegacyModResources` left the whole mod (`return`) when an old-format mod replaced an ebx, res or chunk that an earlier mod had changed through a handler, so its data was not in the archive list. 1.0.6.3 and 1.0.6.4 skipped only that asset (`continue`); restored. Veilguard has no old-format mods | `FrostyModSupport/FrostyModExecutor.cs` |
+
 ## 1.7.2
 
 Shows as **1.7.2 - 2026.11.24.2**. Release tag: `2026.11.24.2`. DAI users delete ModData once.
