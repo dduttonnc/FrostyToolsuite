@@ -22,6 +22,7 @@ Bug Fixes:
 - Mass Effect: Andromeda: fixed texture mods leaving the streamed full-resolution copy of a texture unchanged, so save loads and area transitions hung (e.g. Beard Styles). Toc chunks were recorded under the previous superbundle, so chunks0 was never updated. The MEA cache must be rebuilt once
 - Mass Effect: Andromeda: old-format texture mods are now split at the texture's first streamed mip, as Frosty's texture importer does, instead of putting the whole texture into the bundle
 - Dragon Age: Inquisition: old-format mods that replace existing textures (e.g. Cullen 4k Armor Textures) no longer show sparkles, pixelated or wrongly colored textures. 1.7 ignored the mod's own chunk instructions and marked the replaced textures as patch deltas in the game's chunk list; chunks are now handled as in 1.0.6.4. New chunks from some mods (e.g. Creation Magic Expanded) were also left out and are now added again
+- Dragon Age: Inquisition: ModData is much smaller and the game loads faster with mods that add new chunks (e.g. 4k Map textures): new chunks now go only into the global chunk list (chunks0), as DAI Mod Manager did. Each of the 8 DLC chunk files used to get its own full copy of every new chunk (about 5 GB of a 6.4 GB ModData in one 28-mod setup)
 
 v1.7 - 2026.11.21.1
 --------

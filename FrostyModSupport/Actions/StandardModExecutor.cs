@@ -57,16 +57,23 @@ namespace Frosty.ModSupport
             private DbReader baseSbReader;
             private DbReader patchSbReader;
 
-            // [DAI fix] 1.0.6.4 routing: every toc gets the "chunks" modify list, new chunks only go into the chunks superbundles
+            // [DAI fix] 1.0.6.4 routing: every toc gets the "chunks" modify list, new chunks only go into chunks0.
+            // The DLC chunkgroups only replace chunks they already list; each used to get its own inline copy of every new chunk
             private ModBundleInfo GetChunkBundle(string superBundle)
             {
                 if (ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeInquisition))
                 {
                     if (!parent.m_modifiedBundles.TryGetValue(s_chunksBundleHash, out ModBundleInfo chunks))
                         return null;
-                    if (superBundle.Contains("chunks"))
+                    if (superBundle.Equals("win32/chunks0", StringComparison.OrdinalIgnoreCase))
                         return chunks;
-                    return new ModBundleInfo() { Name = s_chunksBundleHash, Modify = chunks.Modify };
+                    if (!superBundle.Contains("chunks"))
+                        return new ModBundleInfo() { Name = s_chunksBundleHash, Modify = chunks.Modify };
+
+                    ModBundleInfo existingOnly = new ModBundleInfo() { Name = s_chunksBundleHash };
+                    existingOnly.Modify.Chunks.UnionWith(chunks.Modify.Chunks);
+                    existingOnly.Modify.Chunks.UnionWith(chunks.Add.Chunks);
+                    return existingOnly;
                 }
 
                 int sbId = parent.m_am.GetSuperBundleId(superBundle);
