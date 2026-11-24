@@ -1,5 +1,6 @@
 ﻿============================================================
 1. Frosty by dduttonnc
+============================================================
 One Frosty Mod Manager for Dragon Age: Inquisition, Dragon Age: The Veilguard and Mass Effect: Andromeda. https://github.com/dduttonnc/FrostyToolsuite
 
 Not released yet
@@ -99,7 +100,9 @@ Technical Changes:
 
 NOTE: Re-import .daimod files after updating. The fixes only apply when a mod is imported.
 
+============================================================
 2. J-Lyt's Frosty
+============================================================
 Frosty for Dragon Age: The Veilguard, built on the original Frosty's unreleased 1.0.7. Every version is v1.0.7 plus a build date. https://github.com/J-Lyt/FrostyToolsuite
 
 v1.0.7 - 2026.08.21.0
@@ -483,7 +486,9 @@ Options:
 Misc:
 - When importing an ebx as .bin file, bypass the ebx writer entirely as a workaround to ebxwriter limitations
 
+============================================================
 3. Original Frosty Toolsuite
+============================================================
 The original Frosty Toolsuite by GalaxyMan2015 and the Frosty team. https://github.com/CadeEvs/FrostyToolsuite (v1.0.6.4 had no changelog entry of its own; that entry lists its changes from the repository)
 
 v1.0.6.4
