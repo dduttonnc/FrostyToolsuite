@@ -17,6 +17,7 @@ Every code change in this section is marked with a `[DAI fix]` comment.
 |---|---|
 | DAI and MEA: `ProcessLegacyModResources` left the whole mod (`return`) when an old-format mod replaced an ebx, res or chunk that an earlier mod had changed through a handler, so its data was not in the archive list. 1.0.6.3 and 1.0.6.4 skipped only that asset (`continue`); restored. Veilguard has no old-format mods | `FrostyModSupport/FrostyModExecutor.cs` |
 | DAI and MEA: `LaunchGame` uses the `steam://run` link whenever `steam_appid.txt` is in the game folder, as 1.0.6.3 did. The 1.0.7 base only did that with the 'Use Steam protocol' option, which is off by default. Not applied when DatapathFix is enabled, because it handles the launch itself. Other games are unchanged. An empty `steam_appid.txt` now falls back to starting the exe instead of failing. Untested: no Steam copy was available | `FrostyModSupport/FrostyModExecutor.cs` |
+| All games: the friendly incompatible-mod message only caught `AggregateException`, but `WorkerPool.ForEach` rethrows the original `NullEntryException` unwrapped, so the message never showed. Both forms are caught now | `FrostyModSupport/FrostyModExecutor.cs` |
 
 ## 1.7.2
 
