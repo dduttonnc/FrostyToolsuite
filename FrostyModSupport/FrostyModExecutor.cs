@@ -287,7 +287,7 @@ namespace Frosty.ModSupport
                         foreach (int hash in bundles)
                         {
                             var kv = m_modifiedBundles[hash];
-                            writer.WriteLine($"  {bundleHashMap[hash]}:");
+                            writer.WriteLine($"  {(bundleHashMap.TryGetValue(hash, out string bundleName) ? bundleName : "chunks")}:");
 
                             if (kv.Modify.Ebx.Count > 0)
                             {
@@ -433,6 +433,27 @@ namespace Frosty.ModSupport
                     m_archiveData.TryRemove(sha1, out _);
                 return true;
             }
+        }
+
+        // [DAI fix] DAI uses the 1.0.6.4 "chunks" pseudo-bundle instead of the asset manager's superbundles, which marked replaced chunks as deltas
+        private static bool IsDai => ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeInquisition);
+
+        private void AddChunkSuperBundles(ChunkAssetEntry chunkEntry, HashSet<int> bundles, List<int> superBundles)
+        {
+            if (IsDai)
+                bundles.Add(s_chunksBundleHash);
+            else
+                superBundles.AddRange(chunkEntry.SuperBundles);
+        }
+
+        private void AddToChunksBundle(Guid id, bool isAdded)
+        {
+            m_modifiedBundles.TryAdd(s_chunksBundleHash, new ModBundleInfo() { Name = s_chunksBundleHash });
+            ModBundleInfo chunksBundle = m_modifiedBundles[s_chunksBundleHash];
+            if (isAdded)
+                chunksBundle.Add.AddChunk(id);
+            else
+                chunksBundle.Modify.AddChunk(id);
         }
 
         private void ProcessModResources(IResourceContainer fmod)
@@ -706,7 +727,7 @@ namespace Frosty.ModSupport
                                 }
 
                                 // add in existing superbundles
-                                superBundles.AddRange(chunkEntry.SuperBundles);
+                                AddChunkSuperBundles(chunkEntry, bundles, superBundles);
 
                                 entry.ExtraData = extraData;
                                 m_modifiedChunks.TryAdd(guid, entry);
@@ -822,9 +843,9 @@ namespace Frosty.ModSupport
                                 }
 
                                 // add in existing superbundles
-                                superBundles.AddRange(chunkEntry.SuperBundles);
+                                AddChunkSuperBundles(chunkEntry, bundles, superBundles);
                             }
-                            else if (!resource.IsAdded)
+                            else if (!resource.IsAdded && !IsDai)
                             {
                                 // old mods had their IsAdded flag overridden so we have to manually set the flag and add it to chunks superbundles
                                 resource.IsAdded = true;
@@ -905,7 +926,8 @@ namespace Frosty.ModSupport
                 foreach (int bundleHash in resource.AddedBundles)
                 {
                     // Skips bundle if the whitelist has more than one element and doesn't contain the bundle hash
-                    if ((App.WhitelistedBundles.Count != 0 && !App.WhitelistedBundles.Contains(bundleHash)) || bundleHash == s_chunksBundleHash)
+                    // [DAI fix] DAI keeps the mod's own "chunks" actions, as 1.0.6.4 did
+                    if ((App.WhitelistedBundles.Count != 0 && !App.WhitelistedBundles.Contains(bundleHash)) || (bundleHash == s_chunksBundleHash && !IsDai))
                     {
                         continue;
                     }
@@ -932,6 +954,12 @@ namespace Frosty.ModSupport
                 }
 
                 // add superbundle actions (these are stored in the mod)
+                if (IsDai && addedSuperBundles.Count > 0 && resource.Type == ModResourceType.Chunk)
+                {
+                    AddToChunksBundle(new Guid(resource.Name), true);
+                    addedSuperBundles.Clear();
+                }
+
                 foreach (int superBundleId in addedSuperBundles)
                 {
                     m_modifiedSuperBundles.TryAdd(superBundleId, new ModBundleInfo() { Name = superBundleId });
@@ -960,7 +988,7 @@ namespace Frosty.ModSupport
                 string actionType = action.GetValue<string>("type");
                 int resourceId = action.GetValue<int>("resourceId");
 
-                if (bundle == s_chunksBundleHash)
+                if (bundle == s_chunksBundleHash && !IsDai)
                 {
                     continue;
                 }
@@ -1246,7 +1274,15 @@ namespace Frosty.ModSupport
                     m_numArchiveEntries++;
 
                     ChunkAssetEntry originalEntry = m_am.GetChunkEntry(entry.Id);
-                    if (originalEntry != null)
+                    if (IsDai)
+                    {
+                        // [DAI fix] 1.0.6.4 routing: v1 mods have no toc action, converted .daimods add texture chunks; the rest come from the mod's "chunks" actions
+                        if (ver < 2)
+                            AddToChunksBundle(entry.Id, false);
+                        else if (ver == 3 && entry.FirstMip != -1)
+                            AddToChunksBundle(entry.Id, true);
+                    }
+                    else if (originalEntry != null)
                     {
                         // pull superbundles from am
                         foreach (int sbId in originalEntry.SuperBundles)
