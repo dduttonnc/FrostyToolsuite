@@ -57,6 +57,22 @@ namespace Frosty.ModSupport
             private DbReader baseSbReader;
             private DbReader patchSbReader;
 
+            // [DAI fix] 1.0.6.4 routing: every toc gets the "chunks" modify list, new chunks only go into the chunks superbundles
+            private ModBundleInfo GetChunkBundle(string superBundle)
+            {
+                if (ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeInquisition))
+                {
+                    if (!parent.m_modifiedBundles.TryGetValue(s_chunksBundleHash, out ModBundleInfo chunks))
+                        return null;
+                    if (superBundle.Contains("chunks"))
+                        return chunks;
+                    return new ModBundleInfo() { Name = s_chunksBundleHash, Modify = chunks.Modify };
+                }
+
+                int sbId = parent.m_am.GetSuperBundleId(superBundle);
+                return parent.m_modifiedSuperBundles.TryGetValue(sbId, out ModBundleInfo info) ? info : null;
+            }
+
             public SuperBundleAction(string inSuperBundle, ManualResetEvent inDoneEvent, FrostyModExecutor inParent, string inModPath, CancellationToken inCancelToken)
             {
                 superBundle = inSuperBundle;
@@ -121,11 +137,10 @@ namespace Frosty.ModSupport
 #if FROSTY_DEVELOPER
                         Debug.Assert(toc.HasValue("bundles") ? toc.GetValue<DbObject>("bundles").Count == 0 : true);
 #endif
-                        int sbId = parent.m_am.GetSuperBundleId(superBundle);
-                        if (parent.m_modifiedSuperBundles.ContainsKey(sbId))
+                        ModBundleInfo chunkBundle = GetChunkBundle(superBundle);
+                        if (chunkBundle != null)
                         {
                             FileInfo sbFi = new FileInfo(parent.m_fs.BasePath + modPath + "/" + superBundle + ".sb");
-                            ModBundleInfo chunkBundle = parent.m_modifiedSuperBundles[sbId];
 
                             if (isBinary)
                             {
