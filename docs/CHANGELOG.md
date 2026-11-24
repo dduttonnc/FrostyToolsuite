@@ -3,7 +3,7 @@
 Like [PATCH_NOTES.md](../PATCH_NOTES.md), this file has one section per Frosty program, newest first,
 because each has its own version numbers:
 
-1. [Frosty by dduttonnc](#1-frosty-by-dduttonnc): v1.7.2, v1.7.1, v1.7 and v1.0.6.4-dai.1, in full detail below.
+1. [Frosty by dduttonnc](#1-frosty-by-dduttonnc): v1.7.3, v1.7.2, v1.7.1, v1.7 and v1.0.6.4-dai.1, in full detail below.
 2. [J-Lyt's Frosty](#2-j-lyts-frosty): v1.0.7 builds.
 3. [Original Frosty Toolsuite](#3-original-frosty-toolsuite): v1.0.0 to v1.0.6.4.
 
@@ -11,7 +11,9 @@ because each has its own version numbers:
 
 Every code change in this section is marked with a `[DAI fix]` comment.
 
-## Not released yet
+## 1.7.3
+
+Shows as **1.7.3 - 2026.11.24.3**. Release tag: `2026.11.24.3`. First release with per-game data numbers (MEA cache revision 1, ModData version 1 for every game), so nothing needs deleting by hand.
 
 | Change | Files |
 |---|---|
