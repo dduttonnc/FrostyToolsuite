@@ -14,6 +14,9 @@ One Frosty Mod Manager for Dragon Age: Inquisition and Dragon Age: The Veilguard
 
 Next version (not released yet)
 --------
+Improvements:
+- Mass Effect: Andromeda is now a supported game: selecting it no longer shows the 'not supported' message
+
 Bug Fixes:
 - Mass Effect: Andromeda: fixed texture mods leaving the streamed full-resolution copy of a texture unchanged, so save loads and area transitions hung (e.g. Beard Styles). Toc chunks were recorded under the previous superbundle, so chunks0 was never updated. The MEA cache must be rebuilt once
 - Mass Effect: Andromeda: old-format texture mods are now split at the texture's first streamed mip, as Frosty's texture importer does, instead of putting the whole texture into the bundle
