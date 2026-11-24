@@ -1193,14 +1193,17 @@ namespace Frosty.Core.Sdk
         public static long NextOffset;
 
         private List<ClassInfo> m_classInfos = new List<ClassInfo>();
-        private List<string> m_alreadyProcessedClasses = new List<string>();
+        private HashSet<string> m_alreadyProcessedClasses = new HashSet<string>();
         private Dictionary<long, ClassInfo> m_offsetClassInfoMappings = new Dictionary<long, ClassInfo>();
 
-        private List<EbxClass> m_processedClasses = new List<EbxClass>();
+        private HashSet<EbxClass> m_processedClasses = new HashSet<EbxClass>(new EbxClassComparer());
         private Dictionary<string, List<EbxField>> m_fieldMappings;
         private Dictionary<string, Tuple<EbxClass, DbObject>> m_classMappings;
 
         private List<Tuple<EbxClass, DbObject>> m_values = null;
+        private Dictionary<string, int> m_valueIndexByName = new Dictionary<string, int>();
+        private Dictionary<string, int> m_nonBasicValueIndexByName = new Dictionary<string, int>();
+        private Dictionary<string, DbObject> m_outListByName = new Dictionary<string, DbObject>();
         private DbObject m_classList = null;
         private DbObject m_classMetaList = null;
 
@@ -1387,6 +1390,14 @@ namespace Frosty.Core.Sdk
             m_values = m_classMappings.Values.ToList();
             m_values.Sort((Tuple<EbxClass, DbObject> a, Tuple<EbxClass, DbObject> b) => { return a.Item1.Name.CompareTo(b.Item1.Name); });
 
+            m_valueIndexByName.Clear();
+            m_nonBasicValueIndexByName.Clear();
+            m_outListByName.Clear();
+            for (int i = 0; i < m_values.Count; i++)
+            {
+                IndexValue(i);
+            }
+
             Console.WriteLine("Creating SDK");
             for (int z = 0; z < m_values.Count; z++)
             {
@@ -1450,19 +1461,29 @@ namespace Frosty.Core.Sdk
                 }
 
                 m_values.Add(new Tuple<EbxClass, DbObject>(tmpClass, classObj));
+                IndexValue(m_values.Count - 1);
                 m_fieldMappings.Add(tmpClass.Name, tmpFields);
                 supportedClasses.Add(classObj);
+            }
+
+            Dictionary<DbObject, Tuple<EbxClass, DbObject>> valueByClassObj = new Dictionary<DbObject, Tuple<EbxClass, DbObject>>(new ReferenceComparer<DbObject>());
+            foreach (Tuple<EbxClass, DbObject> value in m_values)
+            {
+                if (value.Item2 != null && !valueByClassObj.ContainsKey(value.Item2))
+                {
+                    valueByClassObj.Add(value.Item2, value);
+                }
             }
 
             foreach (DbObject classObj in supportedClasses)
             {
                 if (classObj.HasValue("basic"))
                 {
-                    finalList.Add(classObj);
+                    AddToOutList(finalList, classObj);
                     continue;
                 }
 
-                Tuple<EbxClass, DbObject> p = m_values.Find((Tuple<EbxClass, DbObject> a) => { return a.Item2 == classObj; });
+                Tuple<EbxClass, DbObject> p = valueByClassObj[classObj];
 
                 int offset = 0;
                 int fieldIndex = 0;
@@ -1633,7 +1654,7 @@ namespace Frosty.Core.Sdk
             string parent = pobj.GetValue<string>("parent");
             if (parent != "")
             {
-                Tuple<EbxClass, DbObject> p = m_values.Find((Tuple<EbxClass, DbObject> a) => { return a.Item1.Name == parent; });
+                Tuple<EbxClass, DbObject> p = FindValue(parent);
                 offset = ProcessClass(p.Item1, p.Item2, m_fieldMappings[p.Item1.Name], outList, ref offset, ref fieldIndex);
 
                 if (p.Item1.Name == "DataContainer" && pclass.Name != "Asset")
@@ -1644,13 +1665,10 @@ namespace Frosty.Core.Sdk
 
             if (m_processedClasses.Contains(pclass))
             {
-                foreach (DbObject t in outList)
+                if (pclass.Name != null && m_outListByName.TryGetValue(pclass.Name, out DbObject t))
                 {
-                    if (t.GetValue<string>("name") == pclass.Name)
-                    {
-                        fieldIndex += t.GetValue<DbObject>("fields").Count;
-                        return t.GetValue<int>("size");
-                    }
+                    fieldIndex += t.GetValue<DbObject>("fields").Count;
+                    return t.GetValue<int>("size");
                 }
                 return 0;
             }
@@ -1740,7 +1758,7 @@ namespace Frosty.Core.Sdk
                     if (field.DebugType == EbxFieldType.Pointer || field.DebugType == EbxFieldType.Struct || field.DebugType == EbxFieldType.Enum || field.DebugType == EbxFieldType.Delegate || field.DebugType == EbxFieldType.Function)
                     {
                         string baseTypeName = origField.GetValue<string>("baseType");
-                        int idx = m_values.FindIndex((Tuple<EbxClass, DbObject> a) => a.Item1.Name == baseTypeName && !a.Item2.HasValue("basic"));
+                        int idx = FindNonBasicValueIndex(baseTypeName);
                         if (idx != -1)
                         {
                             if (field.DebugType == EbxFieldType.Delegate || field.DebugType == EbxFieldType.Function)
@@ -1787,7 +1805,7 @@ namespace Frosty.Core.Sdk
                     else if (field.DebugType == EbxFieldType.Array)
                     {
                         string baseTypeName = origField.GetValue<string>("baseType");
-                        int idx = m_values.FindIndex((Tuple<EbxClass, DbObject> a) => a.Item1.Name == baseTypeName && !a.Item2.HasValue("basic"));
+                        int idx = FindNonBasicValueIndex(baseTypeName);
 
                         if (idx != -1)
                         {
@@ -1845,7 +1863,7 @@ namespace Frosty.Core.Sdk
                     {
                         case EbxFieldType.Struct:
                             {
-                                Tuple<EbxClass, DbObject> s = m_values.Find((Tuple<EbxClass, DbObject> a) => a.Item1.Name == fieldObj.GetValue<string>("baseType"));
+                                Tuple<EbxClass, DbObject> s = FindValue(fieldObj.GetValue<string>("baseType"));
 
                                 int structOffset = 0;
                                 int structFieldIndex = 0;
@@ -1919,8 +1937,68 @@ namespace Frosty.Core.Sdk
                 }
             }
 
-            outList.Add(pobj);
+            AddToOutList(outList, pobj);
             return offset;
+        }
+
+        private void IndexValue(int index)
+        {
+            Tuple<EbxClass, DbObject> value = m_values[index];
+            string name = value.Item1.Name;
+            if (name == null)
+            {
+                return;
+            }
+
+            if (!m_valueIndexByName.ContainsKey(name))
+            {
+                m_valueIndexByName.Add(name, index);
+            }
+            if (value.Item2 != null && !value.Item2.HasValue("basic") && !m_nonBasicValueIndexByName.ContainsKey(name))
+            {
+                m_nonBasicValueIndexByName.Add(name, index);
+            }
+        }
+
+        private Tuple<EbxClass, DbObject> FindValue(string name)
+        {
+            return (name != null && m_valueIndexByName.TryGetValue(name, out int index)) ? m_values[index] : null;
+        }
+
+        private int FindNonBasicValueIndex(string name)
+        {
+            return (name != null && m_nonBasicValueIndexByName.TryGetValue(name, out int index)) ? index : -1;
+        }
+
+        private void AddToOutList(DbObject outList, DbObject obj)
+        {
+            outList.Add(obj);
+            string name = obj.GetValue<string>("name");
+            if (name != null && !m_outListByName.ContainsKey(name))
+            {
+                m_outListByName.Add(name, obj);
+            }
+        }
+
+        private class EbxClassComparer : IEqualityComparer<EbxClass>
+        {
+            public bool Equals(EbxClass a, EbxClass b)
+            {
+                return a.NameHash == b.NameHash && a.FieldIndex == b.FieldIndex && a.FieldCount == b.FieldCount
+                    && a.Alignment == b.Alignment && a.Type == b.Type && a.Size == b.Size && a.SecondSize == b.SecondSize
+                    && a.Index == b.Index && string.Equals(a.Name, b.Name) && string.Equals(a.Namespace, b.Namespace);
+            }
+
+            public int GetHashCode(EbxClass obj)
+            {
+                return (obj.Name?.GetHashCode() ?? 0) ^ (int)obj.NameHash;
+            }
+        }
+
+        private class ReferenceComparer<T> : IEqualityComparer<T> where T : class
+        {
+            public bool Equals(T a, T b) => ReferenceEquals(a, b);
+            public int GetHashCode(T obj) => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);
         }
 
         private DbObject DumpClasses(SdkUpdateTask task)

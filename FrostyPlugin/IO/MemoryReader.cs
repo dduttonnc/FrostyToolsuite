@@ -40,6 +40,10 @@ namespace Frosty.Core.IO
         protected byte[] buffer = new byte[20];
         protected long position;
 
+        private const int PageSize = 4096;
+        private readonly byte[] m_page = new byte[PageSize];
+        private long m_pageStart = -1;
+
         internal MemoryReader()
         {
         }
@@ -209,6 +213,20 @@ namespace Frosty.Core.IO
 
         protected virtual void FillBuffer(int numBytes)
         {
+            // Read a whole page at a time: one call per value made SDK generation very slow
+            long pageStart = position & ~(long)(PageSize - 1);
+            if (pageStart != m_pageStart && position + numBytes <= pageStart + PageSize)
+            {
+                int pageBytesRead = 0;
+                m_pageStart = (ReadProcessMemory(handle, pageStart, m_page, PageSize, ref pageBytesRead) && pageBytesRead == PageSize) ? pageStart : -1;
+            }
+            if (pageStart == m_pageStart && position + numBytes <= pageStart + PageSize)
+            {
+                Buffer.BlockCopy(m_page, (int)(position - pageStart), buffer, 0, numBytes);
+                position += numBytes;
+                return;
+            }
+
             uint oldProtect = 0;
             int bytesRead = 0;
 

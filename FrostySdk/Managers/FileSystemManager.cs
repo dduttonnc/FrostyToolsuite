@@ -120,6 +120,7 @@ namespace FrostySdk
         public void Initialize(byte[] key = null)
         {
             ProcessLayouts();
+            ProfilesLibrary.SetGameHead(Head);
             LoadInitfs(key);
         }
 
