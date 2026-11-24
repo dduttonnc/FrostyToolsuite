@@ -11,6 +11,14 @@ because each has its own version numbers:
 
 Every code change in this section is marked with a `[DAI fix]` comment.
 
+## Next version (not released yet)
+
+Mass Effect: Andromeda changes are marked with `[MEA fix]`.
+
+| Change | Files |
+|---|---|
+| Old-format (FBMODV1) texture mods keep the whole texture chunk in one piece (`logicalOffset` 0), so Frosty wrote all mips into the bundle while the texture header says only the mips from `firstMip` on are there (e.g. Beard Styles, Nexus 506: 5.5 MB in `mastersharedbundle` where the game has 87 KB). Saves stopped loading and area transitions hung. For MEA, the legacy loader now reads each texture header in the mod and splits the matching chunk the same way as `Utils.CompressTexture` (`logicalOffset`, `logicalSize`, `rangeStart`, `rangeEnd`). The chunk is left as-is if the header doesn't match its size or there is no block boundary at that mip. The streamed copy in the `chunks` tocs was already updated | `FrostyModSupport/FrostyModExecutor.cs` |
+
 ## 1.7: DAI and Veilguard in one build
 
 One Mod Manager for both Dragon Age: Inquisition and Dragon Age: The Veilguard. Before this, the
