@@ -212,6 +212,16 @@ namespace Frosty.ModSupport
 
         private CasDataInfo m_casData = new CasDataInfo();
         private static int s_chunksBundleHash = Fnv1.HashString("chunks"); // should not be used, only here to ignore old mods adding assets to it
+
+        // StandardModExecutor.cs had hack with "chunks" and FifaModExecutor.cs had hack with globals.toc
+        private static bool IsNewChunkSuperBundle(string name)
+        {
+            // [DAI fix] only the global chunks0 list; every DLC chunkgroups .sb used to get its own inline copy of all new chunks
+            if (ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeInquisition))
+                return name.Equals("win32/chunks0", StringComparison.OrdinalIgnoreCase);
+
+            return name.Contains("chunks") || name.Equals("Win32/globals", StringComparison.OrdinalIgnoreCase) || name.Equals("<none>");
+        }
         private Dictionary<int, Dictionary<int, Dictionary<uint, CatResourceEntry>>> m_resources = new Dictionary<int, Dictionary<int, Dictionary<uint, CatResourceEntry>>>();
         private string m_modDirName = "ModData";
         private string m_patchPath = "Patch";
@@ -830,8 +840,7 @@ namespace Frosty.ModSupport
                                 resource.IsAdded = true;
                                 foreach (var superBundle in m_am.EnumerateSuperBundles())
                                 {
-                                    // StandardModExecutor.cs had hack with "chunks" and FifaModExecutor.cs had hack with globals.toc 
-                                    if (superBundle.Name.Contains("chunks") || superBundle.Name.Equals("Win32/globals", StringComparison.OrdinalIgnoreCase) || superBundle.Name.Equals("<none>"))
+                                    if (IsNewChunkSuperBundle(superBundle.Name))
                                     {
                                         addedSuperBundles.Add(m_am.GetSuperBundleId(superBundle));
                                     }
@@ -1262,8 +1271,7 @@ namespace Frosty.ModSupport
                         // need to add it to some superbundle
                         foreach (var superBundle in m_am.EnumerateSuperBundles())
                         {
-                            // StandardModExecutor.cs had hack with "chunks" and FifaModExecutor.cs had hack with globals.toc 
-                            if (superBundle.Name.Contains("chunks") || superBundle.Name.Equals("Win32/globals", StringComparison.OrdinalIgnoreCase) || superBundle.Name.Equals("<none>"))
+                            if (IsNewChunkSuperBundle(superBundle.Name))
                             {
                                 int sbId = m_am.GetSuperBundleId(superBundle);
                                 m_modifiedSuperBundles.TryAdd(sbId, new ModBundleInfo() { Name = sbId });
