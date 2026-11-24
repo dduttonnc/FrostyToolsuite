@@ -285,11 +285,8 @@ namespace BiowareLocalizationPlugin.LocalizedResources
 
             uint newNodeCount = (uint)nodeList.Count;
 
-            uint nodeOffset = m_headerData.NodeOffset;
-            if (ResourceUtils.IsDai)
-            {
-                nodeOffset = 40 + (((uint)encodedTextsGrouping.DeclinatedAdjectivesIdsAndPositions.Count + 2) * 8);
-            }
+            //uint nodeOffset = m_headerData.NodeOffset;
+            uint nodeOffset = 40 + (((uint)encodedTextsGrouping.DeclinatedAdjectivesIdsAndPositions.Count + 2) * 8);
 
             if (nodeOffset != m_headerData.NodeOffset)
             {
@@ -471,7 +468,7 @@ namespace BiowareLocalizationPlugin.LocalizedResources
             // games use newline \n, while editing seems to use system linebreak, so \r\n on windows!
             // luckyly i dont think i have to deal with old mac os carriage return only or weird EoL sequences...
             // has to be done here in addition to the modified resource so that the string comparison works correctly
-            string neutralLineBreakText = ResourceUtils.IsDai ? text.Replace("\r\n", "\n") : text;
+            string neutralLineBreakText = ResourceUtils.IsVeilguard ? text : text.Replace("\r\n", "\n");
 
             // have to try anyway as long as no dedicated remove is present..
             foreach (var entry in m_localizedStrings)
@@ -1476,7 +1473,7 @@ namespace BiowareLocalizationPlugin.LocalizedResources
         {
             // games use newline \n, while editing seems to use system linebreak, so \r\n on windows!
             // luckyly i dont think i have to deal with old mac os carriage return only or weird EoL sequences...
-            string neutralLineBreakText = ResourceUtils.IsDai ? text.Replace("\r\n", "\n") : text;
+            string neutralLineBreakText = ResourceUtils.IsVeilguard ? text : text.Replace("\r\n", "\n");
 
             AlteredTexts[textId] = neutralLineBreakText;
         }
