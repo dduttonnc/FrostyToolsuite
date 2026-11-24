@@ -12,11 +12,12 @@ namespace FrostySdk.Managers
             {
                 foreach (string superBundleName in parent.m_fileSystem.SuperBundles)
                 {
-                    DbObject toc = parent.ProcessTocChunks(string.Format("{0}.toc", superBundleName), helper, false);
-                    if (toc == null)
+                    // [MEA fix] add the superbundle first, so its toc chunks get its own index (was the previous one's)
+                    if (parent.m_fileSystem.ResolvePath(string.Format("{0}.toc", superBundleName)) == "")
                         continue;
 
                     parent.m_superBundles.Add(new SuperBundleEntry() { Name = superBundleName });
+                    DbObject toc = parent.ProcessTocChunks(string.Format("{0}.toc", superBundleName), helper, false);
                     parent.WriteToLog("Loading data ({0})", superBundleName);
                     parent.ReportProgress(parent.m_superBundles.Count, parent.m_fileSystem.SuperBundleCount);
 

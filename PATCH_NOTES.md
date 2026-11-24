@@ -15,7 +15,8 @@ One Frosty Mod Manager for Dragon Age: Inquisition and Dragon Age: The Veilguard
 Next version (not released yet)
 --------
 Bug Fixes:
-- Mass Effect: Andromeda: fixed save loads and area transitions hanging with old-format texture mods (e.g. Beard Styles). Their texture chunks are now split at the texture's first streamed mip, as Frosty's texture importer does, instead of putting the whole texture into the bundle
+- Mass Effect: Andromeda: fixed texture mods leaving the streamed full-resolution copy of a texture unchanged, so save loads and area transitions hung (e.g. Beard Styles). Toc chunks were recorded under the previous superbundle, so chunks0 was never updated. The MEA cache must be rebuilt once
+- Mass Effect: Andromeda: old-format texture mods are now split at the texture's first streamed mip, as Frosty's texture importer does, instead of putting the whole texture into the bundle
 
 v1.7 - 2026.11.21.1
 --------
