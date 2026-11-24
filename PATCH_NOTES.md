@@ -6,7 +6,7 @@ These notes cover three Frosty programs, each with its own version numbers. Newe
 2. [J-Lyt's Frosty](#2-j-lyts-frosty): v1.0.7 builds
 3. [Original Frosty Toolsuite](#3-original-frosty-toolsuite): v1.0.0 to v1.0.6.4
 
-Frosty by dduttonnc is built on J-Lyt's Frosty, which is built on the original Frosty Toolsuite. Detailed notes for section 1 are in [docs/CHANGELOG.md](docs/CHANGELOG.md).
+Frosty by dduttonnc is built on J-Lyt's Frosty, which is built on the original Frosty Toolsuite. Detailed notes for section 1 are in [docs/CHANGELOG.md](docs/CHANGELOG.md), and a quick summary is in [QUICK_NOTES.md](QUICK_NOTES.md).
 
 # 1. Frosty by dduttonnc
 

@@ -11,7 +11,7 @@ This version runs Dragon Age: Inquisition, Dragon Age: The Veilguard and Mass Ef
   <img alt="Downloads" src="https://img.shields.io/github/downloads/dduttonnc/FrostyToolsuite/total?color=white&label=Downloads&logo=github&style=flat-square"></a>
 
 ## Release
-Download the latest release from [releases](https://github.com/dduttonnc/FrostyToolsuite/releases/latest). What changed in each version is in [PATCH_NOTES.md](PATCH_NOTES.md).
+Download the latest release from [releases](https://github.com/dduttonnc/FrostyToolsuite/releases/latest). What changed in each version is in [PATCH_NOTES.md](PATCH_NOTES.md), with a quick summary in [QUICK_NOTES.md](QUICK_NOTES.md).
 
 ## Build
 
