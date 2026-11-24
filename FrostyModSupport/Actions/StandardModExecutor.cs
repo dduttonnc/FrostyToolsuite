@@ -57,6 +57,18 @@ namespace Frosty.ModSupport
             private DbReader baseSbReader;
             private DbReader patchSbReader;
 
+            // [DAI fix] DAI counts only the bundled range; the full chunk size made totalSize up to ~14 MB too big per texture bundle
+            private static long BundledChunkSize(DbObject chunk)
+            {
+                if (ProfilesLibrary.DataVersion == (int)ProfileVersion.MassEffectAndromeda || ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa18 || ProfilesLibrary.DataVersion == (int)ProfileVersion.StarWarsBattlefrontII || ProfilesLibrary.DataVersion == (int)ProfileVersion.Madden19)
+                    return chunk.GetValue<long>("bundledSize");
+
+                if (ProfilesLibrary.DataVersion == (int)ProfileVersion.DragonAgeInquisition && chunk.GetValue<long>("rangeEnd") > chunk.GetValue<long>("rangeStart"))
+                    return chunk.GetValue<long>("rangeEnd") - chunk.GetValue<long>("rangeStart");
+
+                return chunk.GetValue<long>("size");
+            }
+
             public SuperBundleAction(string inSuperBundle, ManualResetEvent inDoneEvent, FrostyModExecutor inParent, string inModPath, CancellationToken inCancelToken)
             {
                 superBundle = inSuperBundle;
@@ -1450,9 +1462,7 @@ namespace Frosty.ModSupport
                                                 }
                                             }
 
-                                            chunkBundleSize += (ProfilesLibrary.DataVersion == (int)ProfileVersion.MassEffectAndromeda || ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa18 || ProfilesLibrary.DataVersion == (int)ProfileVersion.StarWarsBattlefrontII || ProfilesLibrary.DataVersion == (int)ProfileVersion.Madden19)
-                                                ? chunk.GetValue<long>("bundledSize")
-                                                : chunk.GetValue<long>("size");
+                                            chunkBundleSize += BundledChunkSize(chunk);
                                         }
                                     }
 
@@ -1523,9 +1533,7 @@ namespace Frosty.ModSupport
                                         sbBundle.GetValue<DbObject>("chunks").Add(chunk);
                                         sbBundle.GetValue<DbObject>("chunkMeta").Add(chunkMeta);
 
-                                        chunkBundleSize += (ProfilesLibrary.DataVersion == (int)ProfileVersion.MassEffectAndromeda || ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa18 || ProfilesLibrary.DataVersion == (int)ProfileVersion.StarWarsBattlefrontII || ProfilesLibrary.DataVersion == (int)ProfileVersion.Madden19)
-                                            ? chunk.GetValue<long>("bundledSize")
-                                            : chunk.GetValue<long>("size");
+                                        chunkBundleSize += BundledChunkSize(chunk);
                                     }
 
                                     if (ProfilesLibrary.DataVersion != (int)ProfileVersion.DragonAgeInquisition && ProfilesLibrary.DataVersion != (int)ProfileVersion.Battlefield4 && ProfilesLibrary.DataVersion != (int)ProfileVersion.NeedForSpeed && ProfilesLibrary.DataVersion != (int)ProfileVersion.NeedForSpeedRivals)

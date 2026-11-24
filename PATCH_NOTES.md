@@ -22,6 +22,7 @@ Bug Fixes:
 - Mass Effect: Andromeda: fixed texture mods leaving the streamed full-resolution copy of a texture unchanged, so save loads and area transitions hung (e.g. Beard Styles). Toc chunks were recorded under the previous superbundle, so chunks0 was never updated. The MEA cache must be rebuilt once
 - Mass Effect: Andromeda: old-format texture mods are now split at the texture's first streamed mip, as Frosty's texture importer does, instead of putting the whole texture into the bundle
 - Dragon Age: Inquisition: new chunks from mods (e.g. 4k Map textures) now go only into the global chunk list (chunks0), as DAI Mod Manager did. Each of the 8 DLC chunk files used to get its own full copy, which made ModData several GB larger
+- Dragon Age: Inquisition: rewritten bundles now report the same total size as the game's own: only the part of each texture that is stored in the bundle is counted, not the whole texture. Texture bundles were reported up to ~14 MB too large (e.g. 48 outfit bundles for one Skyhold outfit mod), which slowed the load to the main menu
 
 v1.7 - 2026.11.21.1
 --------
