@@ -30,6 +30,8 @@ namespace FrostyModManager.Compression
             }
         }
 
+        public string FullName => filename;
+
         public Stream Stream => stream;
 
         private string filename;

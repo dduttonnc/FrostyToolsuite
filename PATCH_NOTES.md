@@ -19,6 +19,7 @@ Improvements:
 - Bioware Localization plugin: two new options on the 'Bioware Localization Options' page, 'Log verification texts' (debug logging) and 'Reuse original resource's text bits' (faster writing). Both are off by default
 - Dragon Age: The Veilguard: the EA app version no longer has to generate a new SDK (with the game running) the first time Frosty opens it. Frosty only shipped the SDK made from the Steam version, and the EA app version of the same patch has a different version number and a few platform-only types, so it always asked for a new one. Frosty now ships both and loads the one that matches the installed game
 - All games: generating a new SDK (needed after a game patch) is much faster. The 'Creating SDK' step searched long lists for every type and field, which took about 15 minutes for Dragon Age: The Veilguard; it now uses lookup tables, and the game's type data is read from memory a page at a time instead of a few bytes at a time. The SDK it makes is unchanged. The SDK window now shows how long each step took
+- Dragon Age: Inquisition: DAI Mod Manager mods (.daimod) can be installed straight from the downloaded .zip, .7z or .rar, without unpacking it first (Add Mod or drag and drop). Every .daimod in the archive is converted as if it had been picked on its own, so configurable mods still show their settings window and Reconfigure... still works. If the archive also has a Frosty version (.fbmod) of the same mod, only the Frosty version is installed
 
 Bug Fixes:
 - Dragon Age: Inquisition: the bundled Bioware Localization plugin is updated to 1.1.1.2 (by KrrKs), which text mods made for 1.1.1.2 need, e.g. Fixes of Russian localization. Texts changed by mods no longer go missing in game, mostly in non-English versions: female variants of a line are now stored right after the male line and the text data is padded, as the game expects. Mass Effect: Andromeda keeps the 1.1.1.1 behaviour, and Veilguard support is unchanged
@@ -29,6 +30,8 @@ Bug Fixes:
 - Dragon Age: Inquisition and Mass Effect: Andromeda: the DAVExtender(Dex) menu entry, the empty Dex Mods tab and the 'DAVExtender(Dex) is installed' log line no longer appear when d3d11.dll is in the game folder (e.g. ReShade). They are for Dragon Age: The Veilguard only
 - All games: a mod that refers to an asset the game does not have shows the '"X" is incompatible with the installed version of the game' message again and the launch is cancelled cleanly. Since the mod loading speedup the message was skipped and a general error box appeared instead
 - All games: mod collections (.fbcollection) made before Veilguard support no longer show the 'Has DAVExtender(Dex) Archive' icon, and their mods are no longer scanned for a Dex archive at launch
+- Dragon Age: Inquisition: a .daimod that Frosty can't read is now listed in the install errors instead of closing the Mod Manager
+- Other games: a .daimod is now refused with 'Mod was not designed for this game.' instead of being converted for the wrong game
 
 v1.7.2 - 2026.11.24.2
 --------
