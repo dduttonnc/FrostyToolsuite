@@ -86,7 +86,11 @@ namespace Frosty.Core.Windows
             {
                 // set current task to active and execute
                 task.State = SdkUpdateTaskState.Active;
+                Stopwatch timer = Stopwatch.StartNew();
                 await Task.Run(() => { task.Task(task, state); });
+                task.StatusMessage = string.IsNullOrEmpty(task.StatusMessage)
+                    ? $"{timer.Elapsed.TotalSeconds:0} s"
+                    : $"{task.StatusMessage}, {timer.Elapsed.TotalSeconds:0} s";
 
                 if (task.State == SdkUpdateTaskState.CompletedFail)
                 {

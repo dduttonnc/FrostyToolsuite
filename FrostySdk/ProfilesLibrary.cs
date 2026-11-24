@@ -97,7 +97,9 @@ namespace FrostySdk
         public static Type AssetLoader => Type.GetType(m_assetLoaderNamespace + "+" + m_effectiveProfile.AssetLoader);
         public static int DataVersion => m_effectiveProfile.DataVersion;
         public static List<FileSystemSource> Sources => m_effectiveProfile.Sources;
-        public static string SDKFilename => m_effectiveProfile.SDKFilename;
+        public static string SDKFilename => (m_isVeilguardEA && DataVersion == (int)ProfileVersion.DragonAgeTheVeilguard)
+            ? m_effectiveProfile.SDKFilename + "_EA"
+            : m_effectiveProfile.SDKFilename;
         public static byte[] Banner => m_effectiveProfile.Banner;
 
         public static int EbxVersion => m_effectiveProfile.EbxVersion;
@@ -115,12 +117,19 @@ namespace FrostySdk
 
         public static Dictionary<int, string> SharedBundles => m_effectiveProfile.SharedBundles;
 
+        // [DAV fix] EA and Steam builds of the same patch have different heads and a few platform-only types, so each gets its own SDK file
+        public static void SetGameHead(uint head)
+        {
+            m_isVeilguardEA = GameVersions.DragonAgeTheVeilguardEA.Contains((int)head);
+        }
+
         public static bool IsResTypeIgnored(Managers.Entries.ResourceType resType)
         {
             return m_effectiveProfile.IgnoredResTypes.Contains((uint)resType);
         }
 
         private static Profile m_effectiveProfile;
+        private static bool m_isVeilguardEA;
         private static readonly string m_deobfuscatorNamespace = typeof(Deobfuscators.NullDeobfuscator).Namespace;
         private static readonly string m_assetLoaderNamespace = typeof(Managers.AssetManager).FullName;
         private static readonly byte[][] m_obfuscationKey =
