@@ -19,6 +19,7 @@ Every code change in this section is marked with a `[DAI fix]` comment.
 | DAI and MEA: `LaunchGame` uses the `steam://run` link whenever `steam_appid.txt` is in the game folder, as 1.0.6.3 did. The 1.0.7 base only did that with the 'Use Steam protocol' option, which is off by default. Not applied when DatapathFix is enabled, because it handles the launch itself. Other games are unchanged. An empty `steam_appid.txt` now falls back to starting the exe instead of failing. Untested: no Steam copy was available | `FrostyModSupport/FrostyModExecutor.cs` |
 | The DAVExtender check read `d3d11.dll exists \|\| (DAVE.asi exists && Veilguard)`, so any game with a `d3d11.dll` (ReShade) got the Dex menu and tab. The Veilguard test now covers both files | `FrostyModManager/Windows/MainWindow.xaml.cs` |
 | All games: the friendly incompatible-mod message only caught `AggregateException`, but `WorkerPool.ForEach` rethrows the original `NullEntryException` unwrapped, so the message never showed. Both forms are caught now | `FrostyModSupport/FrostyModExecutor.cs` |
+| All games: `HasDexResource` compared with `""` only, and an old `.fbcollection` has no Dex field (null), so it counted as having one. Null and empty are treated the same now | `FrostyPlugin/Mod/FrostyModDetails.cs` |
 
 ## 1.7.2
 
