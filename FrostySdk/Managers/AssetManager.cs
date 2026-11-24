@@ -210,6 +210,7 @@ namespace FrostySdk.Managers
         /*
           Cache Versions:
             4 - Nothing changed in the format just bumped up that the cache gets regenerated, bc bundled chunks did not always had their logical offset/size stored
+            Each game's DataVersions.CacheRevision is added on top, so one game's cache can be rebuilt without the others
         */
         private const uint CacheVersion = 4;
 
@@ -1824,7 +1825,8 @@ namespace FrostySdk.Managers
                     return false;
 
                 uint version = reader.ReadUInt();
-                if (version != CacheVersion)
+                // [DAI fix] per-game revision, so a release that changes one game's cache rebuilds only that game
+                if (version != CacheVersion + DataVersions.CacheRevision)
                     return false;
 
                 int profileNameHash = reader.ReadInt();
@@ -2061,7 +2063,7 @@ namespace FrostySdk.Managers
             using (NativeWriter writer = new NativeWriter(new FileStream(fi.FullName, FileMode.Create)))
             {
                 writer.Write(CacheMagic);
-                writer.Write(CacheVersion);
+                writer.Write(CacheVersion + DataVersions.CacheRevision);
                 writer.Write(Fnv1.HashString(ProfilesLibrary.ProfileName));
                 writer.Write(m_fileSystem.Head);
 
