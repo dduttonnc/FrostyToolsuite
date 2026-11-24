@@ -12,7 +12,7 @@ Frosty by dduttonnc is built on J-Lyt's Frosty, which is built on the original F
 
 One Frosty Mod Manager for Dragon Age: Inquisition and Dragon Age: The Veilguard. https://github.com/dduttonnc/FrostyToolsuite
 
-Next version (not released yet)
+v1.7.1 (not released yet)
 --------
 Improvements:
 - Mass Effect: Andromeda is now a supported game: selecting it no longer shows the 'not supported' message

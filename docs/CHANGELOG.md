@@ -11,7 +11,7 @@ because each has its own version numbers:
 
 Every code change in this section is marked with a `[DAI fix]` comment.
 
-## Next version (not released yet)
+## 1.7.1 (not released yet)
 
 Mass Effect: Andromeda changes are marked with `[MEA fix]`.
 
