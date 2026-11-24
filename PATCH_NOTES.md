@@ -2,7 +2,7 @@
 
 These notes cover three Frosty programs, each with its own version numbers. Newest first:
 
-1. [Frosty by dduttonnc](#1-frosty-by-dduttonnc): v1.7.2, v1.7.1, v1.7 and v1.0.6.4-dai.1
+1. [Frosty by dduttonnc](#1-frosty-by-dduttonnc): v1.7.3, v1.7.2, v1.7.1, v1.7 and v1.0.6.4-dai.1
 2. [J-Lyt's Frosty](#2-j-lyts-frosty): v1.0.7 builds
 3. [Original Frosty Toolsuite](#3-original-frosty-toolsuite): v1.0.0 to v1.0.6.4
 
@@ -12,8 +12,10 @@ Frosty by dduttonnc is built on J-Lyt's Frosty, which is built on the original F
 
 One Frosty Mod Manager for Dragon Age: Inquisition, Dragon Age: The Veilguard and Mass Effect: Andromeda. https://github.com/dduttonnc/FrostyToolsuite
 
-Not released yet
+v1.7.3 - 2026.11.24.3
 --------
+No need to delete Caches or ModData after updating: Frosty rebuilds each mod pack's ModData once on its next launch, and a Mass Effect: Andromeda cache from before 1.7.1 at the next start. Deleting them by hand is still fine. Full details: docs/CHANGELOG.md
+
 Improvements:
 - All games: after a Frosty update, the cache and ModData are rebuilt automatically when the update changes what Frosty writes for that game, so they no longer need to be deleted by hand. Each game has its own data number, so an update for one game does not rebuild the others. This update rebuilds each mod pack's ModData once, on its next launch
 - Bioware Localization plugin: two new options on the 'Bioware Localization Options' page, 'Log verification texts' (debug logging) and 'Reuse original resource's text bits' (faster writing). Both are off by default
