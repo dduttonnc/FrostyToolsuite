@@ -162,6 +162,9 @@ namespace Frosty.Core
         /// <param name="profile">The profile the option belongs to. If null, the currently active profile will be used.</param>
         public static void Add(string option, object value, ConfigScope scope = ConfigScope.Global, string profile = null)
         {
+            if (IsPerGameOption(option, scope, profile))
+                scope = ConfigScope.Game;
+
             // check if the provided value implements IConvertible or JToken
             if (value is IConvertible || value is JToken)
             {
@@ -228,6 +231,10 @@ namespace Frosty.Core
         /// <param name="profile">The profile the option belongs to. If null, the currently active profile will be used.</param>
         public static T Get<T>(string option, T defaultValue, ConfigScope scope = ConfigScope.Global, string profile = null)
         {
+            // a game without its own value yet keeps the old shared value
+            if (IsPerGameOption(option, scope, profile) && Current[option, ConfigScope.Game, profile] != null)
+                scope = ConfigScope.Game;
+
             object retrievedValue = Current[option, scope, profile ?? ProfilesLibrary.ProfileName];
 
             if (retrievedValue != null)
@@ -251,6 +258,18 @@ namespace Frosty.Core
             }
 
             return (T)(retrievedValue ?? defaultValue);
+        }
+
+        // [DAI fix] DatapathFix stores these globally, so one answer applied to DAI, MEA and Veilguard alike
+        private static readonly HashSet<string> s_perGameOptions = new HashSet<string>() { "DatapathFixEnabled", "DatapathFixFirstLaunch" };
+
+        private static bool IsPerGameOption(string option, ConfigScope scope, string profile)
+        {
+            if (scope != ConfigScope.Global || !s_perGameOptions.Contains(option))
+                return false;
+
+            string name = profile ?? ProfilesLibrary.ProfileName;
+            return name != null && Current.Games.ContainsKey(name);
         }
 
         // indexer
