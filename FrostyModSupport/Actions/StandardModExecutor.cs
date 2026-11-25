@@ -543,27 +543,25 @@ namespace Frosty.ModSupport
                                         baseSbStream?.Dispose();
                                         patchSbStream.Dispose();
 
+                                        // [DAI fix] match base and patch assets with lookup tables instead of a scan per asset (first match wins, as before)
+                                        Dictionary<int, DbObject> patchEbxByHash = new Dictionary<int, DbObject>();
+                                        foreach (DbObject patchEbx in sbBundle.GetValue<DbObject>("ebx"))
+                                        {
+                                            int patchHash = patchEbx.GetValue<int>("nameHash");
+                                            if (!patchEbxByHash.ContainsKey(patchHash))
+                                                patchEbxByHash.Add(patchHash, patchEbx);
+                                        }
+                                        HashSet<int> ebxHashes = new HashSet<int>();
+
                                         // ebx
                                         if (baseSbBundle != null)
                                         {
                                             // iterate base bundle first
                                             foreach (DbObject ebx in baseSbBundle.GetValue<DbObject>("ebx"))
                                             {
-                                                bool bFound = false;
-                                                bool bModified = false;
-                                                DbObject foundObject = null;
-
                                                 int hash = Fnv1.HashString(ebx.GetValue<string>("name"));
-                                                foreach (DbObject patchEbx in sbBundle.GetValue<DbObject>("ebx"))
-                                                {
-                                                    if (hash == patchEbx.GetValue<int>("nameHash"))
-                                                    {
-                                                        bFound = true;
-                                                        bModified = (ebx.GetValue<Sha1>("sha1") != patchEbx.GetValue<Sha1>("sha1"));
-                                                        foundObject = patchEbx;
-                                                        break;
-                                                    }
-                                                }
+                                                bool bFound = patchEbxByHash.TryGetValue(hash, out DbObject foundObject);
+                                                bool bModified = bFound && (ebx.GetValue<Sha1>("sha1") != foundObject.GetValue<Sha1>("sha1"));
 
                                                 AssetInfo info = new AssetInfo { Name = ebx.GetValue<string>("name") };
                                                 info.NameHash = Fnv1.HashString(info.Name);
@@ -572,13 +570,14 @@ namespace Frosty.ModSupport
                                                 info.Asset = (bFound) ? foundObject : ebx;
                                                 info.BaseAsset = ebx;
                                                 ebxAssetInfo.Add(info);
+                                                ebxHashes.Add(info.NameHash);
                                             }
                                         }
                                         // add in all delta bundle items
                                         foreach (DbObject ebx in sbBundle.GetValue<DbObject>("ebx"))
                                         {
                                             int hash = Fnv1.HashString(ebx.GetValue<string>("name"));
-                                            if (ebxAssetInfo.FindIndex((AssetInfo a) => a.NameHash == hash) == -1)
+                                            if (!ebxHashes.Contains(hash))
                                             {
                                                 AssetInfo info = new AssetInfo
                                                 {
@@ -589,8 +588,18 @@ namespace Frosty.ModSupport
 
                                                 info.NameHash = Fnv1.HashString(info.Name);
                                                 ebxAssetInfo.Add(info);
+                                                ebxHashes.Add(info.NameHash);
                                             }
                                         }
+
+                                        Dictionary<int, DbObject> patchResByHash = new Dictionary<int, DbObject>();
+                                        foreach (DbObject patchRes in sbBundle.GetValue<DbObject>("res"))
+                                        {
+                                            int patchHash = patchRes.GetValue<int>("nameHash");
+                                            if (!patchResByHash.ContainsKey(patchHash))
+                                                patchResByHash.Add(patchHash, patchRes);
+                                        }
+                                        HashSet<int> resHashes = new HashSet<int>();
 
                                         // res
                                         if (baseSbBundle != null)
@@ -598,21 +607,9 @@ namespace Frosty.ModSupport
                                             // iterate base bundle first
                                             foreach (DbObject res in baseSbBundle.GetValue<DbObject>("res"))
                                             {
-                                                bool bFound = false;
-                                                bool bModified = false;
-                                                DbObject foundObject = null;
-
                                                 int hash = Fnv1.HashString(res.GetValue<string>("name"));
-                                                foreach (DbObject patchRes in sbBundle.GetValue<DbObject>("res"))
-                                                {
-                                                    if (hash == patchRes.GetValue<int>("nameHash"))
-                                                    {
-                                                        bFound = true;
-                                                        bModified = (res.GetValue<Sha1>("sha1") != patchRes.GetValue<Sha1>("sha1"));
-                                                        foundObject = patchRes;
-                                                        break;
-                                                    }
-                                                }
+                                                bool bFound = patchResByHash.TryGetValue(hash, out DbObject foundObject);
+                                                bool bModified = bFound && (res.GetValue<Sha1>("sha1") != foundObject.GetValue<Sha1>("sha1"));
 
                                                 AssetInfo info = new AssetInfo
                                                 {
@@ -626,13 +623,14 @@ namespace Frosty.ModSupport
                                                 info.NameHash = Fnv1.HashString(info.Name);
 
                                                 resAssetInfo.Add(info);
+                                                resHashes.Add(info.NameHash);
                                             }
                                         }
                                         // add in all delta bundle items
                                         foreach (DbObject res in sbBundle.GetValue<DbObject>("res"))
                                         {
                                             int hash = Fnv1.HashString(res.GetValue<string>("name"));
-                                            if (resAssetInfo.FindIndex((AssetInfo a) => a.NameHash == hash) == -1)
+                                            if (!resHashes.Contains(hash))
                                             {
                                                 AssetInfo info = new AssetInfo
                                                 {
@@ -642,8 +640,19 @@ namespace Frosty.ModSupport
                                                 };
                                                 info.NameHash = Fnv1.HashString(info.Name);
                                                 resAssetInfo.Add(info);
+                                                resHashes.Add(info.NameHash);
                                             }
                                         }
+
+                                        DbObject patchChunks = sbBundle.GetValue<DbObject>("chunks");
+                                        Dictionary<Guid, int> patchChunkIndex = new Dictionary<Guid, int>();
+                                        for (int j = 0; j < patchChunks.Count; j++)
+                                        {
+                                            Guid patchId = ((DbObject)patchChunks[j]).GetValue<Guid>("id");
+                                            if (!patchChunkIndex.ContainsKey(patchId))
+                                                patchChunkIndex.Add(patchId, j);
+                                        }
+                                        HashSet<Guid> chunkIds = new HashSet<Guid>();
 
                                         // chunk
                                         int k = 0;
@@ -652,28 +661,22 @@ namespace Frosty.ModSupport
                                             // iterate base bundle first
                                             foreach (DbObject chunk in baseSbBundle.GetValue<DbObject>("chunks"))
                                             {
-                                                bool bFound = false;
-                                                bool bModified = false;
                                                 DbObject foundObject = null;
                                                 DbObject foundMeta = (DbObject)baseSbBundle.GetValue<DbObject>("chunkMeta")[k];
 
-                                                int j = 0;
-                                                foreach (DbObject patchChunk in sbBundle.GetValue<DbObject>("chunks"))
+                                                Guid id = chunk.GetValue<Guid>("id");
+                                                bool bFound = patchChunkIndex.TryGetValue(id, out int j);
+                                                bool bModified = false;
+                                                if (bFound)
                                                 {
-                                                    if (chunk.GetValue<Guid>("id") == patchChunk.GetValue<Guid>("id"))
-                                                    {
-                                                        bFound = true;
-                                                        bModified = (chunk.GetValue<Sha1>("sha1") != patchChunk.GetValue<Sha1>("sha1"));
-                                                        foundObject = patchChunk;
-                                                        foundMeta = (DbObject)sbBundle.GetValue<DbObject>("chunkMeta")[j];
-                                                        break;
-                                                    }
-                                                    j++;
+                                                    foundObject = (DbObject)patchChunks[j];
+                                                    bModified = (chunk.GetValue<Sha1>("sha1") != foundObject.GetValue<Sha1>("sha1"));
+                                                    foundMeta = (DbObject)sbBundle.GetValue<DbObject>("chunkMeta")[j];
                                                 }
 
                                                 AssetInfo info = new AssetInfo
                                                 {
-                                                    Id = chunk.GetValue<Guid>("id"),
+                                                    Id = id,
                                                     Removed = !bFound,
                                                     Modified = bModified,
                                                     Asset = (bFound) ? foundObject : chunk,
@@ -681,14 +684,15 @@ namespace Frosty.ModSupport
                                                     Meta = foundMeta
                                                 };
                                                 chunkAssetInfo.Add(info);
+                                                chunkIds.Add(id);
                                                 k++;
                                             }
                                         }
                                         k = 0;
                                         // add in all delta bundle items
-                                        foreach (DbObject chunk in sbBundle.GetValue<DbObject>("chunks"))
+                                        foreach (DbObject chunk in patchChunks)
                                         {
-                                            if (chunkAssetInfo.FindIndex((AssetInfo a) => a.Id == chunk.GetValue<Guid>("id")) == -1)
+                                            if (!chunkIds.Contains(chunk.GetValue<Guid>("id")))
                                             {
                                                 AssetInfo info = new AssetInfo
                                                 {
@@ -698,6 +702,7 @@ namespace Frosty.ModSupport
                                                     Meta = (DbObject)sbBundle.GetValue<DbObject>("chunkMeta")[k]
                                                 };
                                                 chunkAssetInfo.Add(info);
+                                                chunkIds.Add(info.Id);
                                             }
                                             k++;
                                         }
