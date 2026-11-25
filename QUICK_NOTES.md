@@ -4,8 +4,10 @@ The short version of what changed. Full notes: [PATCH_NOTES.md](PATCH_NOTES.md).
 
 DAI = Dragon Age: Inquisition, DAV = Dragon Age: The Veilguard, MEA = Mass Effect: Andromeda.
 
-## Not released yet
+## 1.7.4
 
+- DAI and MEA: applying mods (building ModData) is faster, most of all with many mods
+- MEA: Bioware Localization 1.1.1.2 fixes now apply to MEA too (ModData rebuilds once)
 - DAI: saves made with DAI Mod Manager can be loaded again (Frosty asks first, and Options has a new Dragon Age Inquisition page to change or undo it). Back up your saves first: new saves then only load through Frosty
 
 ## 1.7.3

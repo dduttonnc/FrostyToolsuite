@@ -3,8 +3,10 @@
 ============================================================
 One Frosty Mod Manager for Dragon Age: Inquisition, Dragon Age: The Veilguard and Mass Effect: Andromeda. https://github.com/dduttonnc/FrostyToolsuite
 
-Not released yet
+v1.7.4 - 2026.11.25.1
 --------
+Mass Effect: Andromeda: Frosty rebuilds each mod pack's ModData once on its next launch, so text mods get the new localization fix. Nothing needs deleting by hand. Full details: docs/CHANGELOG.md
+
 Improvements:
 - Dragon Age: Inquisition and Mass Effect: Andromeda: applying mods (building ModData) is faster, most of all with many mods. Old-format mods (converted .daimods and old .fbmods) are now read and checked on all CPU threads instead of one, parts of the game files that no mod changes are copied as they are instead of being taken apart and put back together, the biggest parts start first, changed bundles in DLC levels are matched up with the game's originals much faster, and their changed data is compressed on all CPU threads instead of one.
 - All games: launching with an unchanged mod list no longer reads every mod's icon and screenshots, and the progress bar is updated less often while mods are applied
@@ -12,6 +14,7 @@ Improvements:
 
 Bug Fixes:
 - Dragon Age: Inquisition: saves made with DAI Mod Manager can be loaded. DAI Mod Manager's merged patch tells the game it is one patch newer (e.g. 13 instead of 12), saves record that number, and through Frosty the game refused them with 'This save data was created with a newer version of the game'. When some saves need a higher patch, Frosty now asks at launch whether to report that patch to the game. The new 'Dragon Age Inquisition' page in Options shows the patch Frosty reports (the game's real patch by default, the next three, and any patch your saves need) and can turn the question off. Warning: saves made while a higher patch is reported only load when the game is launched through Frosty (or DAI Mod Manager), not when it is started normally. Back up your saves before saying Yes (the pop-up opens the save folder); Frosty only reads them and never changes them. Nothing changes when all saves match the game's patch
+- Mass Effect: Andromeda: the bundled Bioware Localization plugin now uses the 1.1.1.2 changes for Mass Effect: Andromeda too (1.7.3 only used them for Dragon Age: Inquisition), so texts changed by mods are stored the way the game expects. Only checked briefly, in Russian
 
 v1.7.3 - 2026.11.24.3
 --------
@@ -25,7 +28,7 @@ Improvements:
 - Dragon Age: Inquisition: DAI Mod Manager mods (.daimod) can be installed straight from the downloaded .zip, .7z or .rar, without unpacking it first (Add Mod or drag and drop). Every .daimod in the archive is converted as if it had been picked on its own, so configurable mods still show their settings window and Reconfigure... still works. If the archive also has a Frosty version (.fbmod) of the same mod, only the Frosty version is installed
 
 Bug Fixes:
-- Dragon Age: Inquisition and Mass Effect: Andromeda: the bundled Bioware Localization plugin is updated to 1.1.1.2 (by KrrKs), which text mods made for 1.1.1.2 need, e.g. Fixes of Russian localization. Texts changed by mods no longer go missing in game in non-English versions: female variants of a line are now stored right after the male line and the text data is padded, as the game expects. Veilguard support is unchanged. Mass Effect: Andromeda was only checked briefly, in Russian
+- Dragon Age: Inquisition: the bundled Bioware Localization plugin is updated to 1.1.1.2 (by KrrKs), which text mods made for 1.1.1.2 need, e.g. Fixes of Russian localization. Texts changed by mods no longer go missing in game, mostly in non-English versions: female variants of a line are now stored right after the male line and the text data is padded, as the game expects. Mass Effect: Andromeda keeps the 1.1.1.1 behaviour, and Veilguard support is unchanged
 - Mass Effect: Andromeda: a cache built before 1.7.1 is now rebuilt automatically at the next start, so texture mods work without deleting Caches\masseffect.cache by hand
 - Dragon Age: Inquisition and Mass Effect: Andromeda: an old-format mod (old .fbmod or converted .daimod) is no longer cut short while loading. When it replaced an asset that an earlier mod had already changed through a plugin (e.g. text edited with the Bioware Localization plugin), the rest of that mod was skipped; only that one asset is skipped now, as in 1.0.6.3
 - Dragon Age: Inquisition and Mass Effect: Andromeda: Steam copies launch through Steam again without ticking 'Use Steam protocol' in Options, as in 1.0.6.3, so mods load. Nothing changes when the DatapathFix plugin is enabled, and nothing changes for Dragon Age: The Veilguard. Untested: no Steam copy was available to test with
