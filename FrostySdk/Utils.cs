@@ -1132,7 +1132,7 @@ namespace FrostySdk
             return outMs.ToArray();
         }
 
-        // [DAI fix] compresses several buffers at once, block by block on all threads; each result has the same bytes CompressFile gives
+        // [DAI fix] same bytes as CompressFile, block by block on all threads
         public static byte[][] CompressFiles(IList<byte[]> inputs, IList<ResourceType> resTypes)
         {
             int count = inputs.Count;

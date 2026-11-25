@@ -49,8 +49,7 @@ namespace FrostySdk.Managers
 
             public void FilterAndAddBundleData(DbObject baseList, DbObject deltaList) => AddPreparedBundleData(PrepareBundleData(baseList, deltaList));
 
-            // [DAI fix] the slow part (base matching, recompressing changed data) runs on any thread;
-            // AddPreparedBundleData then applies it in order, exactly as the old single pass did
+            // [DAI fix] the slow part runs on any thread; AddPreparedBundleData applies it in order
             public static PreparedBundleData PrepareBundleData(DbObject baseList, DbObject deltaList)
             {
                 return new PreparedBundleData

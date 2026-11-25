@@ -43,7 +43,7 @@ namespace Frosty.ModSupport
             public bool TocModified = false;
             public bool SbModified = false;
 
-            // [DAI fix] times for the log: whole superbundle, unpacking patched binary bundles, compressing their data
+            // [DAI fix] per-step times for the log
             public double Seconds;
             public double ReadSeconds;
             public double CompressSeconds;
@@ -63,9 +63,7 @@ namespace Frosty.ModSupport
             private DbReader baseSbReader;
             private DbReader patchSbReader;
 
-            // [DAI fix] 1.0.6.4 routing: every toc gets the "chunks" modify list, added chunks only go into the chunks superbundles.
-            // The DLC chunkgroups only get added chunks that replace a game chunk (their inline copy is what overrides the base entry);
-            // brand-new chunks only need chunks0, and each chunkgroup used to get its own inline copy of all of them
+            // [DAI fix] 1.0.6.4 routing; DLC chunkgroups only get added chunks that replace a game chunk
             private ModBundleInfo GetChunkBundle(string superBundle)
             {
                 if (ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeInquisition))
@@ -552,7 +550,7 @@ namespace Frosty.ModSupport
                                         baseSbStream?.Dispose();
                                         patchSbStream.Dispose();
 
-                                        // [DAI fix] match base and patch assets with lookup tables instead of a scan per asset (first match wins, as before)
+                                        // [DAI fix] lookup tables instead of a scan per asset; first match still wins
                                         Dictionary<int, DbObject> patchEbxByHash = new Dictionary<int, DbObject>();
                                         foreach (DbObject patchEbx in sbBundle.GetValue<DbObject>("ebx"))
                                         {
@@ -1105,7 +1103,7 @@ namespace Frosty.ModSupport
                                     // delta data offset
                                     long dataOffset = writer.Position - startPos;
 
-                                    // [DAI fix] compress the changed assets on all threads first, then write them in the same order as before
+                                    // [DAI fix] compress on all threads, then write in the original order
                                     List<int> toCompress = new List<int>();
                                     for (int y = 0; y < totalAssetInfo.Count; y++)
                                     {

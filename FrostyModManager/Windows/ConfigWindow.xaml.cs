@@ -86,7 +86,7 @@ namespace FrostyModManager
         // [DAI fix] settings chosen last time, by id
         private IDictionary<string, string> savedValues;
 
-        // fallback for mods converted before settings were saved: the "<name> <value>" lines at the end of the description
+        // mods converted before settings were saved: "<name> <value>" lines at the end of the description
         private string[] legacyLines;
 
         public FrostyConfigElementsList(ConfigWindow inWindow, IDictionary<string, string> inSavedValues = null, string inLegacyDescription = null)
@@ -106,7 +106,6 @@ namespace FrostyModManager
 
             if (legacyLines != null && !string.IsNullOrEmpty(name))
             {
-                // the settings are at the end of the description
                 string prefix = name + " ";
                 for (int i = legacyLines.Length - 1; i >= 0; i--)
                 {
@@ -396,7 +395,7 @@ namespace FrostyModManager
             return elem.CurrentValue;
         }
 
-        // [DAI fix] used to be discarded
+        // [DAI fix] script log lines used to be discarded
         public void LogLn(string line) => log.Add(line);
 
         public byte[] GetResourceData(int index)
@@ -454,8 +453,7 @@ namespace FrostyModManager
                 GenerateInMemory = true
             };
 
-            // [DAI fix] full paths so they resolve from any working directory. There is no System.Linq.dll
-            // in .NET Framework (Linq is in System.Core).
+            // [DAI fix] full paths so they resolve from any working directory; Linq is in System.Core
             HashSet<string> references = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
                 typeof(Uri).Assembly.Location,
@@ -517,10 +515,7 @@ namespace FrostyModManager
             return sb.ToString();
         }
 
-        /// <summary>
-        /// [DAI fix] The chosen settings keyed by setting id, written culture-independently, so they can
-        /// be saved and passed back in next time (Reconfigure).
-        /// </summary>
+        // [DAI fix] chosen settings by id, culture-independent, for Reconfigure
         public Dictionary<string, string> GetSettingValues()
         {
             Dictionary<string, string> values = new Dictionary<string, string>();

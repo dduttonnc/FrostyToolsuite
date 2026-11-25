@@ -440,7 +440,7 @@ namespace Frosty.ModSupport
             }
         }
 
-        // [DAI fix] DAI uses the 1.0.6.4 "chunks" pseudo-bundle instead of the asset manager's superbundles, which marked replaced chunks as deltas
+        // [DAI fix] DAI uses the 1.0.6.4 "chunks" pseudo-bundle; the superbundle route marked replaced chunks as deltas
         private static bool IsDai => ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeInquisition);
 
         private void AddChunkSuperBundles(ChunkAssetEntry chunkEntry, HashSet<int> bundles, List<int> superBundles)
@@ -1084,7 +1084,7 @@ namespace Frosty.ModSupport
 
                         if (!m_archiveData.ContainsKey(existingEntry.Sha1))
                         {
-                            // [DAI fix] skip this asset only, as 1.0.6.3 did; return dropped the rest of the mod
+                            // [DAI fix] skip only this asset, as 1.0.6.3 did
                             continue;
                         }
 
@@ -1128,7 +1128,7 @@ namespace Frosty.ModSupport
 
                         if (!m_archiveData.ContainsKey(existingEntry.Sha1))
                         {
-                            // [DAI fix] skip this asset only, as 1.0.6.3 did; return dropped the rest of the mod
+                            // [DAI fix] skip only this asset, as 1.0.6.3 did
                             continue;
                         }
 
@@ -1174,7 +1174,7 @@ namespace Frosty.ModSupport
 
                         if (!m_archiveData.ContainsKey(existingEntry.Sha1))
                         {
-                            // [DAI fix] skip this asset only, as 1.0.6.3 did; return dropped the rest of the mod
+                            // [DAI fix] skip only this asset, as 1.0.6.3 did
                             continue;
                         }
 
@@ -1252,7 +1252,7 @@ namespace Frosty.ModSupport
                     ChunkAssetEntry originalEntry = m_am.GetChunkEntry(entry.Id);
                     if (IsDai)
                     {
-                        // [DAI fix] 1.0.6.4 routing: v1 mods have no toc action, converted .daimods add texture chunks; the rest come from the mod's "chunks" actions
+                        // [DAI fix] 1.0.6.4 routing; other chunks come from the mod's own "chunks" actions
                         if (ver < 2)
                             AddToChunksBundle(entry.Id, false);
                         else if (ver == 3 && entry.FirstMip != -1)
@@ -2528,7 +2528,7 @@ namespace Frosty.ModSupport
             string gameExecutable = Path.Combine(basePath, $"{ProfilesLibrary.ProfileName}.exe");
             string dataPathArgument = $"-dataPath \"{modDataPath.Trim('\\')}\" {additionalArgs}";
 
-            // [DAI fix] DAI and MEA Steam copies launch through Steam as in 1.0.6.3, unless DatapathFix handles the launch
+            // [DAI fix] DAI and MEA Steam copies launch through Steam, as in 1.0.6.3
             bool steamCopy = (ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeInquisition) || ProfilesLibrary.IsLoaded(ProfileVersion.MassEffectAndromeda))
                 && File.Exists(Path.Combine(basePath, "steam_appid.txt"))
                 && !Config.Get<bool>("DatapathFixEnabled", false);
@@ -3185,8 +3185,7 @@ namespace Frosty.ModSupport
                     continue;
                 }
 
-                // mipOffsets[2], type, format, poolId, flags (u16), width, height, depth, sliceCount (u16),
-                // mipCount (u8), firstMip (u8), chunkId, mipSizes[15]
+                // 30 = mipCount, 31 = firstMip, 32 = chunkId, 48 = mipSizes[15]
                 if (header == null || header.Length < 108)
                     continue;
 
@@ -3273,7 +3272,7 @@ namespace Frosty.ModSupport
             public Sha1 GetSha1() => (Buffer != null) ? Sha1 : Utils.GenerateSha1(Buffer);
         }
 
-        // [DAI fix] old-format mods read and hash their data on all threads, each with its own open files; applying it stays in mod order
+        // [DAI fix] read and hash on all threads; applying stays in mod order
         private LegacyResourceData[] ReadLegacyResourceData(string modPath, List<DbObject> resources)
         {
             LegacyResourceData[] result = new LegacyResourceData[resources.Count];

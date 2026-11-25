@@ -45,8 +45,7 @@ namespace FrostySdk.Managers
 
             private void LoadSuperBundles(AssetManager parent, BinarySbDataHelper helper)
             {
-                // [DAI fix] DAI has hundreds of small superbundles: read and parse several ahead on other
-                // threads, then add them here one at a time in the original order
+                // [DAI fix] parsed ahead on other threads, added here in the original order
                 List<string> superBundleNames = new List<string>(parent.m_fileSystem.SuperBundles);
                 Task<PreloadedSuperBundle>[] preloads = new Task<PreloadedSuperBundle>[superBundleNames.Count];
                 int window = Math.Max(2, WorkerPool.MaxThreads);
@@ -209,8 +208,7 @@ namespace FrostySdk.Managers
                 public int Started;
             }
 
-            // [DAI fix] binary bundles are unpacked and matched against the base game on the thread pool, in toc
-            // order and across superbundle boundaries, so the cores don't sit idle at the end of each superbundle
+            // [DAI fix] runs across superbundle boundaries so cores don't idle at the end of each one
             private class BinaryPipeline : IDisposable
             {
                 private readonly AssetManager parent;

@@ -6,13 +6,12 @@ using System.Threading.Tasks;
 
 namespace FrostySdk
 {
-    // [DAI fix] Frosty's own worker threads for loading and applying mods, so the user can cap how many
-    // cores they use and at what priority (the .NET thread pool can't go below one thread per core)
+    // [DAI fix] the .NET thread pool can't be capped below one thread per core
     public static class WorkerPool
     {
         private static readonly object sync = new object();
         private static readonly Queue<Action> queue = new Queue<Action>();
-        // [DAI fix] helpers of a running For go before jobs that haven't started, since the For's caller waits on them
+        // [DAI fix] run before queued jobs, since the For's caller waits on them
         private static readonly Queue<Action> helpers = new Queue<Action>();
         private static int threadCount;
         private static int idleCount;
