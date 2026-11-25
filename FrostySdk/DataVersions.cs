@@ -23,7 +23,7 @@
             {
                 switch ((ProfileVersion)ProfilesLibrary.DataVersion)
                 {
-                    case ProfileVersion.DragonAgeInquisition: return 1;
+                    case ProfileVersion.DragonAgeInquisition: return 2;
                     case ProfileVersion.MassEffectAndromeda: return 2;
                     case ProfileVersion.DragonAgeTheVeilguard: return 1;
                     default: return 1;

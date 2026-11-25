@@ -11,6 +11,15 @@ because each has its own version numbers:
 
 Every code change in this section is marked with a `[DAI fix]` comment.
 
+## Not released yet
+
+DAI ModData version raised to 2 (old texture chunks removed for old .daimod conversions), so DAI ModData is rebuilt once; MEA and Veilguard numbers unchanged.
+
+| Change | Files |
+|---|---|
+| DAI: a .daimod made with the DAI modding tools replaces a texture in three steps: modify the texture header (res), remove the game's chunk from the bundle, add a chunk with a new id. The original Frosty's .daimod import skipped every `action="remove"` resource (fixed for new imports in 1.0.6.4-dai.1), so mods converted before that (FBMODV3) left the game's chunk in the bundle next to the new one, both with the same `h32` (texture name hash) and a `firstMip` in `chunkMeta`. The unmodded game never has two such chunks in one bundle, and the game then used the wrong one for the bundled range (the always-loaded small mips): rainbow or black noise until the full mips streamed in, and permanently on Low texture quality. `ProcessLegacyModResources` now calls `RestoreLegacyTextureChunkRemovals` for DAI: for each texture header the mod modifies, it reads the chunk id from the mod's header and from the game's header, and where they differ and the mod adds the new chunk to the same bundle, it adds the game's chunk to that bundle's removals. A mod that already has the remove actions gets the same removals as before. Checked on the real mods and game data: HairyNudeMale and HairyNudeMaleJockStrap (converted Dec 2025) each get the one removal their .daimod lists (`532c298d-...` in `basegame_bundle`), re-imported mods (Scarless Cullen, Cullen Face Retexture) keep exactly the removals they had, and in-place mods (Cullen 4k Armor Textures) get none | `FrostyModSupport/FrostyModExecutor.cs` |
+| DAI: ModData version 2, so ModData built by older versions is rebuilt once without the leftover chunks | `FrostySdk/DataVersions.cs` |
+
 ## 1.7.4
 
 Shows as **1.7.4 - 2026.11.25.1**. Release tag: `2026.11.25.1`. MEA ModData version raised to 2 (localization write changes), so MEA ModData is rebuilt once; DAI and Veilguard numbers unchanged.

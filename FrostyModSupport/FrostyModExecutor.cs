@@ -1036,6 +1036,10 @@ namespace Frosty.ModSupport
                 }
             }
 
+            // [DAI fix] stock Frosty's .daimod import dropped "remove" actions, leaving a replaced texture's old chunk in the bundle
+            if (IsDai)
+                RestoreLegacyTextureChunkRemovals(modPath, mod);
+
             // [MEA fix] old mods store whole texture chunks; split them at the header's first mip like the importer does
             Dictionary<Guid, LegacyTextureLayout> textureLayouts = ProfilesLibrary.IsLoaded(ProfileVersion.MassEffectAndromeda)
                 ? ReadLegacyTextureLayouts(modPath, resourceList)
@@ -3149,6 +3153,79 @@ namespace Frosty.ModSupport
                     // do nothing
                 }
             }
+        }
+
+        private void RestoreLegacyTextureChunkRemovals(string modPath, DbObject mod)
+        {
+            DbObject resourceList = mod.GetValue<DbObject>("resources");
+
+            for (int resourceId = 0; resourceId < resourceList.Count; resourceId++)
+            {
+                DbObject resource = resourceList[resourceId] as DbObject;
+                if (resource.GetValue<string>("type") != "res" || !resource.HasValue("archiveIndex") || (uint)resource.GetValue<int>("resType") != (uint)ResourceType.DxTexture)
+                    continue;
+
+                ResAssetEntry original = m_am.GetResEntry(resource.GetValue<string>("name"));
+                if (original == null)
+                    continue;
+
+                Guid newId, oldId;
+                try
+                {
+                    byte[] buffer = GetResourceData(modPath, resource.GetValue<int>("archiveIndex"), resource.GetValue<long>("archiveOffset"), (int)resource.GetValue<long>("compressedSize"));
+                    using (CasReader reader = new CasReader(new MemoryStream(buffer)))
+                        newId = ReadDaiTextureChunkId(reader.Read());
+                    using (NativeReader reader = new NativeReader(m_am.GetRes(original)))
+                        oldId = ReadDaiTextureChunkId(reader.ReadToEnd());
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
+
+                if (newId == Guid.Empty || oldId == Guid.Empty || newId == oldId)
+                    continue;
+
+                int chunkResourceId = -1;
+                for (int i = 0; i < resourceList.Count; i++)
+                {
+                    DbObject chunk = resourceList[i] as DbObject;
+                    if (chunk.GetValue<string>("type") == "chunk" && !chunk.GetValue<bool>("isRemoval", false) && Guid.TryParse(chunk.GetValue<string>("name"), out Guid id) && id == newId)
+                        chunkResourceId = i;
+                }
+                if (chunkResourceId == -1)
+                    continue;
+
+                // only in bundles where the mod changes the header and adds the header's new chunk
+                HashSet<int> headerBundles = new HashSet<int>();
+                HashSet<int> chunkBundles = new HashSet<int>();
+                foreach (DbObject action in mod.GetValue<DbObject>("actions"))
+                {
+                    int bundle = Fnv1.HashString(action.GetValue<string>("bundle").ToLower());
+                    string actionType = action.GetValue<string>("type");
+                    if (action.GetValue<int>("resourceId") == resourceId && actionType == "modify")
+                        headerBundles.Add(bundle);
+                    else if (action.GetValue<int>("resourceId") == chunkResourceId && actionType == "add")
+                        chunkBundles.Add(bundle);
+                }
+
+                foreach (int bundle in headerBundles)
+                {
+                    if (chunkBundles.Contains(bundle) && m_modifiedBundles.TryGetValue(bundle, out ModBundleInfo modBundle))
+                        modBundle.Remove.Chunks.Add(oldId);
+                }
+            }
+        }
+
+        // the chunk id sits at 28 in DAI's texture header
+        private static Guid ReadDaiTextureChunkId(byte[] header)
+        {
+            if (header == null || header.Length < 44)
+                return Guid.Empty;
+
+            byte[] guidBytes = new byte[16];
+            Array.Copy(header, 28, guidBytes, 0, 16);
+            return new Guid(guidBytes);
         }
 
         private class LegacyTextureLayout

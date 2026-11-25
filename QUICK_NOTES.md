@@ -4,6 +4,10 @@ The short version of what changed. Full notes: [PATCH_NOTES.md](PATCH_NOTES.md).
 
 DAI = Dragon Age: Inquisition, DAV = Dragon Age: The Veilguard, MEA = Mass Effect: Andromeda.
 
+## Not released yet
+
+- DAI: texture mods from DAI Mod Manager that were converted with the original Frosty no longer show rainbow or black noise while loading or on Low texture quality (ModData rebuilds once, no re-import needed)
+
 ## 1.7.4
 
 - DAI and MEA: applying mods (building ModData) is faster, most of all with many mods
