@@ -1037,7 +1037,7 @@ namespace Frosty.ModSupport
             }
 
             // [MEA fix] old mods store whole texture chunks; split them at the header's first mip like the importer does
-            Dictionary<Guid, LegacyTextureLayout> textureLayouts = ProfilesLibrary.IsLoaded(ProfileVersion.MassEffectAndromeda)
+            Dictionary<Guid, LegacyTextureLayout> textureLayouts = ProfilesLibrary.IsLoaded(ProfileVersion.MassEffectAndromeda) || IsDai
                 ? ReadLegacyTextureLayouts(modPath, resourceList)
                 : new Dictionary<Guid, LegacyTextureLayout>();
 
@@ -1238,7 +1238,13 @@ namespace Frosty.ModSupport
                     }
 
                     if (entry.LogicalOffset == 0 && entry.RangeStart == 0 && textureLayouts.TryGetValue(entry.Id, out LegacyTextureLayout layout))
-                        SplitLegacyTextureChunk(layout, buffer, entry);
+                    {
+                        // [DAI fix] .daimods converted before 1.7 can say firstMip 0 while the texture header says otherwise
+                        if (!IsDai)
+                            SplitLegacyTextureChunk(layout, buffer, entry, false);
+                        else if (entry.FirstMip >= 0 && entry.FirstMip != layout.FirstMip && SplitLegacyTextureChunk(layout, buffer, entry, true))
+                            entry.FirstMip = layout.FirstMip;
+                    }
 
                     entry.Sha1 = resourceData[resourceIndex].GetSha1();
 
@@ -3168,9 +3174,9 @@ namespace Frosty.ModSupport
                 if (resource.GetValue<string>("type") != "res" || !resource.HasValue("archiveIndex") || (uint)resource.GetValue<int>("resType") != (uint)ResourceType.Texture)
                     continue;
 
-                // header version 12 and up (MEA uses 13)
+                // header version 12 and up (MEA uses 13); DAI uses 11
                 byte[] resMeta = resource.GetValue<byte[]>("resMeta");
-                if (resMeta == null || resMeta.Length < 4 || BitConverter.ToUInt32(resMeta, 0) < 12)
+                if (resMeta == null || resMeta.Length < 4 || (BitConverter.ToUInt32(resMeta, 0) < 12) != IsDai)
                     continue;
 
                 byte[] header;
@@ -3185,20 +3191,21 @@ namespace Frosty.ModSupport
                     continue;
                 }
 
-                // 30 = mipCount, 31 = firstMip, 32 = chunkId, 48 = mipSizes[15]
-                if (header == null || header.Length < 108)
+                // 30 = mipCount, 31 = firstMip, 32 = chunkId, 48 = mipSizes[15]; DAI has all of them 4 bytes earlier
+                int start = IsDai ? 26 : 30;
+                if (header == null || header.Length < start + 78)
                     continue;
 
                 LegacyTextureLayout layout = new LegacyTextureLayout
                 {
-                    MipCount = header[30],
-                    FirstMip = header[31]
+                    MipCount = header[start],
+                    FirstMip = header[start + 1]
                 };
                 for (int i = 0; i < 15; i++)
-                    layout.MipSizes[i] = BitConverter.ToUInt32(header, 48 + i * 4);
+                    layout.MipSizes[i] = BitConverter.ToUInt32(header, start + 18 + i * 4);
 
                 byte[] guidBytes = new byte[16];
-                Array.Copy(header, 32, guidBytes, 0, 16);
+                Array.Copy(header, start + 2, guidBytes, 0, 16);
                 layouts[new Guid(guidBytes)] = layout;
             }
 
@@ -3206,26 +3213,30 @@ namespace Frosty.ModSupport
         }
 
         // Same split as Utils.CompressTexture; leaves the entry alone if the data has no block boundary there.
-        private static void SplitLegacyTextureChunk(LegacyTextureLayout layout, byte[] data, ChunkAssetEntry entry)
+        private static bool SplitLegacyTextureChunk(LegacyTextureLayout layout, byte[] data, ChunkAssetEntry entry, bool offsetAtFirstMip)
         {
             if (layout.MipCount <= 1 || layout.MipCount > 15 || layout.FirstMip <= 0 || layout.FirstMip >= layout.MipCount)
-                return;
+                return false;
 
             long total = 0;
             for (int i = 0; i < layout.MipCount; i++)
                 total += layout.MipSizes[i];
             if (total <= 0x10000 || total != entry.LogicalSize)
-                return;
+                return false;
 
             // the bundled part keeps a minimum size of 0x10000, so it can start before firstMip
-            long first = 0, second = total;
-            for (int i = 0; i < layout.FirstMip && second > 0x10000; i++)
+            long first = 0, second = total, mipOffset = 0;
+            for (int i = 0; i < layout.FirstMip; i++)
             {
-                first += layout.MipSizes[i];
-                second -= layout.MipSizes[i];
+                if (second > 0x10000)
+                {
+                    first += layout.MipSizes[i];
+                    second -= layout.MipSizes[i];
+                }
+                mipOffset += layout.MipSizes[i];
             }
             if (first == 0)
-                return;
+                return false;
 
             long compressedPos = 0, uncompressedPos = 0, splitPos = -1;
             while (compressedPos + 8 <= data.Length)
@@ -3249,12 +3260,15 @@ namespace Frosty.ModSupport
             }
 
             if (compressedPos != data.Length || uncompressedPos != total || splitPos < 0)
-                return;
+                return false;
 
-            entry.LogicalOffset = (uint)first;
-            entry.LogicalSize = (uint)(total - first);
+            // [DAI fix] DAI's own textures put the logical offset at firstMip, as the .daimod import does
+            long logicalOffset = offsetAtFirstMip ? mipOffset : first;
+            entry.LogicalOffset = (uint)logicalOffset;
+            entry.LogicalSize = (uint)(total - logicalOffset);
             entry.RangeStart = (uint)splitPos;
             entry.RangeEnd = (uint)data.Length;
+            return true;
         }
 
         private long GetSuperBundleSize(string superBundle)

@@ -11,6 +11,15 @@ because each has its own version numbers:
 
 Every code change in this section is marked with a `[DAI fix]` comment.
 
+## Not released yet
+
+DAI ModData version raised to 2 (texture streaming correction for old converted .daimods), so DAI ModData is rebuilt once; MEA and Veilguard numbers unchanged.
+
+| Change | Files |
+|---|---|
+| DAI: .daimods converted before 1.7 (FBMODV3) kept the .daimod's chunk values even when they disagree with the mod's own texture header, e.g. a 4096x4096 body texture with header `firstMip` 3 but chunk `firstMip` 0, `logicalOffset` 0 and the whole 12.4 MB chunk as the bundled range. The game then read the start of mip 0 as the small mips: rainbow or black noise while loading, when zooming, and permanently on Low texture quality, until the full mips streamed in. The 1.7 import (`DaiCalcTextureRange`) already fixes this, but only at import. `ProcessLegacyModResources` now also reads DAI texture headers (version 11 layout) and, when a whole-chunk entry has a `firstMip` of 0 or more that differs from its header, splits it the same way (`logicalOffset` = sum of the mips before `firstMip`, as in the game's own textures; range from the block where the bundled part starts) and sets `firstMip` from the header. That example then bundles 207 KB instead of 12.4 MB. Chunks without a `firstMip`, single-mip textures and chunks without a block boundary there are left as they are. MEA output is unchanged | `FrostyModSupport/FrostyModExecutor.cs` |
+| DAI: ModData version 2, so ModData built by older versions is rebuilt once with the corrected textures | `FrostySdk/DataVersions.cs` |
+
 ## 1.7.4
 
 Shows as **1.7.4 - 2026.11.25.1**. Release tag: `2026.11.25.1`. MEA ModData version raised to 2 (localization write changes), so MEA ModData is rebuilt once; DAI and Veilguard numbers unchanged.

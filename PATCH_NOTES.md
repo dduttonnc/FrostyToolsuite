@@ -12,6 +12,13 @@ Frosty by dduttonnc is built on J-Lyt's Frosty, which is built on the original F
 
 One Frosty Mod Manager for Dragon Age: Inquisition, Dragon Age: The Veilguard and Mass Effect: Andromeda. https://github.com/dduttonnc/FrostyToolsuite
 
+Not released yet
+--------
+Dragon Age: Inquisition: Frosty rebuilds each mod pack's ModData once on its next launch, so the texture fix below is applied. Nothing needs deleting by hand. Full details: docs/CHANGELOG.md
+
+Bug Fixes:
+- Dragon Age: Inquisition: textures from DAI Mod Manager mods (.daimod) converted before 1.7 no longer turn into rainbow or black noise while an area loads, when zooming, or with low texture quality (e.g. a nude body texture mod). Some .daimods say their whole texture loads at once while the texture itself says only the small versions do, so the game read the wrong data for the small versions until the full-size one arrived. Since 1.7 this is corrected when a .daimod is imported, but mods converted earlier kept the wrong values; Frosty now corrects them when it applies mods, so they don't need to be imported again
+
 v1.7.4 - 2026.11.25.1
 --------
 Mass Effect: Andromeda: Frosty rebuilds each mod pack's ModData once on its next launch, so text mods get the new localization fix. Nothing needs deleting by hand. Full details: docs/CHANGELOG.md
