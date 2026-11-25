@@ -559,7 +559,10 @@ namespace Frosty.Core.Windows
                 {
                     saves.TryGetValue(version, out int count);
                     values.Add(version.ToString());
-                    names.Add((count == 0) ? $"Patch {version}" : $"Patch {version} ({count} {((count == 1) ? "save needs" : "saves need")} this)");
+                    if (count > 0)
+                        names.Add($"Patch {version} ({count} {((count == 1) ? "save needs" : "saves need")} this)");
+                    else
+                        names.Add((version > gamePatch + 1) ? $"Patch {version} (experimental)" : $"Patch {version}");
                 }
             }
 
