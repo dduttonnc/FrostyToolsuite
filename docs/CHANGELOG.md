@@ -11,6 +11,18 @@ because each has its own version numbers:
 
 Every code change in this section is marked with a `[DAI fix]` comment.
 
+## Not released yet
+
+| Change | Files |
+|---|---|
+| All games (old-format mods: converted .daimods, FBMODV1-3): `ProcessLegacyModResources` read every resource on one thread, opening the `.archive` (or game cas file) again for each one, and hashed it there. `ReadLegacyResourceData` now reads and hashes a mod's resources first on `WorkerPool`, each worker keeping its files open; the loop that decides which mod wins still runs in mod order, so the result is the same. A missing archive still fails at that asset | `FrostyModSupport/FrostyModExecutor.cs` |
+| All games: `Utils.GenerateSha1` used `SHA1Managed`; it now uses `SHA1CryptoServiceProvider` (one per thread), which gives the same hash several times faster | `FrostySdk/Utils.cs` |
+| DAI and MEA: when a superbundle had a modded bundle, every delta bundle in it was read with `DbReader` and written again with `DbWriter`, even the untouched ones. Untouched bundles are now copied byte for byte from the game's sb (same range the asset loader reads). If `DbWriter` wrote them exactly as before, ModData is unchanged; to be confirmed by byte-compare | `FrostyModSupport/Actions/StandardModExecutor.cs` |
+| DAI and MEA: superbundle jobs start largest .sb first, so a big one is not left running alone at the end. Results are still collected in the original order, so the cas files are written in the same order | `FrostyModSupport/FrostyModExecutor.cs` |
+| All games: the mod list check before launch (`GenerateModInfoList`) and the mod list used for applying built `FrostyMod` objects that read the icon and 4 screenshots. New `FrostyMod(path, loadImages)` overload skips them; the old constructor is unchanged | `FrostyPlugin/Mod/FrostyMod.cs`, `FrostyModSupport/FrostyModExecutor.cs` |
+| All games: `ReportProgress` now only updates the window when the bar moves by 0.1% (it was called for every modified asset in the handler step) | `FrostyModSupport/FrostyModExecutor.cs` |
+| All games: each apply step's time (loading the cache, loading mods, handlers, cleanup, applying mods, writing archive data) is written to the log | `FrostyModSupport/FrostyModExecutor.cs` |
+
 ## 1.7.3
 
 Shows as **1.7.3 - 2026.11.24.3**. Release tag: `2026.11.24.3`. First release with per-game data numbers (MEA cache revision 1, ModData version 1 for every game), so nothing needs deleting by hand.

@@ -78,6 +78,12 @@ namespace Frosty.Core.Mod
         /// Constructor for new binary format
         /// </summary>
         public FrostyMod(string inFilename)
+            : this(inFilename, true)
+        {
+        }
+
+        // [DAI fix] applying mods doesn't need the icon and screenshots
+        public FrostyMod(string inFilename, bool loadImages)
         {
             FileInfo fi = new FileInfo(inFilename);
             Filename = fi.Name;
@@ -93,6 +99,9 @@ namespace Frosty.Core.Mod
                     ModDetails = reader.ReadModDetails();
 
                     resources = reader.ReadResources();
+                    if (!loadImages)
+                        return;
+
                     ModDetails.SetIcon(reader.GetResourceData(resources[0]));
 
                     for (int i = 0; i < 4; i++)

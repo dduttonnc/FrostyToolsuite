@@ -883,13 +883,14 @@ namespace FrostySdk
             return outGuid;
         }
 
+        // [DAI fix] the system SHA1 gives the same hash several times faster than SHA1Managed
+        [ThreadStatic] private static SHA1 s_sha1;
+
         public static Sha1 GenerateSha1(byte[] buffer)
         {
-            using (SHA1Managed sha1 = new SHA1Managed())
-            {
-                Sha1 newSha1 = new Sha1(sha1.ComputeHash(buffer));
-                return newSha1;
-            }
+            if (s_sha1 == null)
+                s_sha1 = new SHA1CryptoServiceProvider();
+            return new Sha1(s_sha1.ComputeHash(buffer));
         }
 
         public static ulong GenerateResourceId()

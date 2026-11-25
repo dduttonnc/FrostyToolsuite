@@ -1184,6 +1184,7 @@ namespace Frosty.ModSupport
 
                             MemoryStream outSbStream = new MemoryStream();
                             List<long> bundleOffsets = new List<long>();
+                            bool copyUntouchedBundles = ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeInquisition, ProfileVersion.MassEffectAndromeda);
                             List<long> bundleSizes = new List<long>();
 
                             // modify bundles
@@ -1199,6 +1200,7 @@ namespace Frosty.ModSupport
                                 int bundleName = Fnv1.HashString(bundle.GetValue<string>("id").ToLower());
 
                                 DbObject sbBundle = null;
+                                byte[] rawBundle = null;
                                 if (bundle.GetValue<long>("offset") == 0xDEADBEEF)
                                 {
                                     sbBundle = new DbObject();
@@ -1232,7 +1234,12 @@ namespace Frosty.ModSupport
                                         : patchSbReader ?? (patchSbReader = OpenSbReader("native_patch/"));
 
                                     reader.BaseStream.Position = bundle.GetValue<long>("offset");
-                                    sbBundle = reader.ReadDbObject();
+
+                                    // [DAI fix] bundles no mod touches are copied as they are instead of being decoded and written again
+                                    if (copyUntouchedBundles && !parent.m_modifiedBundles.ContainsKey(bundleName))
+                                        rawBundle = reader.ReadBytes((int)bundle.GetValue<long>("size"));
+                                    else
+                                        sbBundle = reader.ReadDbObject();
                                 }
 
                                 if (parent.m_modifiedBundles.ContainsKey(bundleName))
@@ -1571,8 +1578,15 @@ namespace Frosty.ModSupport
                                 if ((baseBundle && modified) || !baseBundle)
                                 {
                                     bundleOffsets.Add(outSbStream.Position);
-                                    using (DbWriter writer = new DbWriter(outSbStream, false, true))
-                                        writer.Write(sbBundle);
+                                    if (rawBundle != null)
+                                    {
+                                        outSbStream.Write(rawBundle, 0, rawBundle.Length);
+                                    }
+                                    else
+                                    {
+                                        using (DbWriter writer = new DbWriter(outSbStream, false, true))
+                                            writer.Write(sbBundle);
+                                    }
 
                                     bundle.SetValue("size", (int)(outSbStream.Position - bundleOffsets[bundleOffsets.Count - 1]));
 
