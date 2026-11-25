@@ -12,6 +12,13 @@ Frosty by dduttonnc is built on J-Lyt's Frosty, which is built on the original F
 
 One Frosty Mod Manager for Dragon Age: Inquisition, Dragon Age: The Veilguard and Mass Effect: Andromeda. https://github.com/dduttonnc/FrostyToolsuite
 
+Not released yet
+--------
+Improvements:
+- Dragon Age: Inquisition and Mass Effect: Andromeda: applying mods (building ModData) is faster, most of all with many mods. Old-format mods (converted .daimods and old .fbmods) are now read and checked on all CPU threads instead of one, parts of the game files that no mod changes are copied as they are instead of being taken apart and put back together, the biggest parts start first, changed bundles in DLC levels are matched up with the game's originals much faster, and their changed data is compressed on all CPU threads instead of one.
+- All games: launching with an unchanged mod list no longer reads every mod's icon and screenshots, and the progress bar is updated less often while mods are applied
+- All games: the log shows how long each step of applying mods took, and the 3 slowest superbundles
+
 v1.7.3 - 2026.11.24.3
 --------
 No need to delete Caches or ModData after updating: Frosty rebuilds each mod pack's ModData once on its next launch, and a Mass Effect: Andromeda cache from before 1.7.1 at the next start. Deleting them by hand is still fine. Full details: docs/CHANGELOG.md

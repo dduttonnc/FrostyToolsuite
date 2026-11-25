@@ -363,11 +363,16 @@ namespace Frosty.ModSupport
             }
         }
 
+        private int m_lastProgress = -1;
+
+        // [DAI fix] only tell the window when the bar moves by 0.1%, not once per file
         private void ReportProgress(int current, int total)
         {
             if (total > 0)
             {
-                Logger.Log("progress:" + current / (float)total * 100d);
+                int permille = (int)(current * 1000L / total);
+                if (Interlocked.Exchange(ref m_lastProgress, permille) != permille)
+                    Logger.Log("progress:" + current / (float)total * 100d);
             }
         }
 
@@ -1036,9 +1041,16 @@ namespace Frosty.ModSupport
                 ? ReadLegacyTextureLayouts(modPath, resourceList)
                 : new Dictionary<Guid, LegacyTextureLayout>();
 
-            // obtain resources to modify
+            List<DbObject> resources = new List<DbObject>();
             foreach (DbObject resource in resourceList)
+                resources.Add(resource);
+            LegacyResourceData[] resourceData = ReadLegacyResourceData(modPath, resources);
+
+            // obtain resources to modify
+            for (int resourceIndex = 0; resourceIndex < resources.Count; resourceIndex++)
             {
+                DbObject resource = resources[resourceIndex];
+
                 // [DAI fix] .daimod removal entries have no data, just a name for "remove" actions
                 if (resource.GetValue<bool>("isRemoval", false))
                     continue;
@@ -1091,25 +1103,11 @@ namespace Frosty.ModSupport
                         Size = resource.GetValue<long>("compressedSize")
                     };
 
-                    byte[] buffer = null;
+                    byte[] buffer = resourceData[resourceIndex].Buffer;
                     if (resource.HasValue("archiveIndex"))
-                    {
                         entry.IsInline = resource.GetValue<bool>("shouldInline");
-                        buffer = GetResourceData(modPath, resource.GetValue<int>("archiveIndex"), resource.GetValue<long>("archiveOffset"), (int)entry.Size);
-                    }
-                    else
-                    {
-                        ManifestFileRef fileRef = resource.GetValue<int>("file");
-                        long offset = resource.GetValue<int>("offset");
 
-                        using (NativeReader reader = new NativeReader(new FileStream(m_fs.ResolvePath(fileRef), FileMode.Open, FileAccess.Read)))
-                        {
-                            reader.Position = offset;
-                            buffer = reader.ReadBytes((int)entry.Size);
-                        }
-                    }
-
-                    entry.Sha1 = Utils.GenerateSha1(buffer);
+                    entry.Sha1 = resourceData[resourceIndex].GetSha1();
 
                     m_modifiedEbx.TryAdd(entry.Name, entry);
                     if (!m_archiveData.ContainsKey(entry.Sha1))
@@ -1152,25 +1150,11 @@ namespace Frosty.ModSupport
                         ResMeta = resource.GetValue<byte[]>("resMeta")
                     };
 
-                    byte[] buffer = null;
+                    byte[] buffer = resourceData[resourceIndex].Buffer;
                     if (resource.HasValue("archiveIndex"))
-                    {
                         entry.IsInline = resource.GetValue<bool>("shouldInline");
-                        buffer = GetResourceData(modPath, resource.GetValue<int>("archiveIndex"), resource.GetValue<long>("archiveOffset"), (int)entry.Size);
-                    }
-                    else
-                    {
-                        ManifestFileRef fileRef = resource.GetValue<int>("file");
-                        long offset = resource.GetValue<int>("offset");
 
-                        using (NativeReader reader = new NativeReader(new FileStream(m_fs.ResolvePath(fileRef), FileMode.Open, FileAccess.Read)))
-                        {
-                            reader.Position = offset;
-                            buffer = reader.ReadBytes((int)entry.Size);
-                        }
-                    }
-
-                    entry.Sha1 = Utils.GenerateSha1(buffer);
+                    entry.Sha1 = resourceData[resourceIndex].GetSha1();
 
                     m_modifiedRes.TryAdd(entry.Name, entry);
                     if (!m_archiveData.ContainsKey(entry.Sha1))
@@ -1214,25 +1198,14 @@ namespace Frosty.ModSupport
                         H32 = resource.GetValue<int>("h32", 0)
                     };
 
-                    byte[] buffer = null;
+                    byte[] buffer = resourceData[resourceIndex].Buffer;
                     if (resource.HasValue("archiveIndex"))
                     {
                         // obtain data from archive
                         entry.IsInline = resource.GetValue<bool>("shouldInline", false);
-                        buffer = GetResourceData(modPath, resource.GetValue<int>("archiveIndex"), resource.GetValue<long>("archiveOffset"), (int)entry.Size);
                     }
                     else
                     {
-                        ManifestFileRef fileRef = resource.GetValue<int>("file");
-                        long offset = resource.GetValue<int>("offset");
-
-                        // obtain data from cas file location
-                        using (NativeReader reader = new NativeReader(new FileStream(m_fs.ResolvePath(fileRef), FileMode.Open, FileAccess.Read)))
-                        {
-                            reader.Position = offset;
-                            buffer = reader.ReadBytes((int)entry.Size);
-                        }
-
                         if (ProfilesLibrary.IsLoaded(ProfileVersion.StarWarsBattlefrontII, ProfileVersion.Battlefield5))
                         {
                             if (entry.LogicalOffset != 0)
@@ -1267,7 +1240,7 @@ namespace Frosty.ModSupport
                     if (entry.LogicalOffset == 0 && entry.RangeStart == 0 && textureLayouts.TryGetValue(entry.Id, out LegacyTextureLayout layout))
                         SplitLegacyTextureChunk(layout, buffer, entry);
 
-                    entry.Sha1 = Utils.GenerateSha1(buffer);
+                    entry.Sha1 = resourceData[resourceIndex].GetSha1();
 
                     m_modifiedChunks.TryAdd(entry.Id, entry);
                     if (!m_archiveData.ContainsKey(entry.Sha1))
@@ -1441,6 +1414,14 @@ namespace Frosty.ModSupport
             if (needsModding)
             {
                 cancelToken.ThrowIfCancellationRequested();
+                // [DAI fix] each step's time goes to the log, to see where applying mods spends its time
+                Stopwatch stepWatch = Stopwatch.StartNew();
+                Action<string> logStepTime = step =>
+                {
+                    App.Logger.Log($"{step} took {stepWatch.Elapsed.TotalSeconds:0.0}s");
+                    stepWatch.Restart();
+                };
+
                 Logger.Log("Initializing Resources");
 
                 if (ProfilesLibrary.IsLoaded(ProfileVersion.StarWarsBattlefrontII, ProfileVersion.Battlefield5, ProfileVersion.StarWarsSquadrons))
@@ -1467,6 +1448,7 @@ namespace Frosty.ModSupport
                 m_am = new AssetManager(m_fs, m_rm);
                 m_am.SetLogger(m_logger);
                 m_am.Initialize(additionalStartup: false);
+                logStepTime("Loading the cache");
 
                 cancelToken.ThrowIfCancellationRequested();
                 Logger.Log("Loading Mods");
@@ -1479,7 +1461,7 @@ namespace Frosty.ModSupport
                     FileInfo fi = new FileInfo(Path.Combine(rootPath, path));
 
                     if (fi.Extension == ".fbmod")
-                        modList.Add(new FrostyMod(fi.FullName));
+                        modList.Add(new FrostyMod(fi.FullName, false));
 
                     else if (fi.Extension == ".fbcollection")
                     {
@@ -1545,6 +1527,7 @@ namespace Frosty.ModSupport
                     ReportProgress(currentMod++, modList.Count);
                 }
 
+                logStepTime("Loading mods");
                 Logger.Log("Applying Handlers");
                 App.Logger.Log("Applying Handlers");
 
@@ -1582,6 +1565,7 @@ namespace Frosty.ModSupport
 #endif
 
                 cancelToken.ThrowIfCancellationRequested();
+                logStepTime("Applying handlers");
                 Logger.Log("Cleaning Up ModData");
                 App.Logger.Log("Cleaning Up ModData");
 
@@ -1811,6 +1795,9 @@ namespace Frosty.ModSupport
                         }
                     }
                 }
+
+                logStepTime("Cleaning up ModData");
+                List<string> slowSuperBundles = new List<string>();
 
                 // set max threads to processor amount (stop hitching)
                 ThreadPool.GetMaxThreads(out int workerThreads, out int completionPortThreads);
@@ -2139,27 +2126,26 @@ namespace Frosty.ModSupport
                     List<SuperBundleAction> actions = new List<SuperBundleAction>();
                     ManualResetEvent doneEvent = new ManualResetEvent(false);
 
-                    int totalTasks = 0;
                     foreach (string superBundle in m_fs.SuperBundles)
                     {
                         if (m_fs.ResolvePath(superBundle + ".toc") == "")
                             continue;
 
-                        SuperBundleAction action = new SuperBundleAction(superBundle, doneEvent, this, m_modDirName + "/" + m_patchPath, cancelToken);
-                        WorkerPool.Post(() => action.ThreadPoolCallback(null));
-                        actions.Add(action);
-                        m_numTasks++;
-                        totalTasks++;
+                        actions.Add(new SuperBundleAction(superBundle, doneEvent, this, m_modDirName + "/" + m_patchPath, cancelToken));
                     }
 
                     foreach (string superBundle in m_addedSuperBundles)
-                    {
-                        SuperBundleAction action = new SuperBundleAction(superBundle, doneEvent, this, m_modDirName + "/" + m_patchPath, cancelToken);
+                        actions.Add(new SuperBundleAction(superBundle, doneEvent, this, m_modDirName + "/" + m_patchPath, cancelToken));
+
+                    // [DAI fix] start the biggest superbundles first; results are still used in the original order
+                    List<SuperBundleAction> startOrder = new List<SuperBundleAction>(actions);
+                    if (ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeInquisition, ProfileVersion.MassEffectAndromeda))
+                        startOrder = actions.OrderByDescending(a => GetSuperBundleSize(a.SuperBundle)).ToList();
+
+                    int totalTasks = actions.Count;
+                    m_numTasks += totalTasks;
+                    foreach (SuperBundleAction action in startOrder)
                         WorkerPool.Post(() => action.ThreadPoolCallback(null));
-                        actions.Add(action);
-                        m_numTasks++;
-                        totalTasks++;
-                    }
 
                     while (m_numTasks != 0)
                     {
@@ -2221,6 +2207,15 @@ namespace Frosty.ModSupport
                                 m_casData.Add(catalogPath, completedAction.CasRefs[i]);
                         }
                     }
+
+                    // [DAI fix] the slowest superbundles go to the log, to see what holds up this step
+                    foreach (SuperBundleAction slowAction in actions.Where(a => a.Seconds >= 1.0).OrderByDescending(a => a.Seconds).Take(3))
+                    {
+                        string details = (slowAction.ReadSeconds + slowAction.CompressSeconds > 0)
+                            ? $" (unpacking {slowAction.ReadSeconds:0.0}s, compressing {slowAction.CompressBytes / 1048576.0:0} MB took {slowAction.CompressSeconds:0.0}s)"
+                            : "";
+                        slowSuperBundles.Add($"  {slowAction.SuperBundle} took {slowAction.Seconds:0.0}s{details}");
+                    }
                 }
 
                 cancelToken.ThrowIfCancellationRequested();
@@ -2232,6 +2227,9 @@ namespace Frosty.ModSupport
                 // reset threadpool
                 ThreadPool.SetMaxThreads(workerThreads, completionPortThreads);
 
+                logStepTime("Applying mods");
+                foreach (string line in slowSuperBundles)
+                    App.Logger.Log(line);
                 Logger.Log("Writing Archive Data");
                 App.Logger.Log("Writing Archive Data");
 
@@ -2290,6 +2288,7 @@ namespace Frosty.ModSupport
 
                 cancelToken.ThrowIfCancellationRequested();
 
+                logStepTime("Writing archive data");
                 Logger.Log("Writing Manifest");
                 App.Logger.Log("Writing Manifest");
 
@@ -2674,7 +2673,7 @@ namespace Frosty.ModSupport
             foreach (string path in modPaths)
             {
                 FileInfo fi = new FileInfo(Path.Combine(rootPath, path));
-                FrostyMod fmod = new FrostyMod(fi.FullName);
+                FrostyMod fmod = new FrostyMod(fi.FullName, false);
                 ModInfo modInfo;
 
                 if (fmod.NewFormat)
@@ -3254,6 +3253,71 @@ namespace Frosty.ModSupport
             entry.LogicalSize = (uint)(total - first);
             entry.RangeStart = (uint)splitPos;
             entry.RangeEnd = (uint)data.Length;
+        }
+
+        private long GetSuperBundleSize(string superBundle)
+        {
+            string path = m_fs.ResolvePath(superBundle + ".sb");
+            return (path != "" && File.Exists(path)) ? new FileInfo(path).Length : 0;
+        }
+
+        private class LegacyResourceData
+        {
+            public byte[] Buffer;
+            public Sha1 Sha1;
+
+            // a missing archive still fails at this asset, as before
+            public Sha1 GetSha1() => (Buffer != null) ? Sha1 : Utils.GenerateSha1(Buffer);
+        }
+
+        // [DAI fix] old-format mods read and hash their data on all threads, each with its own open files; applying it stays in mod order
+        private LegacyResourceData[] ReadLegacyResourceData(string modPath, List<DbObject> resources)
+        {
+            LegacyResourceData[] result = new LegacyResourceData[resources.Count];
+            int workers = Math.Max(1, Math.Min(WorkerPool.MaxThreads, resources.Count));
+
+            WorkerPool.For(workers, worker =>
+            {
+                Dictionary<string, NativeReader> readers = new Dictionary<string, NativeReader>(StringComparer.OrdinalIgnoreCase);
+                try
+                {
+                    for (int i = worker; i < resources.Count; i += workers)
+                    {
+                        DbObject resource = resources[i];
+                        string type = resource.GetValue<string>("type");
+                        if (resource.GetValue<bool>("isRemoval", false) || (type != "ebx" && type != "res" && type != "chunk"))
+                            continue;
+
+                        bool fromArchive = resource.HasValue("archiveIndex");
+                        string path = fromArchive
+                            ? modPath.Replace(".fbmod", "_" + resource.GetValue<int>("archiveIndex").ToString("D2") + ".archive")
+                            : m_fs.ResolvePath((ManifestFileRef)resource.GetValue<int>("file"));
+                        long offset = fromArchive ? resource.GetValue<long>("archiveOffset") : resource.GetValue<int>("offset");
+
+                        if (!readers.TryGetValue(path, out NativeReader reader))
+                        {
+                            reader = (fromArchive && !File.Exists(path)) ? null : new NativeReader(new FileStream(path, FileMode.Open, FileAccess.Read));
+                            readers.Add(path, reader);
+                        }
+
+                        LegacyResourceData data = new LegacyResourceData();
+                        if (reader != null)
+                        {
+                            reader.Position = offset;
+                            data.Buffer = reader.ReadBytes((int)resource.GetValue<long>("compressedSize"));
+                            data.Sha1 = Utils.GenerateSha1(data.Buffer);
+                        }
+                        result[i] = data;
+                    }
+                }
+                finally
+                {
+                    foreach (NativeReader reader in readers.Values)
+                        reader?.Dispose();
+                }
+            });
+
+            return result;
         }
 
         private byte[] GetResourceData(string modFilename, int archiveIndex, long offset, int size)

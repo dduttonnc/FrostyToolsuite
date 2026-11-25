@@ -883,13 +883,14 @@ namespace FrostySdk
             return outGuid;
         }
 
+        // [DAI fix] the system SHA1 gives the same hash several times faster than SHA1Managed
+        [ThreadStatic] private static SHA1 s_sha1;
+
         public static Sha1 GenerateSha1(byte[] buffer)
         {
-            using (SHA1Managed sha1 = new SHA1Managed())
-            {
-                Sha1 newSha1 = new Sha1(sha1.ComputeHash(buffer));
-                return newSha1;
-            }
+            if (s_sha1 == null)
+                s_sha1 = new SHA1CryptoServiceProvider();
+            return new Sha1(s_sha1.ComputeHash(buffer));
         }
 
         public static ulong GenerateResourceId()
@@ -1001,7 +1002,7 @@ namespace FrostySdk
         // [DAI fix] for Frosty's own cache: zlib level 1 is many times faster than 9 and reads back the same
         public static byte[] CompressFileForCache(byte[] inData) => CompressFile(inData, null, ResourceType.Invalid, CompressionType.Default, 0, 1);
 
-        private static byte[] CompressFile(byte[] inData, Texture texture, ResourceType resType, CompressionType compressionOverride, uint offset, int zlibLevel)
+        private static CompressionType GetCompressionType(Texture texture, ResourceType resType, CompressionType compressionOverride)
         {
             CompressionType compressionType = compressionOverride;
 
@@ -1037,6 +1038,13 @@ namespace FrostySdk
             {
                 compressionType = CompressionType.None;
             }
+
+            return compressionType;
+        }
+
+        private static byte[] CompressFile(byte[] inData, Texture texture, ResourceType resType, CompressionType compressionOverride, uint offset, int zlibLevel)
+        {
+            CompressionType compressionType = GetCompressionType(texture, resType, compressionOverride);
 
             MemoryStream outMs = new MemoryStream();
             NativeWriter writer = new NativeWriter(outMs);
@@ -1122,6 +1130,103 @@ namespace FrostySdk
             }
 
             return outMs.ToArray();
+        }
+
+        // [DAI fix] compresses several buffers at once, block by block on all threads; each result has the same bytes CompressFile gives
+        public static byte[][] CompressFiles(IList<byte[]> inputs, IList<ResourceType> resTypes)
+        {
+            int count = inputs.Count;
+            int maxBufferSize = MaxBufferSize;
+            CompressionType[] types = new CompressionType[count];
+            int[] firstBlock = new int[count + 1];
+            for (int i = 0; i < count; i++)
+            {
+                types[i] = GetCompressionType(null, resTypes[i], CompressionType.Default);
+                firstBlock[i + 1] = firstBlock[i] + (inputs[i].Length + maxBufferSize - 1) / maxBufferSize;
+            }
+
+            int blockCount = firstBlock[count];
+            byte[][] blockData = new byte[blockCount][];
+            ulong[] blockSizes = new ulong[blockCount];
+            ushort[] blockCodes = new ushort[blockCount];
+            bool[] storeUncompressed = new bool[count];
+
+            WorkerPool.For(blockCount, block =>
+            {
+                int index = Array.BinarySearch(firstBlock, block);
+                if (index < 0)
+                    index = ~index - 1;
+                while (firstBlock[index + 1] <= block)
+                    index++;
+
+                int start = (block - firstBlock[index]) * maxBufferSize;
+                int size = Math.Min(maxBufferSize, inputs[index].Length - start);
+                byte[] buffer = new byte[size];
+                Buffer.BlockCopy(inputs[index], start, buffer, 0, size);
+
+                bool uncompressed = false;
+                byte[] compBuffer = null;
+                ushort compressCode = 0;
+                ulong compressSize = CompressBlock(types[index], buffer, out compBuffer, out compressCode, ref uncompressed, 9);
+
+                // like CompressFile: one block that doesn't shrink stores the whole buffer uncompressed
+                if (uncompressed)
+                {
+                    storeUncompressed[index] = true;
+                    compressSize = CompressNone(buffer, out compBuffer, out compressCode);
+                }
+
+                blockData[block] = compBuffer;
+                blockSizes[block] = compressSize;
+                blockCodes[block] = compressCode;
+            });
+
+            byte[][] outputs = new byte[count][];
+            for (int i = 0; i < count; i++)
+            {
+                using (NativeWriter writer = new NativeWriter(new MemoryStream()))
+                {
+                    for (int block = firstBlock[i]; block < firstBlock[i + 1]; block++)
+                    {
+                        int bufferSize = Math.Min(maxBufferSize, inputs[i].Length - (block - firstBlock[i]) * maxBufferSize);
+                        byte[] compBuffer = blockData[block];
+                        ushort compressCode = blockCodes[block];
+                        ulong compressSize = blockSizes[block];
+
+                        if (storeUncompressed[i])
+                        {
+                            byte[] buffer = new byte[bufferSize];
+                            Buffer.BlockCopy(inputs[i], (block - firstBlock[i]) * maxBufferSize, buffer, 0, bufferSize);
+                            compressSize = CompressNone(buffer, out compBuffer, out compressCode);
+                        }
+
+                        compressCode |= (ushort)((compressSize & 0xF0000) >> 16);
+
+                        writer.Write(bufferSize, Endian.Big);
+                        writer.Write((ushort)compressCode, Endian.Big);
+                        writer.Write((ushort)compressSize, Endian.Big);
+                        writer.Write(compBuffer, 0, (int)compressSize);
+                    }
+                    outputs[i] = ((MemoryStream)writer.BaseStream).ToArray();
+                }
+            }
+
+            return outputs;
+        }
+
+        private static ulong CompressBlock(CompressionType compressionType, byte[] buffer, out byte[] compBuffer, out ushort compressCode, ref bool uncompressed, int zlibLevel)
+        {
+            compBuffer = null;
+            compressCode = 0;
+            switch (compressionType)
+            {
+                case CompressionType.ZStd: return CompressZStd(buffer, out compBuffer, out compressCode, ref uncompressed);
+                case CompressionType.ZLib: return CompressZlib(buffer, out compBuffer, out compressCode, ref uncompressed, zlibLevel);
+                case CompressionType.LZ4: return CompressLZ4(buffer, out compBuffer, out compressCode, ref uncompressed);
+                case CompressionType.None: return CompressNone(buffer, out compBuffer, out compressCode);
+                case CompressionType.Oodle: return CompressOodle(buffer, out compBuffer, out compressCode, ref uncompressed);
+            }
+            return 0;
         }
 
         private static ulong CompressLZ4(byte[] buffer, out byte[] compBuffer, out ushort compressCode, ref bool uncompressed)
