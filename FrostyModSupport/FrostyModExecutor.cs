@@ -3171,7 +3171,7 @@ namespace Frosty.ModSupport
 
             foreach (DbObject resource in resourceList)
             {
-                if (resource.GetValue<string>("type") != "res" || !resource.HasValue("archiveIndex") || (uint)resource.GetValue<int>("resType") != (uint)ResourceType.Texture)
+                if (resource.GetValue<string>("type") != "res" || !resource.HasValue("archiveIndex") || (uint)resource.GetValue<int>("resType") != (uint)(IsDai ? ResourceType.DxTexture : ResourceType.Texture))
                     continue;
 
                 // header version 12 and up (MEA uses 13); DAI uses 11
