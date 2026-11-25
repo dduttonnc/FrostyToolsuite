@@ -7,8 +7,7 @@
         xmlns:ctrl2="clr-namespace:Frosty.Controls;assembly=FrostyControls"
         mc:Ignorable="d"
         Title=""
-        Height="150"
-        Width="400"
+        SizeToContent="WidthAndHeight"
         AllowsTransparency="True"
         WindowStyle="None"
         Background="Transparent"
@@ -23,17 +22,31 @@
         <Border Background="{StaticResource ControlBackground}"
                 VerticalAlignment="Center"
                 HorizontalAlignment="Center"
-                Width="350"
-                Height="125"
+                Margin="25,12,25,13"
                 BorderBrush="{StaticResource ListBackground}"
                 BorderThickness="1">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="20"
                                   ShadowDepth="1" />
             </Border.Effect>
+            <!-- [DAI fix] wider while the Detailed progress view has lines to show -->
+            <Border.Style>
+                <Style TargetType="{x:Type Border}">
+                    <Setter Property="Width"
+                            Value="600" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Path=Details, RelativeSource={RelativeSource AncestorType={x:Type local:FrostyTaskWindow}, Mode=FindAncestor}}"
+                                     Value="">
+                            <Setter Property="Width"
+                                    Value="350" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition />
+                    <RowDefinition Height="100" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="23" />
                 </Grid.RowDefinitions>
 
@@ -52,7 +65,29 @@
                                HorizontalAlignment="Center" />
                 </StackPanel>
 
-                <Grid Grid.Row="1"
+                <!-- [DAI fix] collapsed when empty, so the Simple view looks as before -->
+                <TextBlock x:Name="detailsTextBlock"
+                           Grid.Row="1"
+                           Text="{Binding Path=Details, RelativeSource={RelativeSource AncestorType={x:Type local:FrostyTaskWindow}, Mode=FindAncestor}}"
+                           Padding="10,0,10,8"
+                           FontSize="11"
+                           Foreground="#C0C0C0"
+                           FontFamily="Global User Interface"
+                           TextTrimming="CharacterEllipsis">
+                    <TextBlock.Style>
+                        <Style TargetType="{x:Type TextBlock}">
+                            <Style.Triggers>
+                                <Trigger Property="Text"
+                                         Value="">
+                                    <Setter Property="Visibility"
+                                            Value="Collapsed" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <Grid Grid.Row="2"
                       Background="{StaticResource WindowBackground}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="26" />

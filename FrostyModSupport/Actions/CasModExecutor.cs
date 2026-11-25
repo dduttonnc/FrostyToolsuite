@@ -71,6 +71,17 @@ namespace Frosty.ModSupport
             public Exception Exception { get; private set; }
             public bool HasSb = true;
 
+            // [DAI fix] read by the detailed progress window; 0 until started and after it ends
+            private long startTicks;
+
+            public string Describe()
+            {
+                long start = Interlocked.Read(ref startTicks);
+                if (start == 0)
+                    return null;
+                return $"{SuperBundleInfo.Name}  ({(Stopwatch.GetTimestamp() - start) / (double)Stopwatch.Frequency:0.0}s)";
+            }
+
             private ManualResetEvent doneEvent;
             private FrostyModExecutor parent;
             private string m_catalog;
@@ -1413,7 +1424,9 @@ namespace Frosty.ModSupport
 
             public void ThreadPoolCallback(object threadContext)
             {
+                Interlocked.Exchange(ref startTicks, Stopwatch.GetTimestamp());
                 Run();
+                Interlocked.Exchange(ref startTicks, 0);
 
                 // are all threads done?
                 if (Interlocked.Decrement(ref parent.m_numTasks) == 0)

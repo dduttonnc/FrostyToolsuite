@@ -363,6 +363,67 @@ namespace Frosty.ModSupport
             }
         }
 
+        // [DAI fix] the Detailed progress window: finished steps with their times, the current step and each running task
+        private class ProgressDetails
+        {
+            private const int MaxLines = 32;
+
+            private readonly ILoadingListLogger logger;
+            private readonly List<string> doneSteps = new List<string>();
+            private readonly Stopwatch stepWatch = new Stopwatch();
+            private readonly Stopwatch timer = Stopwatch.StartNew();
+            private long lastUpdate = -1000;
+            private string step;
+
+            public ProgressDetails(ILogger inLogger)
+            {
+                if (Frosty.Core.Windows.ModManagerOptionsData.DetailedProgressView)
+                    logger = inLogger as ILoadingListLogger;
+            }
+
+            public bool Due => logger != null && timer.ElapsedMilliseconds - lastUpdate >= 100;
+
+            public void Begin(string name)
+            {
+                step = name;
+                stepWatch.Restart();
+                Show(null);
+            }
+
+            public void Done(string name, double seconds)
+            {
+                doneSteps.Add($"{name}  ({seconds:0.0}s)");
+                step = null;
+                Show(null);
+            }
+
+            public void Show(string state, IEnumerable<string> tasks = null)
+            {
+                if (logger == null)
+                    return;
+                lastUpdate = timer.ElapsedMilliseconds;
+
+                List<string> lines = new List<string>(doneSteps);
+                if (step != null)
+                {
+                    lines.Add((state != null) ? $"{step}  ({state}, {stepWatch.Elapsed.TotalSeconds:0.0}s)" : $"{step}  ({stepWatch.Elapsed.TotalSeconds:0.0}s)");
+
+                    List<string> running = tasks?.Where(t => t != null).ToList() ?? new List<string>();
+                    for (int i = 0; i < running.Count; i++)
+                    {
+                        if (i == MaxLines)
+                        {
+                            lines.Add($"    ... and {running.Count - i} more");
+                            break;
+                        }
+                        lines.Add("    " + running[i]);
+                    }
+                }
+
+                logger.LogLoadingList(string.Join("\n", lines));
+            }
+        }
+
         private int m_lastProgress = -1;
 
         // [DAI fix] only tell the window when the bar moves by 0.1%, not once per file
@@ -1420,12 +1481,15 @@ namespace Frosty.ModSupport
                 cancelToken.ThrowIfCancellationRequested();
                 // [DAI fix] each step's time goes to the log, to see where applying mods spends its time
                 Stopwatch stepWatch = Stopwatch.StartNew();
+                ProgressDetails progress = new ProgressDetails(m_logger);
                 Action<string> logStepTime = step =>
                 {
                     App.Logger.Log($"{step} took {stepWatch.Elapsed.TotalSeconds:0.0}s");
+                    progress.Done(step, stepWatch.Elapsed.TotalSeconds);
                     stepWatch.Restart();
                 };
 
+                progress.Begin("Loading the cache");
                 Logger.Log("Initializing Resources");
 
                 if (ProfilesLibrary.IsLoaded(ProfileVersion.StarWarsBattlefrontII, ProfileVersion.Battlefield5, ProfileVersion.StarWarsSquadrons))
@@ -1455,6 +1519,7 @@ namespace Frosty.ModSupport
                 logStepTime("Loading the cache");
 
                 cancelToken.ThrowIfCancellationRequested();
+                progress.Begin("Loading mods");
                 Logger.Log("Loading Mods");
                 App.Logger.Log("Loading Mods");
 
@@ -1479,6 +1544,7 @@ namespace Frosty.ModSupport
                 foreach (FrostyMod mod in modList)
                 {
                     Logger.Log($"Loading Mods ({mod.ModDetails?.Title ?? mod.Filename.Replace(".fbmod", "")})");
+                    progress.Show($"{currentMod + 1} of {modList.Count}", new[] { mod.ModDetails?.Title ?? mod.Filename.Replace(".fbmod", "") });
                     if (mod.NewFormat)
                     {
                         try
@@ -1532,6 +1598,7 @@ namespace Frosty.ModSupport
                 }
 
                 logStepTime("Loading mods");
+                progress.Begin("Applying handlers");
                 Logger.Log("Applying Handlers");
                 App.Logger.Log("Applying Handlers");
 
@@ -1570,6 +1637,7 @@ namespace Frosty.ModSupport
 
                 cancelToken.ThrowIfCancellationRequested();
                 logStepTime("Applying handlers");
+                progress.Begin("Cleaning up ModData");
                 Logger.Log("Cleaning Up ModData");
                 App.Logger.Log("Cleaning Up ModData");
 
@@ -1809,6 +1877,7 @@ namespace Frosty.ModSupport
 
                 // modify tocs and sbs
                 cancelToken.ThrowIfCancellationRequested();
+                progress.Begin("Applying mods");
                 Logger.Log("Applying Mods");
                 App.Logger.Log("Applying Mods");
 
@@ -1858,6 +1927,8 @@ namespace Frosty.ModSupport
                         // show progress
                         cancelToken.ThrowIfCancellationRequested();
                         ReportProgress(totalTasks - m_numTasks, totalTasks);
+                        if (progress.Due)
+                            progress.Show($"{totalTasks - m_numTasks} of {totalTasks} superbundles done", actions.Select(a => a.Describe()));
                         Thread.Sleep(1);
                     }
 
@@ -2155,7 +2226,9 @@ namespace Frosty.ModSupport
                     {
                         // show progress
                         cancelToken.ThrowIfCancellationRequested();
-                        m_logger.Log("progress:" + ((totalTasks - m_numTasks) / (double)totalTasks) * 100.0d);
+                        ReportProgress(totalTasks - m_numTasks, totalTasks);
+                        if (progress.Due)
+                            progress.Show($"{totalTasks - m_numTasks} of {totalTasks} superbundles done", startOrder.Select(a => a.Describe()));
                         Thread.Sleep(1);
                     }
 
@@ -2234,6 +2307,7 @@ namespace Frosty.ModSupport
                 logStepTime("Applying mods");
                 foreach (string line in slowSuperBundles)
                     App.Logger.Log(line);
+                progress.Begin("Writing archive data");
                 Logger.Log("Writing Archive Data");
                 App.Logger.Log("Writing Archive Data");
 
@@ -2285,6 +2359,8 @@ namespace Frosty.ModSupport
                         }
                     }
 
+                    if (progress.Due)
+                        progress.Show($"{currentEntry} of {totalEntries}", new[] { entry.Catalog });
                     WriteArchiveData(modDataPath + m_patchPath + "\\" + entry.Catalog, entry);
 
                     ReportProgress(currentEntry++, totalEntries);
@@ -2293,6 +2369,7 @@ namespace Frosty.ModSupport
                 cancelToken.ThrowIfCancellationRequested();
 
                 logStepTime("Writing archive data");
+                progress.Begin("Writing manifest");
                 Logger.Log("Writing Manifest");
                 App.Logger.Log("Writing Manifest");
 

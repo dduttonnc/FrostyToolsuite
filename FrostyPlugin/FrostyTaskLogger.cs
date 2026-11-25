@@ -8,13 +8,21 @@ using System.Threading.Tasks;
 
 namespace Frosty.Core
 {
-    internal class FrostyTaskLogger : ILogger
+    internal class FrostyTaskLogger : ILogger, ILoadingListLogger
     {
         private FrostyTaskWindow task;
+        private bool detailed = ModManagerOptionsData.DetailedProgressView;
 
         public FrostyTaskLogger(FrostyTaskWindow inTask)
         {
             task = inTask;
+        }
+
+        // [DAI fix] the extra lines of the Detailed progress view
+        public void LogLoadingList(string text)
+        {
+            if (detailed)
+                task.Details = text;
         }
 
         public void Log(string text, params object[] vars)

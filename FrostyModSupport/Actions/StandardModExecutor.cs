@@ -49,6 +49,12 @@ namespace Frosty.ModSupport
             public double CompressSeconds;
             public long CompressBytes;
 
+            // [DAI fix] read by the detailed progress window
+            public volatile string Phase;
+            public long StartTicks;
+            public volatile int BundleIndex;
+            public volatile int BundleCount;
+
             private string superBundle;
             private ManualResetEvent doneEvent;
             private FrostyModExecutor parent;
@@ -97,9 +103,22 @@ namespace Frosty.ModSupport
                 cancelToken = inCancelToken;
             }
 
+            public string Describe()
+            {
+                string phase = Phase;
+                if (phase == null)
+                    return null;
+                double seconds = (Stopwatch.GetTimestamp() - StartTicks) / (double)Stopwatch.Frequency;
+                if (phase == "bundles")
+                    phase = $"bundle {BundleIndex} of {BundleCount}";
+                return $"{superBundle}  ({phase}, {seconds:0.0}s)";
+            }
+
             public void Run()
             {
                 Stopwatch runWatch = Stopwatch.StartNew();
+                StartTicks = Stopwatch.GetTimestamp();
+                Phase = "reading";
                 string path = parent.m_fs.ResolvePath(superBundle + ".toc");
 
                 try
@@ -156,6 +175,7 @@ namespace Frosty.ModSupport
                         ModBundleInfo chunkBundle = GetChunkBundle(superBundle);
                         if (chunkBundle != null)
                         {
+                            Phase = "chunks";
                             FileInfo sbFi = new FileInfo(parent.m_fs.BasePath + modPath + "/" + superBundle + ".sb");
 
                             if (isBinary)
@@ -493,9 +513,12 @@ namespace Frosty.ModSupport
                             Directory.CreateDirectory(sbFi.DirectoryName);
 
                             long bundleOffset = 0;
+                            BundleCount = toc.GetValue<DbObject>("bundles").Count;
+                            Phase = "bundles";
                             foreach (DbObject bundle in toc.GetValue<DbObject>("bundles"))
                             {
                                 cancelToken.ThrowIfCancellationRequested();
+                                BundleIndex++;
                                 int bundleName = Fnv1.HashString(bundle.GetValue<string>("id").ToLower());
 
                                 List<AssetInfo> totalAssetInfo = new List<AssetInfo>();
@@ -1120,7 +1143,9 @@ namespace Frosty.ModSupport
                                         CompressBytes += uncompressedData[uncompressedData.Count - 1].Length;
                                     }
                                     Stopwatch compressWatch = Stopwatch.StartNew();
+                                    Phase = "compressing";
                                     byte[][] compressedList = Utils.CompressFiles(uncompressedData, resTypes);
+                                    Phase = "bundles";
                                     CompressSeconds += compressWatch.Elapsed.TotalSeconds;
                                     byte[][] compressedData = new byte[totalAssetInfo.Count][];
                                     for (int c = 0; c < toCompress.Count; c++)
@@ -1221,9 +1246,12 @@ namespace Frosty.ModSupport
                             List<long> bundleSizes = new List<long>();
 
                             // modify bundles
+                            BundleCount = toc.GetValue<DbObject>("bundles").Count;
+                            Phase = "bundles";
                             foreach (DbObject bundle in toc.GetValue<DbObject>("bundles"))
                             {
                                 cancelToken.ThrowIfCancellationRequested();
+                                BundleIndex++;
 
                                 bool baseBundle = false;
                                 if (ProfilesLibrary.DataVersion == (int)ProfileVersion.DragonAgeInquisition || ProfilesLibrary.DataVersion == (int)ProfileVersion.Battlefield4 || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeed || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedRivals)
@@ -1683,6 +1711,7 @@ namespace Frosty.ModSupport
 
                     if (tocChanged)
                     {
+                        Phase = "writing";
                         FileInfo fi = new FileInfo(parent.m_fs.BasePath + modPath + "/" + superBundle + ".toc");
                         Directory.CreateDirectory(fi.DirectoryName);
 
@@ -1704,6 +1733,7 @@ namespace Frosty.ModSupport
                     baseSbReader?.Dispose();
                     patchSbReader?.Dispose();
                     Seconds = runWatch.Elapsed.TotalSeconds;
+                    Phase = null;
                 }
             }
 

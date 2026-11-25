@@ -28,6 +28,8 @@ namespace Frosty.Core.Windows
 
         private string status;
 
+        private string details = "";
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
@@ -62,6 +64,20 @@ namespace Frosty.Core.Windows
             }
         }
 
+        // [DAI fix] the Detailed progress view's extra lines; the window grows while it isn't empty
+        public string Details {
+            get {
+                return details;
+            }
+            set {
+                if (value != details)
+                {
+                    details = value ?? "";
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+
         public ILogger TaskLogger { get; private set; }
 
         private FrostyTaskWindow(Window owner, string task, string initialStatus, FrostyTaskCallback callback, bool showCancelButton, FrostyTaskCancelCallback cancelCallback = null)
@@ -78,6 +94,16 @@ namespace Frosty.Core.Windows
             Owner = owner;
             TaskLogger = new FrostyTaskLogger(this);
             Loaded += FrostyTaskWindow_Loaded;
+
+            // [DAI fix] stay centered while the details make the window grow or shrink
+            SizeChanged += (s, e) =>
+            {
+                if (e.PreviousSize.Width > 0 && e.PreviousSize.Height > 0)
+                {
+                    Left -= (e.NewSize.Width - e.PreviousSize.Width) / 2;
+                    Top -= (e.NewSize.Height - e.PreviousSize.Height) / 2;
+                }
+            };
 
             Application.Current.MainWindow.TaskbarItemInfo.ProgressState = TaskbarItemProgressState.Normal;
 

@@ -34,6 +34,7 @@ namespace FrostyModManager.Windows
             private double progress;
             private string status;
             private string loadingList = "";
+            private bool detailed = ModManagerOptionsData.DetailedProgressView;
 
             public event PropertyChangedEventHandler PropertyChanged;
 
@@ -132,7 +133,11 @@ namespace FrostyModManager.Windows
                 }
             }
 
-            public void LogLoadingList(string text) => LoadingList = text;
+            public void LogLoadingList(string text)
+            {
+                if (detailed)
+                    LoadingList = text;
+            }
 
             public void LogError(string text, params object[] vars)
             {

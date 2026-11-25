@@ -423,6 +423,18 @@ namespace Frosty.Core.Windows
         [DependsOn("UseCustomModsDirectory")]
         public string CustomModsDirectory { get; set; } = "";
 
+        // [DAI fix] one setting for the cache window and the apply window
+        [Category("Manager")]
+        [DisplayName("Progress View")]
+        [Description("How much the progress windows show while Frosty builds its cache and applies mods.\r\n\r\nDetailed (the default) shows a taller window with each step, how long it took, and what each CPU thread is working on. Simple shows only the current step on one line.")]
+        [EbxFieldMeta(EbxFieldType.Struct)]
+        [Editor(typeof(FrostyLocalizationLanguageDataEditor))]
+        public CustomComboData<string, string> ProgressView { get; set; }
+
+        private static readonly List<string> progressViewNames = new List<string>() { "Detailed", "Simple" };
+
+        public static bool DetailedProgressView => Config.Get<string>("ProgressView", "Detailed") != "Simple";
+
         // [DAI fix] limits for Frosty's worker threads (cache build and applying mods)
         [Category("Performance")]
         [DisplayName("CPU Threads")]
@@ -475,6 +487,9 @@ namespace Frosty.Core.Windows
 
             WorkerPriority = new CustomComboData<string, string>(priorityNames, priorityNames);
             WorkerPriority.SelectedIndex = Math.Max(0, priorityNames.IndexOf(Config.Get<string>("WorkerPriority", "Low")));
+
+            ProgressView = new CustomComboData<string, string>(progressViewNames, progressViewNames);
+            ProgressView.SelectedIndex = DetailedProgressView ? 0 : 1;
         }
 
         public override void Save()
@@ -489,6 +504,7 @@ namespace Frosty.Core.Windows
 
             Config.Add("WorkerThreads", WorkerThreads.SelectedValue);
             Config.Add("WorkerPriority", WorkerPriority.SelectedValue);
+            Config.Add("ProgressView", ProgressView.SelectedValue);
             ApplyPerformanceSettings();
 
             if (RememberChoice)
