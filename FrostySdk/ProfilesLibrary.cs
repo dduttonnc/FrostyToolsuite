@@ -117,7 +117,7 @@ namespace FrostySdk
 
         public static Dictionary<int, string> SharedBundles => m_effectiveProfile.SharedBundles;
 
-        // [DAV fix] EA and Steam builds of the same patch have different heads and a few platform-only types, so each gets its own SDK file
+        // [DAV fix] EA and Steam builds differ in a few types, so each has its own SDK
         public static void SetGameHead(uint head)
         {
             m_isVeilguardEA = GameVersions.DragonAgeTheVeilguardEA.Contains((int)head);

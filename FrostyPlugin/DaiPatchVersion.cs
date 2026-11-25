@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Frosty.Core
 {
-    // [DAI fix] DAI Mod Manager's merged patch reports one version higher, and saves made with it won't load at the real version
+    // [DAI fix] saves made with DAI Mod Manager's merged patch need its higher patch version
     public static class DaiPatchVersion
     {
         public const string VersionKey = "DaiPatchVersion";

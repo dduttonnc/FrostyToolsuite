@@ -1031,7 +1031,7 @@ namespace FrostyModManager
             return mod;
         }
 
-        // [DAI fix] split out of AddMod for Reconfigure
+        // [DAI fix] shared with Reconfigure
         private FrostyMod LoadMod(string modFilename, int format)
         {
             FrostyMod mod = null;
@@ -1320,8 +1320,7 @@ namespace FrostyModManager
                     continue;
                 }
 
-                // DAI texture header: mipOffsets[2], type, format, flags(u16), width, height, depth,
-                // sliceCount (u16 each), mipCount (u8), firstMip (u8), chunkId (guid), mipSizes[15]
+                // DAI texture header: 26 = mipCount, 27 = firstMip, 28 = chunkId, 44 = mipSizes[15]
                 if (header == null || header.Length < 104)
                     continue;
 
@@ -1342,8 +1341,7 @@ namespace FrostyModManager
             return layouts;
         }
 
-        // Same layout as Utils.CompressTexture: from firstMip on is the always-loaded range.
-        // False (values untouched) if there is nothing to split or no block boundary at that mip.
+        // same split as Utils.CompressTexture; false if there is no block boundary at firstMip
         private static bool DaiCalcTextureRange(DaiTextureLayout layout, byte[] chunkData,
             ref int firstMip, ref uint logicalOffset, ref uint logicalSize, ref uint rangeStart, ref uint rangeEnd)
         {
@@ -1356,8 +1354,7 @@ namespace FrostyModManager
             if (total <= 0x10000)
                 return false;
 
-            // same rule as Utils.CompressTexture: the range keeps a minimum size of 0x10000,
-            // the logical offset doesn't
+            // as in Utils.CompressTexture, the range keeps a 0x10000 minimum but the logical offset doesn't
             long first = 0, second = total, newLogicalOffset = 0;
             for (int i = 0; i < layout.FirstMip; i++)
             {
@@ -1381,8 +1378,7 @@ namespace FrostyModManager
                 ushort compressCode = (ushort)((chunkData[p + 4] << 8) | chunkData[p + 5]);
                 int blockSize = (chunkData[p + 6] << 8) | chunkData[p + 7];
 
-                // DAI block codes: 0x0270 = zlib (blockSize is the compressed size),
-                // 0x0070 = stored (data is decompressedSize bytes)
+                // DAI block codes: 0x0270 = zlib, 0x0070 = stored
                 decompressedSize &= 0x00FFFFFF;
                 if ((compressCode >> 8) == 0x00)
                     blockSize = decompressedSize;
@@ -1416,8 +1412,7 @@ namespace FrostyModManager
             return -1;
         }
 
-        // The splash screen drops the asset manager after startup, so one is loaded from the cache
-        // for .daimod imports and released afterwards.
+        // the splash screen drops its asset manager, so .daimod imports load one from the cache
         private AssetManager daiAssetManager;
         private bool daiAssetManagerFailed;
 
@@ -1470,8 +1465,7 @@ namespace FrostyModManager
             return map;
         }
 
-        // Frosty only modifies entries already in the bundle and only adds listed additions,
-        // so add vs modify has to match the game data.
+        // Frosty only modifies existing entries and adds listed additions, so the action must match the game data
         private static string DaiResolveBundleAction(AssetManager am, Dictionary<string, int> bundleIds, string type, string resName, Guid chunkGuid, string bundleName, string daimodAction, out bool usedFallback)
         {
             usedFallback = false;
@@ -1499,8 +1493,7 @@ namespace FrostyModManager
 
         #region -- [DAI fix] .daimod import and Reconfigure --
 
-        // The original .daimod and its chosen settings are kept in "<mods folder>\DAI originals" for
-        // Reconfigure. Only .fbmod files directly in the mods folder are loaded, so the subfolder is ignored.
+        // originals and settings for Reconfigure; the mod loader ignores this subfolder
 
         private const string DaiOriginalsFolderName = "DAI originals";
         private const string DaiConvertedPrefix = "(Converted from .daimod)";
@@ -1531,8 +1524,7 @@ namespace FrostyModManager
                 return saved != null && saved.Count > 0;
             }
 
-            // imported before that: the description ends with one line per setting, or with a blank
-            // line if there are none
+            // imported before that: one description line per setting, or a blank line if none
             string desc = (fm.ModDetails.Description ?? "").Replace("\r\n", "\n");
             if (!desc.StartsWith(DaiConvertedPrefix, StringComparison.Ordinal))
                 return false;
@@ -1644,8 +1636,7 @@ namespace FrostyModManager
             return newMod;
         }
 
-        // Re-importing an installed mod starts from its saved settings and replaces it in place
-        // (it used to show up twice until restart).
+        // re-importing an installed mod starts from its saved settings and replaces it in place
         private FrostyMod DaiImportMod(FileInfo fi, List<ImportErrorInfo> errors)
         {
             string baseName = Path.GetFileNameWithoutExtension(fi.Name);
@@ -1947,13 +1938,12 @@ namespace FrostyModManager
                 DaiReconfigureMod(mod);
         }
 
-        // Moved out of InstallMods. chosenValues is null if the mod has no script. On failure or
-        // cancel nothing is written and the reason goes into errors.
+        // chosenValues is null without a script; on failure or cancel nothing is written
         private bool DaiConvertMod(FileInfo fi, string outputDir, string outputBaseName, Dictionary<string, string> savedSettings, string legacyDescription, bool reconfiguring, List<ImportErrorInfo> errors, out Dictionary<string, string> chosenValues)
         {
             chosenValues = null;
 
-            // [DAI fix] read-only (was read/write)
+            // [DAI fix] read-only
             using (NativeReader reader = new NativeReader(new FileStream(fi.FullName, FileMode.Open, FileAccess.Read)))
             {
                 string magic = reader.ReadSizedString(8);
@@ -2090,8 +2080,7 @@ namespace FrostyModManager
                     }
                 }
 
-                // [DAI fix] add vs modify per bundle from the game data. Everything used to be "modify",
-                // so additions were silently dropped.
+                // [DAI fix] add vs modify per bundle from the game data; additions used to be dropped
                 AssetManager am = DaiGetAssetManager();
                 Dictionary<string, int> bundleIds = DaiBuildBundleIdMap(am);
 
@@ -2106,8 +2095,7 @@ namespace FrostyModManager
                     return false;
                 }
 
-                // [DAI fix] some .daimods say firstMip 0 when the texture header doesn't, which gives
-                // black/rainbow textures at a distance. The header wins.
+                // [DAI fix] the texture header's firstMip wins; a wrong 0 gave black/rainbow textures at a distance
                 Dictionary<Guid, DaiTextureLayout> textureLayouts = DaiReadTextureLayouts(resourcesElem, resources);
 
                 foreach (System.Xml.XmlNode resNode in resourcesElem.ChildNodes)
@@ -2569,7 +2557,6 @@ namespace FrostyModManager
                         else if (fi.Extension == ".daimod")
                         {
                             // special handling for DAI mod files
-                            // [DAI fix] moved to DaiImportMod / DaiConvertMod
                             if (DaiCheckProfile(fi.Name, errors))
                                 lastInstalledMod = DaiTryImportMod(fi, fi.Name, errors) ?? lastInstalledMod;
                         }

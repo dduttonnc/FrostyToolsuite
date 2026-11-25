@@ -66,8 +66,7 @@ namespace FrostySdk.Managers
                 }
             }
 
-            // [DAI fix] tocs are read and bundles parsed several superbundles ahead on the worker pool;
-            // this thread then adds everything in the original order
+            // [DAI fix] parsed ahead on the worker pool, added here in the original order
             private void LoadSuperBundles(AssetManager parent, BinarySbDataHelper helper)
             {
                 Pipeline pipeline = new Pipeline(parent, new List<SuperBundleInfo>(parent.m_fileSystem.EnumerateSuperBundleInfos()));
@@ -128,8 +127,7 @@ namespace FrostySdk.Managers
                 public Task<DbObject[]> Task;
             }
 
-            // [DAI fix] schedules toc reads and bundle batches strictly in load order, so the loading thread
-            // never waits on work that can't start, and keeps the splash list of superbundles in flight
+            // [DAI fix] schedules strictly in load order, so the loading thread never waits on work that can't start
             private class Pipeline
             {
                 private const int BatchSize = 64;
