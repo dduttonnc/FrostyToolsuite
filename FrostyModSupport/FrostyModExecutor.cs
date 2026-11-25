@@ -2212,7 +2212,7 @@ namespace Frosty.ModSupport
                     foreach (SuperBundleAction slowAction in actions.Where(a => a.Seconds >= 1.0).OrderByDescending(a => a.Seconds).Take(3))
                     {
                         string details = (slowAction.ReadSeconds + slowAction.CompressSeconds > 0)
-                            ? $" (unpacking {slowAction.ReadSeconds:0.0}s, compressing {slowAction.CompressSeconds:0.0}s)"
+                            ? $" (unpacking {slowAction.ReadSeconds:0.0}s, compressing {slowAction.CompressBytes / 1048576.0:0} MB took {slowAction.CompressSeconds:0.0}s)"
                             : "";
                         slowSuperBundles.Add($"  {slowAction.SuperBundle} took {slowAction.Seconds:0.0}s{details}");
                     }

@@ -47,6 +47,7 @@ namespace Frosty.ModSupport
             public double Seconds;
             public double ReadSeconds;
             public double CompressSeconds;
+            public long CompressBytes;
 
             private string superBundle;
             private ManualResetEvent doneEvent;
@@ -1112,14 +1113,20 @@ namespace Frosty.ModSupport
                                         if (!info.Removed && (info.Inserted || info.Modified) && !info.Asset.GetValue<bool>("dataCompressed"))
                                             toCompress.Add(y);
                                     }
-                                    byte[][] compressedData = new byte[totalAssetInfo.Count][];
-                                    Stopwatch compressWatch = Stopwatch.StartNew();
-                                    WorkerPool.For(toCompress.Count, compressIndex =>
+                                    List<byte[]> uncompressedData = new List<byte[]>();
+                                    List<ResourceType> resTypes = new List<ResourceType>();
+                                    foreach (int y in toCompress)
                                     {
-                                        DbObject asset = totalAssetInfo[toCompress[compressIndex]].Asset;
-                                        compressedData[toCompress[compressIndex]] = Utils.CompressFile(asset.GetValue<byte[]>("data"), resType: (ResourceType)asset.GetValue<int>("resType", -1));
-                                    });
+                                        uncompressedData.Add(totalAssetInfo[y].Asset.GetValue<byte[]>("data"));
+                                        resTypes.Add((ResourceType)totalAssetInfo[y].Asset.GetValue<int>("resType", -1));
+                                        CompressBytes += uncompressedData[uncompressedData.Count - 1].Length;
+                                    }
+                                    Stopwatch compressWatch = Stopwatch.StartNew();
+                                    byte[][] compressedList = Utils.CompressFiles(uncompressedData, resTypes);
                                     CompressSeconds += compressWatch.Elapsed.TotalSeconds;
+                                    byte[][] compressedData = new byte[totalAssetInfo.Count][];
+                                    for (int c = 0; c < toCompress.Count; c++)
+                                        compressedData[toCompress[c]] = compressedList[c];
 
                                     // write data
                                     for (int y = 0; y < totalAssetInfo.Count; y++)

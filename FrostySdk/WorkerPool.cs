@@ -12,6 +12,8 @@ namespace FrostySdk
     {
         private static readonly object sync = new object();
         private static readonly Queue<Action> queue = new Queue<Action>();
+        // [DAI fix] helpers of a running For go before jobs that haven't started, since the For's caller waits on them
+        private static readonly Queue<Action> helpers = new Queue<Action>();
         private static int threadCount;
         private static int idleCount;
         private static int maxThreads = DefaultThreads;
@@ -33,14 +35,16 @@ namespace FrostySdk
             }
         }
 
-        public static void Post(Action job)
+        public static void Post(Action job) => Post(job, false);
+
+        private static void Post(Action job, bool helper)
         {
             lock (sync)
             {
-                queue.Enqueue(job);
+                (helper ? helpers : queue).Enqueue(job);
                 if (idleCount > 0)
                     Monitor.Pulse(sync);
-                if (queue.Count > idleCount && threadCount < maxThreads)
+                if (queue.Count + helpers.Count > idleCount && threadCount < maxThreads)
                 {
                     threadCount++;
                     new Thread(Work) { IsBackground = true, Name = "Frosty Worker" }.Start();
@@ -91,7 +95,7 @@ namespace FrostySdk
             };
 
             for (int h = Math.Min(count, maxThreads) - 1; h > 0; h--)
-                Post(loop);
+                Post(loop, true);
 
             loop();
             finished.Wait();
@@ -111,7 +115,7 @@ namespace FrostySdk
 
                 lock (sync)
                 {
-                    while (queue.Count == 0)
+                    while (queue.Count == 0 && helpers.Count == 0)
                     {
                         if (threadCount > maxThreads)
                         {
@@ -123,7 +127,7 @@ namespace FrostySdk
                         bool signalled = Monitor.Wait(sync, 30000);
                         idleCount--;
 
-                        if (!signalled && queue.Count == 0)
+                        if (!signalled && queue.Count == 0 && helpers.Count == 0)
                         {
                             threadCount--;
                             return;
@@ -136,7 +140,7 @@ namespace FrostySdk
                         return;
                     }
 
-                    job = queue.Dequeue();
+                    job = (helpers.Count > 0) ? helpers.Dequeue() : queue.Dequeue();
                     jobPriority = priority;
                 }
 
