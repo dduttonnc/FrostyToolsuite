@@ -43,6 +43,11 @@ namespace Frosty.ModSupport
             public bool TocModified = false;
             public bool SbModified = false;
 
+            // [DAI fix] times for the log: whole superbundle, unpacking patched binary bundles, compressing their data
+            public double Seconds;
+            public double ReadSeconds;
+            public double CompressSeconds;
+
             private string superBundle;
             private ManualResetEvent doneEvent;
             private FrostyModExecutor parent;
@@ -95,6 +100,7 @@ namespace Frosty.ModSupport
 
             public void Run()
             {
+                Stopwatch runWatch = Stopwatch.StartNew();
                 string path = parent.m_fs.ResolvePath(superBundle + ".toc");
 
                 try
@@ -537,8 +543,10 @@ namespace Frosty.ModSupport
                                         DbObject sbBundle = null;
 
                                         // read in bundle and patch it
+                                        Stopwatch readWatch = Stopwatch.StartNew();
                                         using (BinarySbReader reader = new LegacyBinarySbReader(baseSbStream, patchSbStream, parent.m_fs.CreateDeobfuscator()))
                                             sbBundle = reader.ReadDbObject();
+                                        ReadSeconds += readWatch.Elapsed.TotalSeconds;
 
                                         baseSbStream?.Dispose();
                                         patchSbStream.Dispose();
@@ -1096,6 +1104,23 @@ namespace Frosty.ModSupport
                                     // delta data offset
                                     long dataOffset = writer.Position - startPos;
 
+                                    // [DAI fix] compress the changed assets on all threads first, then write them in the same order as before
+                                    List<int> toCompress = new List<int>();
+                                    for (int y = 0; y < totalAssetInfo.Count; y++)
+                                    {
+                                        AssetInfo info = totalAssetInfo[y];
+                                        if (!info.Removed && (info.Inserted || info.Modified) && !info.Asset.GetValue<bool>("dataCompressed"))
+                                            toCompress.Add(y);
+                                    }
+                                    byte[][] compressedData = new byte[totalAssetInfo.Count][];
+                                    Stopwatch compressWatch = Stopwatch.StartNew();
+                                    WorkerPool.For(toCompress.Count, compressIndex =>
+                                    {
+                                        DbObject asset = totalAssetInfo[toCompress[compressIndex]].Asset;
+                                        compressedData[toCompress[compressIndex]] = Utils.CompressFile(asset.GetValue<byte[]>("data"), resType: (ResourceType)asset.GetValue<int>("resType", -1));
+                                    });
+                                    CompressSeconds += compressWatch.Elapsed.TotalSeconds;
+
                                     // write data
                                     for (int y = 0; y < totalAssetInfo.Count; y++)
                                     {
@@ -1115,9 +1140,7 @@ namespace Frosty.ModSupport
                                         else if (info.Inserted || info.Modified)
                                         {
                                             // asset was added or modified, so use delta data
-                                            byte[] data = (info.Asset.GetValue<bool>("dataCompressed"))
-                                                ? info.Asset.GetValue<byte[]>("data")
-                                                : Utils.CompressFile(info.Asset.GetValue<byte[]>("data"), resType: (ResourceType)info.Asset.GetValue<int>("resType", -1));
+                                            byte[] data = compressedData[y] ?? info.Asset.GetValue<byte[]>("data");
 
                                             if (!info.Inserted)
                                             {
@@ -1675,6 +1698,7 @@ namespace Frosty.ModSupport
                 {
                     baseSbReader?.Dispose();
                     patchSbReader?.Dispose();
+                    Seconds = runWatch.Elapsed.TotalSeconds;
                 }
             }
 

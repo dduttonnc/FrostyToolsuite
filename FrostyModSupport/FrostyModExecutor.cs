@@ -1797,6 +1797,7 @@ namespace Frosty.ModSupport
                 }
 
                 logStepTime("Cleaning up ModData");
+                List<string> slowSuperBundles = new List<string>();
 
                 // set max threads to processor amount (stop hitching)
                 ThreadPool.GetMaxThreads(out int workerThreads, out int completionPortThreads);
@@ -2206,6 +2207,15 @@ namespace Frosty.ModSupport
                                 m_casData.Add(catalogPath, completedAction.CasRefs[i]);
                         }
                     }
+
+                    // [DAI fix] the slowest superbundles go to the log, to see what holds up this step
+                    foreach (SuperBundleAction slowAction in actions.Where(a => a.Seconds >= 1.0).OrderByDescending(a => a.Seconds).Take(3))
+                    {
+                        string details = (slowAction.ReadSeconds + slowAction.CompressSeconds > 0)
+                            ? $" (unpacking {slowAction.ReadSeconds:0.0}s, compressing {slowAction.CompressSeconds:0.0}s)"
+                            : "";
+                        slowSuperBundles.Add($"  {slowAction.SuperBundle} took {slowAction.Seconds:0.0}s{details}");
+                    }
                 }
 
                 cancelToken.ThrowIfCancellationRequested();
@@ -2218,6 +2228,8 @@ namespace Frosty.ModSupport
                 ThreadPool.SetMaxThreads(workerThreads, completionPortThreads);
 
                 logStepTime("Applying mods");
+                foreach (string line in slowSuperBundles)
+                    App.Logger.Log(line);
                 Logger.Log("Writing Archive Data");
                 App.Logger.Log("Writing Archive Data");
 
