@@ -891,11 +891,16 @@ namespace FrostyModManager
             int count = higher.Sum(v => saves[v]);
             string made = (higher.Count == 1) ? $"patch {needed}" : $"patches {higher[0]} to {needed}";
             string text = $"{count} of your saves were made with {made} (usually by DAI Mod Manager). Frosty currently reports patch {current} to the game, so they won't load.\r\n\r\n"
-                + $"Report patch {needed} to the game so they load? Saves you make afterwards will then only load when the game is launched through Frosty.\r\n\r\n"
+                + $"Report patch {needed} to the game so they load?\r\n\r\n"
+                + $"Warning: saves you make afterwards record patch {needed} too, and will then only load when the game is launched through Frosty (or DAI Mod Manager), not when it is started normally.\r\n\r\n"
+                + $"Back up your saves first. Frosty only reads them and never changes them, but a copy is always good to have. Yes also opens the save folder:\r\n{DaiPatchVersion.SaveFolder}\r\n\r\n"
                 + "You can change this later under Options > Dragon Age Inquisition.";
 
             if (FrostyMessageBox.Show(text, "Frosty Mod Manager", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+            {
                 Config.Add(DaiPatchVersion.VersionKey, needed, ConfigScope.Game);
+                Process.Start("explorer.exe", $"\"{DaiPatchVersion.SaveFolder}\"");
+            }
             Config.Add(DaiPatchVersion.AskedKey, needed, ConfigScope.Game);
         }
 
