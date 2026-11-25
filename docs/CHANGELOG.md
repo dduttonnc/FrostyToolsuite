@@ -13,10 +13,11 @@ Every code change in this section is marked with a `[DAI fix]` comment.
 
 ## Not released yet
 
-DAI ModData version raised to 2 (texture streaming correction for old converted .daimods), so DAI ModData is rebuilt once; MEA and Veilguard numbers unchanged.
+DAI ModData version raised to 2 (new chunks marked as patch data, texture streaming correction for old converted .daimods), so DAI ModData is rebuilt once; MEA and Veilguard numbers unchanged.
 
 | Change | Files |
 |---|---|
+| DAI: chunks a mod adds to a bundle (cas superbundles) were written without `casPatchType`, while replaced chunks get `casPatchType` 1. In the game's own patch every entry whose data is in the patch cas has `casPatchType` 1 or 2, and entries without it are only in the base cas, so the game read the bundled range (the always-loaded small mips) from the base catalog, where the sha1 doesn't exist. The texture showed rainbow/black noise until the full mips streamed in through `chunks0`, and stayed broken on Low texture quality (e.g. a converted nude body .daimod, chunk `a8a4cef7`, found only in ModData's `cas_04`). Added chunks now get `casPatchType` 1 for DAI, as DAI Mod Manager writes | `FrostyModSupport/Actions/StandardModExecutor.cs` |
 | DAI: .daimods converted before 1.7 (FBMODV3) kept the .daimod's chunk values even when they disagree with the mod's own texture header, e.g. a 4096x4096 body texture with header `firstMip` 3 but chunk `firstMip` 0, `logicalOffset` 0 and the whole 12.4 MB chunk as the bundled range. The game then read the start of mip 0 as the small mips: rainbow or black noise while loading, when zooming, and permanently on Low texture quality, until the full mips streamed in. The 1.7 import (`DaiCalcTextureRange`) already fixes this, but only at import. `ProcessLegacyModResources` now also reads DAI texture headers (`DxTexture` res type, version 11 layout) and, when a whole-chunk entry has a `firstMip` of 0 or more that differs from its header, splits it the same way (`logicalOffset` = sum of the mips before `firstMip`, as in the game's own textures; range from the block where the bundled part starts) and sets `firstMip` from the header. That example then bundles 207 KB instead of 12.4 MB. Chunks without a `firstMip`, single-mip textures and chunks without a block boundary there are left as they are. MEA output is unchanged | `FrostyModSupport/FrostyModExecutor.cs` |
 | DAI: ModData version 2, so ModData built by older versions is rebuilt once with the corrected textures | `FrostySdk/DataVersions.cs` |
 

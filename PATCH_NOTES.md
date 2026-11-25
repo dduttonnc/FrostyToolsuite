@@ -14,10 +14,11 @@ One Frosty Mod Manager for Dragon Age: Inquisition, Dragon Age: The Veilguard an
 
 Not released yet
 --------
-Dragon Age: Inquisition: Frosty rebuilds each mod pack's ModData once on its next launch, so the texture fix below is applied. Nothing needs deleting by hand. Full details: docs/CHANGELOG.md
+Dragon Age: Inquisition: Frosty rebuilds each mod pack's ModData once on its next launch, so the texture fixes below are applied. Nothing needs deleting by hand. Full details: docs/CHANGELOG.md
 
 Bug Fixes:
-- Dragon Age: Inquisition: textures from DAI Mod Manager mods (.daimod) converted before 1.7 no longer turn into rainbow or black noise while an area loads, when zooming, or with low texture quality (e.g. a nude body texture mod). Some .daimods say their whole texture loads at once while the texture itself says only the small versions do, so the game read the wrong data for the small versions until the full-size one arrived. Since 1.7 this is corrected when a .daimod is imported, but mods converted earlier kept the wrong values; Frosty now corrects them when it applies mods, so they don't need to be imported again
+- Dragon Age: Inquisition: textures that a mod adds as new data (e.g. a nude body texture mod made for DAI Mod Manager) no longer turn into rainbow or black noise while an area loads, when zooming, or on Low texture quality. Frosty didn't mark the small, always-loaded versions of these textures as coming from the patch, so the game looked for them in the base game's files and showed garbage until the full-size texture streamed in. Mods that replace one of the game's own textures were not affected
+- Dragon Age: Inquisition: DAI Mod Manager mods (.daimod) converted before 1.7 now get the same texture streaming correction as a new import: when a .daimod says its whole texture loads at once while the texture itself says only the small versions do, Frosty splits it like the game's own textures when it applies mods. These mods don't need to be imported again
 
 v1.7.4 - 2026.11.25.1
 --------

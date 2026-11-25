@@ -1577,6 +1577,10 @@ namespace Frosty.ModSupport
                                         chunk.SetValue("logicalOffset", (int)entry.LogicalOffset);
                                         chunk.SetValue("logicalSize", (int)entry.LogicalSize);
 
+                                        // [DAI fix] without it the game reads the bundled mips from the base game's cas, not the patch's
+                                        if (ProfilesLibrary.DataVersion == (int)ProfileVersion.DragonAgeInquisition)
+                                            chunk.SetValue("casPatchType", 1);
+
                                         if (entry.IsInline)
                                             chunk.SetValue("idata", parent.m_archiveData[entry.Sha1].Data);
 
