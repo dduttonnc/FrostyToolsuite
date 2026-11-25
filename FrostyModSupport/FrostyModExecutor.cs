@@ -2388,9 +2388,8 @@ namespace Frosty.ModSupport
                         writer.Write(layout);
                 }
 
-                // fifa17, dai, bf4, nfs, nfsr, gw2
+                // fifa17, bf4, nfs, nfsr, gw2 (dai writes its own after this block)
                 if (ProfilesLibrary.IsLoaded(ProfileVersion.Fifa17,
-                    ProfileVersion.DragonAgeInquisition,
                     ProfileVersion.Battlefield4,
                     ProfileVersion.NeedForSpeed,
                     ProfileVersion.NeedForSpeedRivals,
@@ -2464,6 +2463,10 @@ namespace Frosty.ModSupport
             {
                 App.Logger.Log("Launching with previously generated data.");
             }
+
+            // [DAI fix] written on every launch, so a changed patch version choice needs no rebuild
+            if (ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeInquisition))
+                DaiPatchVersion.WriteModDataManifest(m_fs.BasePath, modDataPath, App.Logger);
 
             cancelToken.ThrowIfCancellationRequested();
 
