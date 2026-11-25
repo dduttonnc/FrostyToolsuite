@@ -4,6 +4,10 @@ The short version of what changed. Full notes: [PATCH_NOTES.md](PATCH_NOTES.md).
 
 DAI = Dragon Age: Inquisition, DAV = Dragon Age: The Veilguard, MEA = Mass Effect: Andromeda.
 
+## Not released yet
+
+- DAI: saves made with DAI Mod Manager can be loaded again (Frosty asks first, and Options has a new Dragon Age Inquisition page to change or undo it)
+
 ## 1.7.3
 
 - No more deleting Caches or ModData after an update: Frosty rebuilds them itself when needed. Both are now version-controlled.

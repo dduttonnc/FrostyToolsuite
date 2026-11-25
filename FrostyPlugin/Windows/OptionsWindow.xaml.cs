@@ -7,6 +7,7 @@ using FrostySdk.Ebx;
 using FrostySdk.IO;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Globalization;
 using System.Reflection;
 using System.Windows;
@@ -519,6 +520,72 @@ namespace Frosty.Core.Windows
         }
     }
 
+    // [DAI fix] picks the patch version ModData reports, so saves made with DAI Mod Manager load
+    [DisplayName("Dragon Age Inquisition")]
+    public class DaiPatchVersionOptionsData : OptionsExtension
+    {
+        [Category("Saves")]
+        [DisplayName("Patch Version Reported to the Game")]
+        [Description("Saves made with DAI Mod Manager record a patch one higher than the game's real patch, and won't load at the real patch. Pick the patch those saves need.\r\n\r\nSaves made while a higher patch is picked only load when the game is launched through Frosty. Takes effect on the next launch.")]
+        [EbxFieldMeta(EbxFieldType.Struct)]
+        [Editor(typeof(FrostyLocalizationLanguageDataEditor))]
+        public CustomComboData<string, string> PatchVersion { get; set; }
+
+        [Category("Saves")]
+        [DisplayName("Ask When Saves Need a Higher Patch")]
+        [Description("When launching, ask whether to report a higher patch if some saves need one.")]
+        [EbxFieldMeta(EbxFieldType.Boolean)]
+        public bool AskForHigherPatch { get; set; } = true;
+
+        private int gamePatch;
+        private int loadedVersion;
+
+        public override void Load()
+        {
+            base.Load();
+
+            gamePatch = DaiPatchVersion.GetGamePatchVersion(Config.Get<string>("GamePath", "", ConfigScope.Game));
+            loadedVersion = DaiPatchVersion.GetChosenVersion(gamePatch);
+            SortedDictionary<int, int> saves = DaiPatchVersion.ScanSaves();
+
+            List<string> values = new List<string>() { "0" };
+            List<string> names = new List<string>() { (gamePatch < 0) ? "Game's real patch" : $"Patch {gamePatch} (game's real patch)" };
+            if (gamePatch >= 0)
+            {
+                // a few extra numbers for saves copied from another PC
+                SortedSet<int> versions = new SortedSet<int>(saves.Keys.Where(v => v > gamePatch)) { gamePatch + 1, gamePatch + 2, gamePatch + 3, loadedVersion };
+                versions.Remove(gamePatch);
+                foreach (int version in versions)
+                {
+                    saves.TryGetValue(version, out int count);
+                    values.Add(version.ToString());
+                    names.Add((count == 0) ? $"Patch {version}" : $"Patch {version} ({count} {((count == 1) ? "save needs" : "saves need")} this)");
+                }
+            }
+
+            PatchVersion = new CustomComboData<string, string>(values, names);
+            PatchVersion.SelectedIndex = Math.Max(0, values.IndexOf((loadedVersion > gamePatch) ? loadedVersion.ToString() : "0"));
+            AskForHigherPatch = Config.Get<bool>(DaiPatchVersion.AskKey, true, ConfigScope.Game);
+        }
+
+        public override bool Validate()
+        {
+            int picked = Math.Max(gamePatch, int.Parse(PatchVersion.SelectedValue));
+            if (gamePatch < 0 || picked >= loadedVersion)
+                return true;
+
+            return FrostyMessageBox.Show($"Saves made while patch {loadedVersion} was reported won't load at patch {picked}.\r\n\r\nChange it anyway?", "Dragon Age Inquisition", MessageBoxButton.YesNo) == MessageBoxResult.Yes;
+        }
+
+        public override void Save()
+        {
+            base.Save();
+
+            Config.Add(DaiPatchVersion.VersionKey, int.Parse(PatchVersion.SelectedValue), ConfigScope.Game);
+            Config.Add(DaiPatchVersion.AskKey, AskForHigherPatch, ConfigScope.Game);
+        }
+    }
+
     /// <summary>
     /// Interaction logic for OptionsWindow.xaml
     /// </summary>
@@ -537,7 +604,11 @@ namespace Frosty.Core.Windows
             if (App.PluginManager.IsManagerType(PluginManagerType.Editor))
                 optionDataList.Add(new EditorOptionsData());
             else
+            {
                 optionDataList.Add(new ModManagerOptionsData());
+                if (ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeInquisition))
+                    optionDataList.Add(new DaiPatchVersionOptionsData());
+            }
 
             // Add plugin settings
             foreach (var optionExtType in App.PluginManager.OptionsExtensions)

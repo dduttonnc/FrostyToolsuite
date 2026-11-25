@@ -10,6 +10,9 @@ Improvements:
 - All games: launching with an unchanged mod list no longer reads every mod's icon and screenshots, and the progress bar is updated less often while mods are applied
 - All games: the log shows how long each step of applying mods took, and the 3 slowest superbundles
 
+Bug Fixes:
+- Dragon Age: Inquisition: saves made with DAI Mod Manager can be loaded. DAI Mod Manager's merged patch tells the game it is one patch newer (e.g. 13 instead of 12), saves record that number, and through Frosty the game refused them with 'This save data was created with a newer version of the game'. When some saves need a higher patch, Frosty now asks at launch whether to report that patch to the game. The new 'Dragon Age Inquisition' page in Options shows the patch Frosty reports (the game's real patch by default, the next three, and any patch your saves need) and can turn the question off. Saves made while a higher patch is reported only load when the game is launched through Frosty. Nothing changes when all saves match the game's patch
+
 v1.7.3 - 2026.11.24.3
 --------
 No need to delete Caches or ModData after updating: Frosty rebuilds each mod pack's ModData once on its next launch, and a Mass Effect: Andromeda cache from before 1.7.1 at the next start. Deleting them by hand is still fine. Full details: docs/CHANGELOG.md

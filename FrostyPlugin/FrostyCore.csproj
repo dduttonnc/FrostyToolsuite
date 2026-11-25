@@ -225,6 +225,7 @@
     <Compile Include="Commands\ImportExportBoxClickCommand.cs" />
     <Compile Include="Commands\ItemDoubleClickCommand.cs" />
     <Compile Include="Config.cs" />
+    <Compile Include="DaiPatchVersion.cs" />
     <Compile Include="Controls\Editors\FrostyArrayEditor.cs" />
     <Compile Include="Controls\Editors\FrostyBlobEditor.cs" />
     <Compile Include="Controls\Editors\FrostyBooleanEditor.cs" />
