@@ -574,7 +574,7 @@ namespace Frosty.Core.Windows
             if (gamePatch < 0 || picked >= loadedVersion)
                 return true;
 
-            return FrostyMessageBox.Show($"Saves made while patch {loadedVersion} was reported won't load at patch {picked}.\r\n\r\nChange it anyway?", "Dragon Age Inquisition", MessageBoxButton.YesNo) == MessageBoxResult.Yes;
+            return FrostyMessageBox.Show($"Saves made while patch {loadedVersion} was reported won't load at patch {picked}. While 'Ask When Saves Need a Higher Patch' is ticked, Frosty offers the higher patch again at launch.\r\n\r\nChange it anyway?", "Dragon Age Inquisition", MessageBoxButton.YesNo) == MessageBoxResult.Yes;
         }
 
         public override void Save()

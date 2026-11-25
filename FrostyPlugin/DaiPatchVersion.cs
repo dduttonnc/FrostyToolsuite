@@ -11,7 +11,6 @@ namespace Frosty.Core
     {
         public const string VersionKey = "DaiPatchVersion";
         public const string AskKey = "DaiPatchVersionAsk";
-        public const string AskedKey = "DaiPatchVersionAsked";
 
         // save header key whose value is the patch version as text
         private static readonly byte[] s_saveVersionKey = { 0x03, 0x46, 0xEA, 0xF1 };

@@ -871,7 +871,7 @@ namespace FrostyModManager
             GC.Collect();
         }
 
-        // [DAI fix] asks once per higher patch found, so a "No" isn't asked again on every launch
+        // [DAI fix] the Options checkbox alone decides whether this is asked, so a "No" is asked again next launch
         private void AskDaiSavePatchVersion()
         {
             if (!ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeInquisition) || !Config.Get<bool>(DaiPatchVersion.AskKey, true, ConfigScope.Game))
@@ -884,7 +884,7 @@ namespace FrostyModManager
 
             int needed = saves.Keys.Last();
             int current = DaiPatchVersion.GetChosenVersion(gamePatch);
-            if (needed <= current || needed <= Config.Get<int>(DaiPatchVersion.AskedKey, 0, ConfigScope.Game))
+            if (needed <= current)
                 return;
 
             List<int> higher = saves.Keys.Where(v => v > current).ToList();
@@ -894,14 +894,13 @@ namespace FrostyModManager
                 + $"Report patch {needed} to the game so they load?\r\n\r\n"
                 + $"Warning: saves you make afterwards record patch {needed} too, and will then only load when the game is launched through Frosty (or DAI Mod Manager), not when it is started normally.\r\n\r\n"
                 + $"Back up your saves first. Frosty only reads them and never changes them, but a copy is always good to have. Yes also opens the save folder:\r\n{DaiPatchVersion.SaveFolder}\r\n\r\n"
-                + "You can change this later under Options > Dragon Age Inquisition.";
+                + $"No keeps patch {current} and asks again next launch. To stop asking, untick 'Ask When Saves Need a Higher Patch' under Options > Dragon Age Inquisition, where the patch can also be changed later.";
 
             if (FrostyMessageBox.Show(text, "Frosty Mod Manager", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
             {
                 Config.Add(DaiPatchVersion.VersionKey, needed, ConfigScope.Game);
                 Process.Start("explorer.exe", $"\"{DaiPatchVersion.SaveFolder}\"");
             }
-            Config.Add(DaiPatchVersion.AskedKey, needed, ConfigScope.Game);
         }
 
         private void FrostyWindow_Closing(object sender, CancelEventArgs e)
