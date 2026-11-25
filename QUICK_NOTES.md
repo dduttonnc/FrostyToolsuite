@@ -6,7 +6,7 @@ DAI = Dragon Age: Inquisition, DAV = Dragon Age: The Veilguard, MEA = Mass Effec
 
 ## 1.7.3
 
-- No more deleting Caches or ModData after an update: Frosty rebuilds them itself when needed
+- No more deleting Caches or ModData after an update: Frosty rebuilds them itself when needed. Both are now version-controlled.
 - DAI: install .daimod mods straight from a .zip, .7z or .rar
 - DAV: the EA app version no longer asks for a new SDK
 - New SDKs after a game patch are made much faster
