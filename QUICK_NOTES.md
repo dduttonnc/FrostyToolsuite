@@ -8,10 +8,14 @@ DAI = Dragon Age: Inquisition, DAV = Dragon Age: The Veilguard, MEA = Mass Effec
 
 - All games: the window while mods are applied now looks like the cache window (game banner) and can show every step and what each CPU thread is doing. Options has a new Progress View setting: Detailed (the default) or Simple (one line, as before). It also covers the cache window
 - DAI: texture mods from DAI Mod Manager that were converted with the original Frosty no longer show rainbow or black noise while loading or on Low texture quality (ModData rebuilds once, no re-import needed)
+- The Launch Platform plugin is back (start the game through the EA app, Steam or Epic; off unless turned on), and a broken plugin no longer closes the Mod Manager at launch
+- The Discord support links are hidden for now, since the Frosty team's servers don't support this version
+- The download now includes README, PATCH_NOTES and these quick notes
 
 ## 1.7.4
 
 - DAI and MEA: applying mods (building ModData) is faster, most of all with many mods
+- Launching with an unchanged mod list is quicker, and the log shows how long each step of applying mods took
 - MEA: Bioware Localization 1.1.1.2 fixes now apply to MEA too (ModData rebuilds once)
 - DAI: saves made with DAI Mod Manager can be loaded again (Frosty asks first, and Options has a new Dragon Age Inquisition page to change or undo it). Back up your saves first: new saves then only load through Frosty
 
