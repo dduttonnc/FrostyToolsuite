@@ -1495,6 +1495,47 @@ namespace FrostyModManager
             return (daimodAction == "add") ? "add" : "modify";
         }
 
+        // DAI Mod Manager skipped a file whose game copy was no longer the one the mod was made from
+        private static class DaiPatchCheck
+        {
+            public static List<string> FindChangedFiles(AssetManager am, System.Xml.XmlElement resourcesElem, out int checkedFiles)
+            {
+                List<string> changed = new List<string>();
+                HashSet<string> seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                checkedFiles = 0;
+                if (am == null || resourcesElem == null)
+                    return changed;
+
+                foreach (System.Xml.XmlNode node in resourcesElem.ChildNodes)
+                {
+                    System.Xml.XmlElement elem = node as System.Xml.XmlElement;
+                    if (elem == null || elem.GetAttribute("action") != "modify" || !elem.HasAttribute("originalSha1"))
+                        continue;
+
+                    string type = elem.GetAttribute("type");
+                    string name = elem.GetAttribute("name");
+                    AssetEntry entry = (type == "ebx") ? (AssetEntry)am.GetEbxEntry(name) : (type == "res") ? am.GetResEntry(name) : null;
+                    if (entry == null || !seen.Add(name))
+                        continue;
+
+                    Sha1 original;
+                    try
+                    {
+                        original = new Sha1(elem.GetAttribute("originalSha1"));
+                    }
+                    catch (Exception)
+                    {
+                        continue;
+                    }
+
+                    checkedFiles++;
+                    if (entry.Sha1 != original)
+                        changed.Add(name);
+                }
+                return changed;
+            }
+        }
+
         #endregion
 
         #region -- [DAI fix] .daimod import and Reconfigure --
@@ -2104,6 +2145,9 @@ namespace FrostyModManager
                 // [DAI fix] the texture header's firstMip wins; a wrong 0 gave black/rainbow textures at a distance
                 Dictionary<Guid, DaiTextureLayout> textureLayouts = DaiReadTextureLayouts(resourcesElem, resources);
 
+                // [DAI fix] files a game patch changed after the mod was made
+                List<string> changedFiles = DaiPatchCheck.FindChangedFiles(am, resourcesElem, out int checkedFiles);
+
                 foreach (System.Xml.XmlNode resNode in resourcesElem.ChildNodes)
                 {
                     System.Xml.XmlElement subElem = resNode as System.Xml.XmlElement;
@@ -2292,10 +2336,24 @@ namespace FrostyModManager
                     resourcesList.Add(resource);
                 }
 
-                App.Logger.Log(string.Format("[DAI] {0}: {1} bundle modifications, {2} additions, {3} removals{4}{5}",
+                App.Logger.Log(string.Format("[DAI] {0}: {1} bundle modifications, {2} additions, {3} removals{4}{5}{6}",
                     fi.Name, numModified, numAdded, numRemoved,
                     numTexFixed > 0 ? string.Format(", {0} texture streaming ranges corrected", numTexFixed) : "",
-                    numFallback > 0 ? string.Format(" ({0} decided from the .daimod's own add/modify flag because the bundle was not found in the game data)", numFallback) : ""));
+                    numFallback > 0 ? string.Format(" ({0} decided from the .daimod's own add/modify flag because the bundle was not found in the game data)", numFallback) : "",
+                    changedFiles.Count > 0 ? string.Format(", {0} of {1} modified files updated by a later game patch: {2}", changedFiles.Count, checkedFiles, string.Join(", ", changedFiles)) : ""));
+
+                // [DAI fix] a mod that matches this game gets its version, so it no longer shows the "different game version" warning
+                if (am != null && numFallback == 0 && changedFiles.Count == 0)
+                    modObject.SetValue("gameVersion", (int)fs.Head);
+
+                if (changedFiles.Count > 0)
+                {
+                    string list = string.Join(", ", changedFiles.Take(3)) + (changedFiles.Count > 3 ? string.Format(" and {0} more", changedFiles.Count - 3) : "");
+                    string text = changedFiles.Count == 1
+                        ? "No action needed: 1 of the {0} game files this mod changes was updated by a game patch after the mod was made ({1}). The mod is installed and works as usual. It uses its own copy of that file, so what the patch changed in it is replaced, which is usually harmless."
+                        : "No action needed: {2} of the {0} game files this mod changes were updated by a game patch after the mod was made ({1}). The mod is installed and works as usual. It uses its own copies of those files, so what the patches changed in them is replaced, which is usually harmless.";
+                    errors.Add(new ImportErrorInfo() { filename = fi.Name, error = string.Format(text, checkedFiles, list, changedFiles.Count), isWarning = true });
+                }
 
                 // [DAI fix] log why bundle names didn't match
                 if (firstMissingBundle != null)

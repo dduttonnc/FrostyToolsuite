@@ -13,6 +13,7 @@ DAI = Dragon Age: Inquisition, DAV = Dragon Age: The Veilguard, MEA = Mass Effec
 - The Launch Platform plugin is back (start the game through the EA app, Steam or Epic; off unless turned on), and a broken plugin no longer closes the Mod Manager at launch
 - The Discord support links are hidden for now, since the Frosty team's servers don't support this version
 - The download now includes README, PATCH_NOTES and these quick notes
+- DAI: converted .daimods that match your game no longer show the 'different game version' warning, and a short note names any file a later game patch changed
 
 ## 1.7.4
 
