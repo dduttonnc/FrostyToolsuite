@@ -3,10 +3,6 @@ The most advanced modding platform for games running on DICE's Frostbite game en
 
 This version runs Dragon Age: Inquisition, Dragon Age: The Veilguard and Mass Effect: Andromeda from one Frosty Mod Manager, with fixes for DAI `.daimod` mods and a much faster cache build and mod apply.
 
-<a title="Frosty Toolsuite" href="https://discord.gg/sB8ZUAT">
-  <img alt="Frosty Toolsuite" src="https://img.shields.io/discord/333086156478480384?color=white&label=Frosty%20Toolsuite&logo=discord&logoColor=white&style=flat-square"></a>
-<a title="DAV Modding (Frosty)" href="https://discord.gg/pKF9ReTdAh">
-  <img alt="DAV Modding (Frosty)" src="https://img.shields.io/discord/1322742362434437131?color=5255a4&label=DAV%20Modding%20(Frosty)&logo=discord&logoColor=white&style=flat-square"></a>
 <a title="Downloads" href="https://github.com/dduttonnc/FrostyToolsuite/releases">
   <img alt="Downloads" src="https://img.shields.io/github/downloads/dduttonnc/FrostyToolsuite/total?color=white&label=Downloads&logo=github&style=flat-square"></a>
 
