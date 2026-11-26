@@ -180,8 +180,16 @@ namespace Frosty.Core
 
         private static string DescribeDrive(string path)
         {
-            DriveInfo drive = new DriveInfo(Path.GetPathRoot(Path.GetFullPath(path)));
-            return $"drive {drive.Name} {drive.DriveFormat}, {DiagnosticLog.Size(drive.AvailableFreeSpace)} free";
+            try
+            {
+                DriveInfo drive = new DriveInfo(Path.GetPathRoot(Path.GetFullPath(path)));
+                return $"drive {drive.Name} {drive.DriveFormat}, {DiagnosticLog.Size(drive.AvailableFreeSpace)} free";
+            }
+            catch (Exception e)
+            {
+                // e.g. a network (UNC) path, which DriveInfo doesn't accept
+                return "drive unknown: " + e.Message;
+            }
         }
 
         private const uint Synchronize = 0x00100000;

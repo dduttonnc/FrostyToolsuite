@@ -1541,7 +1541,7 @@ namespace Frosty.ModSupport
                 }
 
                 if (DiagnosticLog.Enabled)
-                    LogModDiagnostics(modList);
+                    LogDiagnostics(() => LogModDiagnostics(modList));
 
                 // Load Mod Resources
                 int currentMod = 0;
@@ -2545,7 +2545,7 @@ namespace Frosty.ModSupport
                 File.WriteAllText(Path.Combine(modDataPath, m_patchPath, "mods.json"), JsonConvert.SerializeObject(GenerateModInfoList(modPaths, rootPath), Formatting.Indented));
                 File.WriteAllText(dataVersionPath, DataVersions.ModDataVersion.ToString());
                 if (DiagnosticLog.Enabled)
-                    LogModDataContents(modDataPath);
+                    LogDiagnostics(() => LogModDataContents(modDataPath));
 
                 // stopwatch
                 watch.Stop();
@@ -2686,6 +2686,19 @@ namespace Frosty.ModSupport
             }
         }
 
+        // diagnostics must never stop mods from being applied
+        private static void LogDiagnostics(Action action)
+        {
+            try
+            {
+                action();
+            }
+            catch (Exception e)
+            {
+                DiagnosticLog.Log("(diagnostics failed: " + e.Message + ")");
+            }
+        }
+
         // [DAI fix] Diagnostic Logging: what each applied mod contains and which game version it was made for
         private void LogModDiagnostics(List<FrostyMod> modList)
         {
@@ -2734,7 +2747,7 @@ namespace Frosty.ModSupport
 
             DiagnosticLog.Log($"ModData now holds {written.Count} files Frosty wrote ({DiagnosticLog.Size(writtenBytes)}) and {links} links to unchanged game files; the list is in the diagnostic log file");
             foreach (FileInfo fi in written)
-                DiagnosticLog.Detail($"  wrote {fi.FullName.Substring(modDataPath.Length)} ({DiagnosticLog.Size(fi.Length)})");
+                DiagnosticLog.Detail($"  wrote {fi.FullName} ({DiagnosticLog.Size(fi.Length)})");
         }
 
         private void KillEADesktop()

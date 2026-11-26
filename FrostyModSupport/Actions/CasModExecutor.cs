@@ -1419,6 +1419,7 @@ namespace Frosty.ModSupport
 
                     // [DAI fix] Diagnostic Logging: where this superbundle's changes went
                     if (DiagnosticLog.Enabled && (isDefaultTocModified || isSplitTocModified.Any(b => b) || m_casWritten.Count > 0))
+                    try
                     {
                         List<string> written = new List<string>();
                         string sbExtension = tocFlags.HasFlag(InternalFlags.HasInlineSb) ? "" : " + .sb";
@@ -1435,6 +1436,10 @@ namespace Frosty.ModSupport
                         DiagnosticLog.Log($"Superbundle {SuperBundleInfo.Name}: {changedBundles.Count} bundles changed; wrote {string.Join(", ", written)} in {modPath}");
                         foreach (string bundle in changedBundles)
                             DiagnosticLog.Detail($"  {SuperBundleInfo.Name}: changed bundle {bundle}");
+                    }
+                    catch (Exception e)
+                    {
+                        DiagnosticLog.Log($"(diagnostics for {SuperBundleInfo.Name} failed: {e.Message})");
                     }
                 }
                 catch (Exception e)
