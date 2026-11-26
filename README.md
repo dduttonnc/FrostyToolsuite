@@ -13,7 +13,8 @@ Download the latest release from [releases](https://github.com/dduttonnc/FrostyT
 
 1. Clone the repository: ``git clone https://github.com/dduttonnc/FrostyToolsuite.git --recurse-submodules``
 2. Open the solution (found under FrostyEditor) with **Visual Studio 2022** or newer, and set the configuration to ``Developer - Debug`` or ``Release - Final``.
-3. Only build the projects themselves, never the solution. Build FrostySdk and FrostyModManager (or FrostyEditor) first, then the plugins you need.
+3. In the Visual Studio Installer, add the **Desktop development with C++** workload with **MSVC v143 - VS 2022 C++ x64/x86 build tools (v14.44-17.14)** and **C++/CLI support for v143**. FrostyShaders also needs ``fxc.exe`` from the Windows SDK.
+4. Use **Build Solution** (or **Rebuild Solution**) to build everything, including the plugins. Don't build single projects on their own.
 
 ## Credits
 This is a fork of a fork. Thanks to everyone whose work it is built on:
