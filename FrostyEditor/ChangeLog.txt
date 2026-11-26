@@ -12,6 +12,7 @@ Improvements:
 
 Bug Fixes:
 - Dragon Age: Inquisition: texture mods made for DAI Mod Manager (.daimod) that were converted with the original Frosty (1.0.6.4 or older) no longer show rainbow or black noise while an area loads, when zooming, or all the time on Low texture quality (e.g. HairyNudeMale). These mods swap a texture's data for new data: remove the old, add the new. The original Frosty's converter skipped every 'remove' step, so the game's old data stayed in the bundle next to the mod's and the game read the wrong one for the small, always-loaded versions of the texture. Frosty now restores the missing step when it applies such a mod. Mods imported with 1.0.6.4-dai.1 or newer already had it, and mods that overwrite the game's data in place (e.g. Cullen 4k Armor Textures) were not affected
+- All games: the Launch Platform plugin is included again (Frosty 1.0.6.3 had it, but this version's builds left it out). Its 'Launch Options' page in Options can start the game through the EA app, Steam or Epic with mods; it is off unless turned on, and settings from an older Frosty carry over. The plugin from Frosty 1.0.6.3 or older closed the Mod Manager when a game was launched; this one is the same plugin, updated for this version. Also, a plugin that fails while a game is launched no longer closes the Mod Manager: the error is written to the log and the launch goes on
 
 v1.7.4 - 2026.11.25.1
 --------

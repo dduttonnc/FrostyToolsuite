@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 using Frosty.Core.Attributes;
 using Frosty.Hash;
 using FrostySdk;
@@ -156,6 +157,25 @@ namespace Frosty.Core
         /// </summary>
         /// <returns>A collection of execution actions.</returns>
         public IEnumerable<ExecutionAction> ExecutionActions => m_executionActions;
+
+        public void RunPreLaunchActions(ILogger logger, PluginManagerType type, CancellationToken cancelToken) => RunExecutionActions(true, logger, type, cancelToken);
+        public void RunPostLaunchActions(ILogger logger, PluginManagerType type, CancellationToken cancelToken) => RunExecutionActions(false, logger, type, cancelToken);
+
+        // [DAI fix] a launch action from an outdated plugin is logged and skipped instead of crashing the launch
+        private void RunExecutionActions(bool preLaunch, ILogger logger, PluginManagerType type, CancellationToken cancelToken)
+        {
+            foreach (ExecutionAction executionAction in m_executionActions)
+            {
+                try
+                {
+                    (preLaunch ? executionAction.PreLaunchAction : executionAction.PostLaunchAction)?.Invoke(logger, type, cancelToken);
+                }
+                catch (Exception ex) when (!(ex is OperationCanceledException))
+                {
+                    App.Logger.LogError("{0} failed: {1}", executionAction.GetType().Assembly.GetName().Name, ex.Message);
+                }
+            }
+        }
 
         /// <summary>
         /// Retreives a collection of loaded plugins.

@@ -461,8 +461,7 @@ namespace FrostyEditor.Windows
                 {
                     try
                     {
-                        foreach (ExecutionAction executionAction in App.PluginManager.ExecutionActions)
-                            executionAction.PreLaunchAction(task.TaskLogger, PluginManagerType.Editor, cancelToken.Token);
+                        App.PluginManager.RunPreLaunchActions(task.TaskLogger, PluginManagerType.Editor, cancelToken.Token);
 
                         task.Update("Exporting Mod");
                         ExportMod(editorSettings, $"Mods/{ProfilesLibrary.ProfileName}/{editorModName}", true);
@@ -490,15 +489,13 @@ namespace FrostyEditor.Windows
                         task.Update("");
                         executor.Run(App.FileSystem, cancelToken.Token, task.TaskLogger, $"Mods/{ProfilesLibrary.ProfileName}/", App.SelectedPack, additionalArgs, modPaths.ToArray());
 
-                        foreach (ExecutionAction executionAction in App.PluginManager.ExecutionActions)
-                            executionAction.PostLaunchAction(task.TaskLogger, PluginManagerType.Editor, cancelToken.Token);
+                        App.PluginManager.RunPostLaunchActions(task.TaskLogger, PluginManagerType.Editor, cancelToken.Token);
                     }
                     catch (OperationCanceledException)
                     {
                         // swollow
 
-                        foreach (ExecutionAction executionAction in App.PluginManager.ExecutionActions)
-                            executionAction.PostLaunchAction(task.TaskLogger, PluginManagerType.ModManager, cancelToken.Token);
+                        App.PluginManager.RunPostLaunchActions(task.TaskLogger, PluginManagerType.ModManager, cancelToken.Token);
                     }
 
                 }, showCancelButton: true, cancelCallback: (task) => cancelToken.Cancel());
