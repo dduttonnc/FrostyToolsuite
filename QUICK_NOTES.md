@@ -6,7 +6,7 @@ DAI = Dragon Age: Inquisition, DAV = Dragon Age: The Veilguard, MEA = Mass Effec
 
 ## Not released yet
 
-- All games: the window while mods are applied can now show every step and what each CPU thread is doing. Options has a new Progress View setting: Detailed (the default) or Simple (one line, as before). It also covers the cache window
+- All games: the window while mods are applied now looks like the cache window (game banner) and can show every step and what each CPU thread is doing. Options has a new Progress View setting: Detailed (the default) or Simple (one line, as before). It also covers the cache window
 - DAI: texture mods from DAI Mod Manager that were converted with the original Frosty no longer show rainbow or black noise while loading or on Low texture quality (ModData rebuilds once, no re-import needed)
 
 ## 1.7.4

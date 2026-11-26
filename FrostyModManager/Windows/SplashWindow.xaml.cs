@@ -152,8 +152,6 @@ namespace FrostyModManager.Windows
         {
             InitializeComponent();
 
-            versionTextBlock.Text = Frosty.Core.App.Version;
-
             // [DAI fix] the window grows while data loads; keep it centered
             SizeChanged += (s, e) =>
             {
@@ -234,8 +232,7 @@ namespace FrostyModManager.Windows
 
             App.Logger.Log("Loading profile for " + ProfilesLibrary.DisplayName);
 
-            profileTextBlock.Text = ProfilesLibrary.DisplayName;
-            bannerImage.Source = LoadBanner(ProfilesLibrary.Banner);
+            header.ShowProfile();
 
             DirectoryInfo di = new DirectoryInfo("Caches");
             if (!Directory.Exists(di.FullName))
@@ -289,24 +286,6 @@ namespace FrostyModManager.Windows
             App.NotificationManager.Show("Initialization complete");
 
             Close();
-        }
-
-        private static BitmapImage LoadBanner(byte[] banner)
-        {
-            if (banner == null || banner.Length == 0)
-                return null;
-            BitmapImage bmp = new BitmapImage();
-            using (MemoryStream ms = new MemoryStream(banner))
-            {
-                bmp.BeginInit();
-                bmp.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
-                bmp.CacheOption = BitmapCacheOption.OnLoad;
-                bmp.UriSource = null;
-                bmp.StreamSource = ms;
-                bmp.EndInit();
-            }
-            bmp.Freeze();
-            return bmp;
         }
 
         private static async Task<int> LoadData(ILogger logger, byte[] key, AssetManagerImportResult result)

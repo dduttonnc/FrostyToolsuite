@@ -814,7 +814,16 @@ namespace FrostyModManager
 
             // launch
             int retCode = 0;
-            FrostyTaskWindow.Show("Launching", "", (task) =>
+
+            // [DAI fix] the Detailed view uses the splash banner, so it looks like the cache window
+            SplashHeader header = null;
+            if (ModManagerOptionsData.DetailedProgressView)
+            {
+                header = new SplashHeader();
+                header.ShowProfile();
+            }
+
+            FrostyTaskWindow.ShowWithHeader("Launching", "", header, (task) =>
             {
                 try
                 {

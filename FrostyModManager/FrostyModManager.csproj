@@ -241,6 +241,9 @@
     <Compile Include="Compression\LZMA.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="Controls\FrostyModDescription.cs" />
+    <Compile Include="Controls\SplashHeader.xaml.cs">
+      <DependentUpon>SplashHeader.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Windows\InstallErrorsWindow.xaml.cs">
       <DependentUpon>InstallErrorsWindow.xaml</DependentUpon>
     </Compile>
@@ -255,6 +258,10 @@
     <Page Include="Windows\PrelaunchWindow2.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\SplashHeader.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Windows\SplashWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

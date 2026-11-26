@@ -78,11 +78,23 @@ namespace Frosty.Core.Windows
             }
         }
 
+        public bool HasHeader { get; private set; }
+
         public ILogger TaskLogger { get; private set; }
 
-        private FrostyTaskWindow(Window owner, string task, string initialStatus, FrostyTaskCallback callback, bool showCancelButton, FrostyTaskCancelCallback cancelCallback = null)
+        private FrostyTaskWindow(Window owner, string task, string initialStatus, FrostyTaskCallback callback, bool showCancelButton, FrostyTaskCancelCallback cancelCallback = null, UIElement header = null)
         {
             InitializeComponent();
+
+            // [DAI fix] a banner (e.g. the splash's) in place of the task name
+            if (header != null)
+            {
+                HasHeader = true;
+                NotifyPropertyChanged(nameof(HasHeader));
+                headerPresenter.Content = header;
+                headerPresenter.Visibility = Visibility.Visible;
+                titlePanel.Visibility = Visibility.Collapsed;
+            }
 
             taskTextBlock.Text = task;
             Progress = 0.0;
@@ -182,6 +194,13 @@ namespace Frosty.Core.Windows
         public static void Show(string task, string initialStatus, FrostyTaskCallback callback, bool showCancelButton = false, FrostyTaskCancelCallback cancelCallback = null)
         {
             Show(Application.Current.MainWindow, task, initialStatus, callback, showCancelButton, cancelCallback);
+        }
+
+        // [DAI fix] new overload so plugins built against the old Show still load
+        public static void ShowWithHeader(string task, string initialStatus, UIElement header, FrostyTaskCallback callback, bool showCancelButton = false, FrostyTaskCancelCallback cancelCallback = null)
+        {
+            FrostyTaskWindow win = new FrostyTaskWindow(Application.Current.MainWindow, task, initialStatus, callback, showCancelButton, cancelCallback, header);
+            win.ShowDialog();
         }
 
         private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")

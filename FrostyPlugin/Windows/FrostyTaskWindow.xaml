@@ -29,31 +29,35 @@
                 <DropShadowEffect BlurRadius="20"
                                   ShadowDepth="1" />
             </Border.Effect>
-            <!-- [DAI fix] wider while the Detailed progress view has lines to show -->
+            <!-- [DAI fix] splash width with a banner or while the Detailed progress view has lines to show -->
             <Border.Style>
                 <Style TargetType="{x:Type Border}">
                     <Setter Property="Width"
                             Value="600" />
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding Path=Details, RelativeSource={RelativeSource AncestorType={x:Type local:FrostyTaskWindow}, Mode=FindAncestor}}"
-                                     Value="">
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding Path=Details, RelativeSource={RelativeSource AncestorType={x:Type local:FrostyTaskWindow}, Mode=FindAncestor}}"
+                                           Value="" />
+                                <Condition Binding="{Binding Path=HasHeader, RelativeSource={RelativeSource AncestorType={x:Type local:FrostyTaskWindow}, Mode=FindAncestor}}"
+                                           Value="False" />
+                            </MultiDataTrigger.Conditions>
                             <Setter Property="Width"
                                     Value="350" />
-                        </DataTrigger>
+                        </MultiDataTrigger>
                     </Style.Triggers>
                 </Style>
             </Border.Style>
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="100" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="23" />
                 </Grid.RowDefinitions>
 
-                <StackPanel Grid.Row="0"
-                            VerticalAlignment="Center"
-                            HorizontalAlignment="Center"
-                            Orientation="Vertical">
+                <Grid x:Name="titlePanel"
+                      Grid.Row="0"
+                      Height="100">
                     <TextBlock x:Name="taskTextBlock"
                                Text="Header Text"
                                Foreground="{StaticResource FontColor}"
@@ -63,13 +67,17 @@
                                FontWeight="Bold"
                                VerticalAlignment="Center"
                                HorizontalAlignment="Center" />
-                </StackPanel>
+                </Grid>
+                <ContentControl x:Name="headerPresenter"
+                                Grid.Row="0"
+                                Visibility="Collapsed" />
 
                 <!-- [DAI fix] collapsed when empty, so the Simple view looks as before -->
                 <TextBlock x:Name="detailsTextBlock"
                            Grid.Row="1"
                            Text="{Binding Path=Details, RelativeSource={RelativeSource AncestorType={x:Type local:FrostyTaskWindow}, Mode=FindAncestor}}"
-                           Padding="10,0,10,8"
+                           Background="{StaticResource WindowBackground}"
+                           Padding="30,4,4,4"
                            FontSize="11"
                            Foreground="#C0C0C0"
                            FontFamily="Global User Interface"
