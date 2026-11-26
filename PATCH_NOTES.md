@@ -17,6 +17,7 @@ Not released yet
 Dragon Age: Inquisition: Frosty rebuilds each mod pack's ModData once on its next launch, so the texture fix below is applied. Nothing needs deleting by hand, and no mod needs importing again. Full details: docs/CHANGELOG.md
 
 Improvements:
+- All games: the Discord support links in the About window and on the Editor's start page are hidden for now. They lead to the Frosty team's and the Veilguard modding community's servers, and this version is not supported there
 - All games: the window shown while mods are applied has a new Detailed view that looks like the cache window, with the same Frosty logo, game banner and version. It lists each step with how long it took, and while mods are applied, every superbundle being worked on (one per CPU thread) with how far along it is. The new 'Progress View' option (Options, Mod Manager Options, Manager) switches both the cache window and this window between Detailed (the default) and Simple, the one-line window from before. Applying mods is not slowed down (the window is updated at most ten times a second), and the step times in the log are unchanged
 
 Bug Fixes:

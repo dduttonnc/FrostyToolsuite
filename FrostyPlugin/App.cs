@@ -28,6 +28,9 @@ namespace Frosty.Core
         public static string SelectedPack;
         public static ILogger Logger;
 
+        // [DAI fix] the Frosty team's Discord links stay hidden until this fork has its own server
+        public static readonly bool ShowDiscordLinks = false;
+
         public static bool IsEditor = true;
         public static string Title = "Frosty Editor";
 

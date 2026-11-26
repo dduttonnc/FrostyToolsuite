@@ -59,7 +59,7 @@
                             </Hyperlink>
                         </TextBlock>
                     </StackPanel>-->
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <StackPanel x:Name="generalSupportPanel" Orientation="Horizontal" HorizontalAlignment="Center" Visibility="Collapsed">
                         <TextBlock Text="General Support: " Foreground="{StaticResource FontColor}" FontWeight="Bold"/>
                         <TextBlock FontFamily="Global User Interface" FontSize="12" Margin="2" HorizontalAlignment="Center">
                             <Hyperlink NavigateUri="https://discord.gg/sB8ZUAT" Foreground="{StaticResource FontColor}" RequestNavigate="hyperlink_RequestNavigate">

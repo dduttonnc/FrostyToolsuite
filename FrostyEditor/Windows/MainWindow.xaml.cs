@@ -546,9 +546,13 @@ namespace FrostyEditor.Windows
                 LaunchButton.IsEnabled = true;
             }
             
-            if (ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeTheVeilguard))
+            if (Frosty.Core.App.ShowDiscordLinks)
             {
-                veilguardPanel.Visibility = Visibility.Visible;
+                generalSupportPanel.Visibility = Visibility.Visible;
+                if (ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeTheVeilguard))
+                {
+                    veilguardPanel.Visibility = Visibility.Visible;
+                }
             }
 
             if (Config.Get<bool>("UpdateCheck", true) || Config.Get<bool>("UpdateCheckPrerelease", false))
