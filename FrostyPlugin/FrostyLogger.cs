@@ -1,4 +1,5 @@
 ﻿using Frosty.Core.Attributes;
+using FrostySdk;
 using FrostySdk.Interfaces;
 using System;
 using System.ComponentModel;
@@ -11,8 +12,17 @@ namespace FrostyCore
 {
     public class FrostyLogger : ILogger, INotifyPropertyChanged
     {
-        public string LogText => sb.ToString();
+        public string LogText { get { lock (sb) return sb.ToString(); } }
         private StringBuilder sb = new StringBuilder();
+
+        // [DAI fix] locked, since mods are applied on several threads; copied to the diagnostic log file when that's on
+        private void Append(string line)
+        {
+            lock (sb)
+                sb.AppendLine(line);
+            DiagnosticLog.WriteLine(line);
+            RaisePropertyChanged("LogText");
+        }
 
         public void Log(string text, params object[] vars)
         {
@@ -23,8 +33,7 @@ namespace FrostyCore
             if (attr != null)
                 category = "[" + attr.DisplayName + "] ";
 
-            sb.AppendLine(string.Format("[" + DateTime.Now.ToLongTimeString() + "]: " + category + text, vars));
-            RaisePropertyChanged("LogText");
+            Append(string.Format("[" + DateTime.Now.ToLongTimeString() + "]: " + category + text, vars));
         }
 
         public void LogWarning(string text, params object[] vars)
@@ -36,8 +45,7 @@ namespace FrostyCore
             if (attr != null)
                 category = "[" + attr.DisplayName + "] ";
 
-            sb.AppendLine(string.Format("[" + DateTime.Now.ToLongTimeString() + "]: " + category + "(WARNING) " + text, vars));
-            RaisePropertyChanged("LogText");
+            Append(string.Format("[" + DateTime.Now.ToLongTimeString() + "]: " + category + "(WARNING) " + text, vars));
         }
 
         public void LogError(string text, params object[] vars)
@@ -49,8 +57,7 @@ namespace FrostyCore
             if (attr != null)
                 category = "[" + attr.DisplayName + "] ";
 
-            sb.AppendLine(string.Format("[" + DateTime.Now.ToLongTimeString() + "]: " + category + "(ERROR) " + text, vars));
-            RaisePropertyChanged("LogText");
+            Append(string.Format("[" + DateTime.Now.ToLongTimeString() + "]: " + category + "(ERROR) " + text, vars));
         }
 
         public void AddBinding(UIElement elementToBind, DependencyProperty propertyToBind)

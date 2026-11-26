@@ -254,6 +254,9 @@ namespace FrostyModManager.Windows
             ILogger logger = new SplashWindowLogger(this);
             AssetManagerImportResult result = new AssetManagerImportResult();
 
+            // [DAI fix] Diagnostic Logging: the cache as found, before loading may rebuild it
+            DiagnosticReport.LogCacheFile("Cache before loading");
+
             // load data from game or cache
             await LoadData(logger, KeyManager.Instance.GetKey("Key1"), result);
 
@@ -276,6 +279,8 @@ namespace FrostyModManager.Windows
                     await FinishLoadingData(logger, result);
                 }
             }
+
+            DiagnosticReport.LogProfile();
 
             // show the main editor window
             MainWindow win = new MainWindow();

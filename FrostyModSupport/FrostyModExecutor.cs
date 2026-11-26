@@ -1395,6 +1395,8 @@ namespace Frosty.ModSupport
                 m_hasUpdateFolder = false;
             }
 
+            DiagnosticLog.Log($"Launch: pack '{modPackName}', ModData {modDataPath}, changed game files go under {m_patchPath}, extra arguments '{additionalArgs}', {modPaths.Length} mods applied");
+
             if (ProfilesLibrary.IsLoaded(ProfileVersion.Madden20))
             {
                 string lcuPath = Environment.ExpandEnvironmentVariables(@"%ProgramData%\Frostbite\Madden NFL 20");
@@ -1431,6 +1433,7 @@ namespace Frosty.ModSupport
             if (!File.Exists(Path.Combine(modDataPath, m_patchPath, "mods.json")))
             {
                 needsModding = true;
+                DiagnosticLog.Log("ModData needs building: it has no mods.json yet");
             }
             else
             {
@@ -1457,9 +1460,11 @@ namespace Frosty.ModSupport
                     hashMatch = false;
                 }
 
-                if (!IsSamePatch(modDataPath + m_patchPath) || !hashMatch)
+                bool samePatch = IsSamePatch(modDataPath + m_patchPath);
+                if (!samePatch || !hashMatch)
                 {
                     needsModding = true;
+                    DiagnosticLog.Log(samePatch ? "ModData needs rebuilding: the mod list or a mod file changed" : "ModData needs rebuilding: the game was updated since it was built, or ModData has no layout.toc");
                 }
             }
 
@@ -1535,6 +1540,9 @@ namespace Frosty.ModSupport
                     }
                 }
 
+                if (DiagnosticLog.Enabled)
+                    LogModDiagnostics(modList);
+
                 // Load Mod Resources
                 int currentMod = 0;
                 foreach (FrostyMod mod in modList)
@@ -1594,6 +1602,8 @@ namespace Frosty.ModSupport
                 }
 
                 logStepTime("Loading mods");
+                DiagnosticLog.Log($"All mods together change {m_modifiedEbx.Count} ebx, {m_modifiedRes.Count} res and {m_modifiedChunks.Count} chunks in {m_modifiedBundles.Count} bundles; "
+                    + $"they add {m_addedBundles.Values.Sum(b => b.Count)} bundles and {m_addedSuperBundles.Count} superbundles, and change chunks listed in {m_modifiedSuperBundles.Count} superbundle tocs");
                 progress.Begin("Applying handlers");
                 Logger.Log("Applying Handlers");
                 App.Logger.Log("Applying Handlers");
@@ -1848,6 +1858,10 @@ namespace Frosty.ModSupport
                             fi.CopyTo(tempPath, false);
                     }
                 }
+
+                DiagnosticLog.Log($"ModData folder {(newInstallation ? "created" : "reused")}; {cmdArgs.Count} links to the game's data to create{(m_useAltSymLink ? ", alternate link method on" : "")}");
+                foreach (SymLinkStruct link in cmdArgs)
+                    DiagnosticLog.Detail($"  link {link.dest} -> {link.src}");
 
                 if (cmdArgs.Count > 0)
                 {
@@ -2298,7 +2312,9 @@ namespace Frosty.ModSupport
                 cancelToken.ThrowIfCancellationRequested();
                 if (cmdArgs.Count > 0)
                 {
-                    RunSymbolicLinkProcess(cmdArgs);
+                    DiagnosticLog.Log($"{cmdArgs.Count} links to unchanged toc/sb files to create");
+                    if (!RunSymbolicLinkProcess(cmdArgs))
+                        DiagnosticLog.Log("Some of those links could not be created");
                 }
 
                 // reset threadpool
@@ -2528,6 +2544,8 @@ namespace Frosty.ModSupport
                 // create the frosty mod list file
                 File.WriteAllText(Path.Combine(modDataPath, m_patchPath, "mods.json"), JsonConvert.SerializeObject(GenerateModInfoList(modPaths, rootPath), Formatting.Indented));
                 File.WriteAllText(dataVersionPath, DataVersions.ModDataVersion.ToString());
+                if (DiagnosticLog.Enabled)
+                    LogModDataContents(modDataPath);
 
                 // stopwatch
                 watch.Stop();
@@ -2563,6 +2581,8 @@ namespace Frosty.ModSupport
 
                 // copy over new CryptBase
                 CopyFileIfRequired("ThirdParty/CryptBase.dll", m_fs.BasePath + "CryptBase.dll");
+                if (DiagnosticLog.Enabled)
+                    DiagnosticLog.Log("Frosty's CryptBase.dll in the game folder: " + DiagnosticLog.DescribeFile(m_fs.BasePath + "CryptBase.dll"));
             }
             CopyFileIfRequired(m_fs.BasePath + "user.cfg", modDataPath + "user.cfg");
 
@@ -2636,19 +2656,85 @@ namespace Frosty.ModSupport
 
                     App.Logger.Log($"Launch: {arguments}");
                     App.Logger.Log($"Encoded: {encodedArguments}");
+                    DiagnosticLog.Log($"Launching through Steam ({(steamCopy ? "Steam copy of DAI or MEA" : "Launch Game Using Steam Protocol option")}): steam://run/{steamAppId}//{encodedArguments}/");
 
                     Process.Start($"steam://run/{steamAppId}//{encodedArguments}/");
                 }
                 else
                 {
                     // fallback
+                    DiagnosticLog.Log($"No Steam app id found, starting the exe directly: \"{gameExecutable}\" {dataPathArgument}");
                     ExecuteProcess(gameExecutable, dataPathArgument);
                 }
             }
             else
             {
+                DiagnosticLog.Log($"Starting the exe directly: \"{gameExecutable}\" {dataPathArgument}");
                 ExecuteProcess(gameExecutable, dataPathArgument);
             }
+        }
+
+        private static string DescribeProcessId(Process process)
+        {
+            try
+            {
+                return $" (process {process.Id})";
+            }
+            catch
+            {
+                return "";
+            }
+        }
+
+        // [DAI fix] Diagnostic Logging: what each applied mod contains and which game version it was made for
+        private void LogModDiagnostics(List<FrostyMod> modList)
+        {
+            DiagnosticLog.Log($"Applying {modList.Count} mods in this order:");
+            for (int i = 0; i < modList.Count; i++)
+            {
+                FrostyMod mod = modList[i];
+                string contents = "old format (FBMOD, e.g. a converted .daimod)";
+                if (mod.NewFormat)
+                {
+                    contents = string.Join(", ", mod.Resources.GroupBy(r => r.Type).Select(g => $"{g.Count()} {g.Key}"));
+                    int handlers = mod.Resources.Count(r => r.HasHandler);
+                    if (handlers > 0)
+                        contents += $", {handlers} merged by handlers";
+                }
+
+                string version = mod.NewFormat ? $"made for game version {DiagnosticLog.DescribeGameVersion(mod.GameVersion)}{((mod.GameVersion == m_fs.Head) ? " (same as the game)" : " (game is " + DiagnosticLog.DescribeGameVersion(m_fs.Head) + ")")}" : "game version not stored";
+                DiagnosticLog.Log($"  {i + 1}. '{mod.ModDetails?.Title ?? mod.Filename}' v{mod.ModDetails?.Version} by {mod.ModDetails?.Author}, {DiagnosticLog.DescribeFile(mod.Path)}, {version}; {contents}");
+            }
+        }
+
+        private void LogModDataContents(string modDataPath)
+        {
+            int links = 0;
+            long writtenBytes = 0;
+            List<FileInfo> written = new List<FileInfo>();
+
+            // linked folders (e.g. DAI's Data) point into the game, so they aren't walked
+            Stack<DirectoryInfo> folders = new Stack<DirectoryInfo>();
+            folders.Push(new DirectoryInfo(modDataPath));
+            while (folders.Count > 0)
+            {
+                foreach (FileSystemInfo item in folders.Pop().EnumerateFileSystemInfos())
+                {
+                    if (item.Attributes.HasFlag(FileAttributes.ReparsePoint))
+                        links++;
+                    else if (item is DirectoryInfo folder)
+                        folders.Push(folder);
+                    else if (item is FileInfo fi)
+                    {
+                        written.Add(fi);
+                        writtenBytes += fi.Length;
+                    }
+                }
+            }
+
+            DiagnosticLog.Log($"ModData now holds {written.Count} files Frosty wrote ({DiagnosticLog.Size(writtenBytes)}) and {links} links to unchanged game files; the list is in the diagnostic log file");
+            foreach (FileInfo fi in written)
+                DiagnosticLog.Detail($"  wrote {fi.FullName.Substring(modDataPath.Length)} ({DiagnosticLog.Size(fi.Length)})");
         }
 
         private void KillEADesktop()
@@ -3221,13 +3307,15 @@ namespace Frosty.ModSupport
                 try
                 {
                     process.Start();
+                    if (DiagnosticLog.Enabled)
+                        DiagnosticLog.Log($"Started {fi.Name}{DescribeProcessId(process)}");
 
                     if (waitForExit)
                         process.WaitForExit();
                 }
-                catch
+                catch (Exception e)
                 {
-                    // do nothing
+                    DiagnosticLog.Log($"Could not start {processName}: {e.Message}");
                 }
             }
         }

@@ -97,6 +97,7 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Management" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml.Linq" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
@@ -226,6 +227,7 @@
     <Compile Include="Commands\ItemDoubleClickCommand.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="DaiPatchVersion.cs" />
+    <Compile Include="DiagnosticReport.cs" />
     <Compile Include="Controls\Editors\FrostyArrayEditor.cs" />
     <Compile Include="Controls\Editors\FrostyBlobEditor.cs" />
     <Compile Include="Controls\Editors\FrostyBooleanEditor.cs" />
