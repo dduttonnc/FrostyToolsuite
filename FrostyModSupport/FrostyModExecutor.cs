@@ -3300,24 +3300,24 @@ namespace Frosty.ModSupport
                 }
             }
 
-            if (chunksBundle == null)
-                return;
-
             // a dropped chunk no bundle uses any more doesn't need to go into chunks0 either
-            foreach (ModBundleInfo bundle in m_modifiedBundles.Values)
+            if (chunksBundle != null)
             {
-                if (bundle.Name != s_chunksBundleHash)
+                foreach (ModBundleInfo bundle in m_modifiedBundles.Values)
                 {
-                    dropped.ExceptWith(bundle.Add.Chunks);
-                    dropped.ExceptWith(bundle.Modify.Chunks);
+                    if (bundle.Name != s_chunksBundleHash)
+                    {
+                        dropped.ExceptWith(bundle.Add.Chunks);
+                        dropped.ExceptWith(bundle.Modify.Chunks);
+                    }
                 }
+                foreach (Guid id in dropped)
+                    chunksBundle.Add.Chunks.Remove(id);
             }
-            foreach (Guid id in dropped)
-                chunksBundle.Add.Chunks.Remove(id);
 
             foreach (Guid id in added)
             {
-                if (!chunksBundle.Add.Chunks.Contains(id) && !chunksBundle.Modify.Chunks.Contains(id))
+                if (chunksBundle == null || (!chunksBundle.Add.Chunks.Contains(id) && !chunksBundle.Modify.Chunks.Contains(id)))
                     AddToChunksBundle(id, m_am.GetChunkEntry(id) == null);
             }
         }
