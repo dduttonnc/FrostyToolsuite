@@ -1364,6 +1364,9 @@ namespace Frosty.ModSupport
 
                                             if (ebxEntry.IsInline)
                                                 ebx.SetValue("idata", parent.m_archiveData[ebxEntry.Sha1].Data);
+                                            // [DAI fix] the game's inline copy no longer matches the modded data
+                                            else if (ProfilesLibrary.DataVersion == (int)ProfileVersion.DragonAgeInquisition)
+                                                ebx.RemoveValue("idata");
 
                                             if (ProfilesLibrary.DataVersion == (int)ProfileVersion.DragonAgeInquisition || ProfilesLibrary.DataVersion == (int)ProfileVersion.Battlefield4 || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeed || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedRivals)
                                             {
@@ -1436,6 +1439,9 @@ namespace Frosty.ModSupport
 
                                             if (resEntry.IsInline)
                                                 res.SetValue("idata", parent.m_archiveData[resEntry.Sha1].Data);
+                                            // [DAI fix] the game's inline copy no longer matches the modded data
+                                            else if (ProfilesLibrary.DataVersion == (int)ProfileVersion.DragonAgeInquisition)
+                                                res.RemoveValue("idata");
 
                                             if (ProfilesLibrary.DataVersion == (int)ProfileVersion.DragonAgeInquisition || ProfilesLibrary.DataVersion == (int)ProfileVersion.Battlefield4 || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeed || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedRivals)
                                             {
