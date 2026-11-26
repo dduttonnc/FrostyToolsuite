@@ -8,6 +8,7 @@ DAI = Dragon Age: Inquisition, DAV = Dragon Age: The Veilguard, MEA = Mass Effec
 
 - All games: the window while mods are applied now looks like the cache window (game banner) and can show every step and what each CPU thread is doing. Options has a new Progress View setting: Detailed (the default) or Simple (one line, as before). It also covers the cache window
 - DAI: texture mods from DAI Mod Manager that were converted with the original Frosty no longer show rainbow or black noise while loading or on Low texture quality (ModData rebuilds once, no re-import needed)
+- DAI: two texture mods for the same texture (e.g. Cullen Face Retexture and Scarless Cullen) no longer mix: the winning mod's texture is used as if it were the only one. Removals in DLC and multiplayer areas now work too (same one-time ModData rebuild)
 - The Launch Platform plugin is back (start the game through the EA app, Steam or Epic; off unless turned on), and a broken plugin no longer closes the Mod Manager at launch
 - The Discord support links are hidden for now, since the Frosty team's servers don't support this version
 - The download now includes README, PATCH_NOTES and these quick notes

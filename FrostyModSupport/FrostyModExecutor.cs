@@ -1097,10 +1097,6 @@ namespace Frosty.ModSupport
                 }
             }
 
-            // [DAI fix] stock Frosty's .daimod import dropped "remove" actions, leaving a replaced texture's old chunk in the bundle
-            if (IsDai)
-                RestoreLegacyTextureChunkRemovals(modPath, mod);
-
             // [MEA fix] old mods store whole texture chunks; split them at the header's first mip like the importer does
             Dictionary<Guid, LegacyTextureLayout> textureLayouts = ProfilesLibrary.IsLoaded(ProfileVersion.MassEffectAndromeda)
                 ? ReadLegacyTextureLayouts(modPath, resourceList)
@@ -1625,6 +1621,10 @@ namespace Frosty.ModSupport
 
                 // process any new resources added during custom handler modification
                 ProcessModResources(runtimeResources);
+
+                // [DAI fix] texture mods that overlap, or old .daimod conversions without their remove steps, left extra chunks in bundles
+                if (IsDai)
+                    ReconcileTextureChunks();
 
 #if FROSTY_DEVELOPER
                 PrintLog();
@@ -3232,69 +3232,145 @@ namespace Frosty.ModSupport
             }
         }
 
-        private void RestoreLegacyTextureChunkRemovals(string modPath, DbObject mod)
+        private class TextureChunkInfo
         {
-            DbObject resourceList = mod.GetValue<DbObject>("resources");
+            public Guid ChunkId;
+            public uint NameHash;
+            public Guid OriginalChunkId;
+            public HashSet<int> OriginalChunkBundles;
+            public HashSet<int> ChunkBundles;
+        }
 
-            for (int resourceId = 0; resourceId < resourceList.Count; resourceId++)
+        // the game keeps at most one chunk per texture in a bundle; keep the one the winning header points at
+        private void ReconcileTextureChunks()
+        {
+            m_modifiedBundles.TryGetValue(s_chunksBundleHash, out ModBundleInfo chunksBundle);
+            Dictionary<string, TextureChunkInfo> textures = new Dictionary<string, TextureChunkInfo>();
+            HashSet<Guid> dropped = new HashSet<Guid>();
+            HashSet<Guid> added = new HashSet<Guid>();
+
+            foreach (ModBundleInfo bundle in m_modifiedBundles.Values)
             {
-                DbObject resource = resourceList[resourceId] as DbObject;
-                if (resource.GetValue<string>("type") != "res" || !resource.HasValue("archiveIndex") || (uint)resource.GetValue<int>("resType") != (uint)ResourceType.DxTexture)
+                if (bundle.Name == s_chunksBundleHash)
                     continue;
 
-                ResAssetEntry original = m_am.GetResEntry(resource.GetValue<string>("name"));
-                if (original == null)
-                    continue;
-
-                Guid newId, oldId;
-                try
+                foreach (string name in bundle.Modify.Res.Concat(bundle.Add.Res))
                 {
-                    byte[] buffer = GetResourceData(modPath, resource.GetValue<int>("archiveIndex"), resource.GetValue<long>("archiveOffset"), (int)resource.GetValue<long>("compressedSize"));
-                    using (CasReader reader = new CasReader(new MemoryStream(buffer)))
-                        newId = ReadDaiTextureChunkId(reader.Read());
-                    using (NativeReader reader = new NativeReader(m_am.GetRes(original)))
-                        oldId = ReadDaiTextureChunkId(reader.ReadToEnd());
-                }
-                catch (Exception)
-                {
-                    continue;
-                }
+                    if (!textures.TryGetValue(name, out TextureChunkInfo tex))
+                    {
+                        tex = ReadTextureChunkInfo(name);
+                        textures.Add(name, tex);
+                    }
+                    if (tex == null)
+                        continue;
 
-                if (newId == Guid.Empty || oldId == Guid.Empty || newId == oldId)
-                    continue;
+                    bool hasChunk = tex.OriginalChunkBundles.Contains(bundle.Name) || tex.ChunkBundles.Contains(bundle.Name) || bundle.Add.Chunks.Contains(tex.ChunkId);
+                    List<Guid> others = new List<Guid>();
+                    foreach (Guid id in bundle.Add.Chunks)
+                    {
+                        if (id != tex.ChunkId && m_modifiedChunks.TryGetValue(id, out ChunkAssetEntry chunk) && (uint)chunk.H32 == tex.NameHash)
+                            others.Add(id);
+                    }
 
-                int chunkResourceId = -1;
-                for (int i = 0; i < resourceList.Count; i++)
-                {
-                    DbObject chunk = resourceList[i] as DbObject;
-                    if (chunk.GetValue<string>("type") == "chunk" && !chunk.GetValue<bool>("isRemoval", false) && Guid.TryParse(chunk.GetValue<string>("name"), out Guid id) && id == newId)
-                        chunkResourceId = i;
-                }
-                if (chunkResourceId == -1)
-                    continue;
+                    // a header-only bundle stays header-only, as in the game
+                    if (!hasChunk && others.Count == 0)
+                        continue;
 
-                // only in bundles where the mod changes the header and adds the header's new chunk
-                HashSet<int> headerBundles = new HashSet<int>();
-                HashSet<int> chunkBundles = new HashSet<int>();
-                foreach (DbObject action in mod.GetValue<DbObject>("actions"))
-                {
-                    int bundle = Fnv1.HashString(action.GetValue<string>("bundle").ToLower());
-                    string actionType = action.GetValue<string>("type");
-                    if (action.GetValue<int>("resourceId") == resourceId && actionType == "modify")
-                        headerBundles.Add(bundle);
-                    else if (action.GetValue<int>("resourceId") == chunkResourceId && actionType == "add")
-                        chunkBundles.Add(bundle);
-                }
+                    if (tex.ChunkId == tex.OriginalChunkId)
+                    {
+                        bundle.Remove.Chunks.Remove(tex.ChunkId);
+                    }
+                    else if (m_modifiedChunks.ContainsKey(tex.ChunkId) || tex.ChunkBundles.Contains(bundle.Name))
+                    {
+                        if (tex.OriginalChunkId != Guid.Empty)
+                            bundle.Remove.Chunks.Add(tex.OriginalChunkId);
+                        if (!tex.ChunkBundles.Contains(bundle.Name) && bundle.Add.Chunks.Add(tex.ChunkId))
+                            added.Add(tex.ChunkId);
+                    }
+                    else
+                    {
+                        continue;
+                    }
 
-                foreach (int bundle in headerBundles)
-                {
-                    if (chunkBundles.Contains(bundle) && m_modifiedBundles.TryGetValue(bundle, out ModBundleInfo modBundle))
-                        modBundle.Remove.Chunks.Add(oldId);
+                    foreach (Guid id in others)
+                    {
+                        bundle.Add.Chunks.Remove(id);
+                        dropped.Add(id);
+                    }
                 }
+            }
+
+            if (chunksBundle == null)
+                return;
+
+            // a dropped chunk no bundle uses any more doesn't need to go into chunks0 either
+            foreach (ModBundleInfo bundle in m_modifiedBundles.Values)
+            {
+                if (bundle.Name != s_chunksBundleHash)
+                {
+                    dropped.ExceptWith(bundle.Add.Chunks);
+                    dropped.ExceptWith(bundle.Modify.Chunks);
+                }
+            }
+            foreach (Guid id in dropped)
+                chunksBundle.Add.Chunks.Remove(id);
+
+            foreach (Guid id in added)
+            {
+                if (!chunksBundle.Add.Chunks.Contains(id) && !chunksBundle.Modify.Chunks.Contains(id))
+                    AddToChunksBundle(id, m_am.GetChunkEntry(id) == null);
             }
         }
 
-        // the chunk id sits at 28 in DAI's texture header
+        private TextureChunkInfo ReadTextureChunkInfo(string name)
+        {
+            if (!m_modifiedRes.TryGetValue(name, out ResAssetEntry entry) || entry.ResType != (uint)ResourceType.DxTexture || entry.ExtraData != null || !m_archiveData.TryGetValue(entry.Sha1, out ArchiveInfo data))
+                return null;
+
+            TextureChunkInfo tex = new TextureChunkInfo();
+            try
+            {
+                byte[] header;
+                using (CasReader reader = new CasReader(new MemoryStream(data.Data)))
+                    header = reader.Read();
+                if (header == null || header.Length < 112)
+                    return null;
+                tex.ChunkId = ReadDaiTextureChunkId(header);
+                tex.NameHash = BitConverter.ToUInt32(header, 108);
+
+                ResAssetEntry original = m_am.GetResEntry(name);
+                if (original != null)
+                {
+                    using (NativeReader reader = new NativeReader(m_am.GetRes(original)))
+                        tex.OriginalChunkId = ReadDaiTextureChunkId(reader.ReadToEnd());
+                }
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+
+            if (tex.ChunkId == Guid.Empty)
+                return null;
+
+            tex.OriginalChunkBundles = GetChunkBundleHashes(tex.OriginalChunkId);
+            tex.ChunkBundles = (tex.ChunkId == tex.OriginalChunkId) ? tex.OriginalChunkBundles : GetChunkBundleHashes(tex.ChunkId);
+            return tex;
+        }
+
+        private HashSet<int> GetChunkBundleHashes(Guid id)
+        {
+            HashSet<int> hashes = new HashSet<int>();
+            ChunkAssetEntry chunk = (id == Guid.Empty) ? null : m_am.GetChunkEntry(id);
+            if (chunk != null)
+            {
+                foreach (int bid in chunk.Bundles)
+                    hashes.Add(HashBundle(m_am.GetBundleEntry(bid)));
+            }
+            return hashes;
+        }
+
+        // DAI texture header: chunk id at 28, name hash (the chunk meta's h32) at 108
         private static Guid ReadDaiTextureChunkId(byte[] header)
         {
             if (header == null || header.Length < 44)

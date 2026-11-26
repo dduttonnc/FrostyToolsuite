@@ -825,6 +825,23 @@ namespace Frosty.ModSupport
                                 {
                                     ModBundleInfo modifiedBundle = parent.m_modifiedBundles[bundleName];
 
+                                    // [DAI fix] mod removals were ignored in binary bundles
+                                    foreach (AssetInfo info in ebxAssetInfo)
+                                    {
+                                        if (modifiedBundle.Remove.Ebx.Contains(info.Name.ToLower()))
+                                            info.Removed = true;
+                                    }
+                                    foreach (AssetInfo info in resAssetInfo)
+                                    {
+                                        if (modifiedBundle.Remove.Res.Contains(info.Name.ToLower()))
+                                            info.Removed = true;
+                                    }
+                                    foreach (AssetInfo info in chunkAssetInfo)
+                                    {
+                                        if (modifiedBundle.Remove.Chunks.Contains(info.Id))
+                                            info.Removed = true;
+                                    }
+
                                     // now add in custom modifications
                                     foreach (AssetInfo info in ebxAssetInfo)
                                     {
@@ -1161,10 +1178,13 @@ namespace Frosty.ModSupport
 
                                         if (info.Removed)
                                         {
-                                            if (blockSize > 0)
+                                            // [DAI fix] skip the base copy's blocks; an asset only in the delta has none
+                                            long baseSize = info.Inserted ? 0 : (info.BaseAsset ?? info.Asset).GetValue<long>("originalSize");
+                                            uint baseBlockSize = (uint)((baseSize / 0x10000) + ((baseSize % 0x10000) != 0 ? 1 : 0));
+                                            if (baseBlockSize > 0)
                                             {
                                                 // asset was removed so skip over data
-                                                writer.Write(blockSize | 0x40000000, Endian.Big);
+                                                writer.Write(baseBlockSize | 0x40000000, Endian.Big);
                                             }
                                         }
                                         else if (info.Inserted || info.Modified)
