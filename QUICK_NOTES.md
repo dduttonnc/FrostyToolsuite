@@ -4,6 +4,10 @@ The short version of what changed. Full notes: [PATCH_NOTES.md](PATCH_NOTES.md).
 
 DAI = Dragon Age: Inquisition, DAV = Dragon Age: The Veilguard, MEA = Mass Effect: Andromeda.
 
+## Not released yet
+
+- Launch Platform and DatapathFix no longer break the launch when both are turned on: Launch Platform is skipped while DatapathFix is on (Steam and Epic only, untested)
+
 ## 1.7.5
 
 - All games: the window while mods are applied now looks like the cache window (game banner) and can show every step and what each CPU thread is doing. Options has a new Progress View setting: Detailed (the default) or Simple (one line, as before). It also covers the cache window
