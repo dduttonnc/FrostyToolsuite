@@ -34,7 +34,7 @@ namespace FrostyModManager.Windows
             private double progress;
             private string status;
             private string loadingList = "";
-            private bool detailed = ModManagerOptionsData.DetailedProgressView;
+            private bool detailed = ModManagerOptionsData.IsDetailedProgressView();
 
             public event PropertyChangedEventHandler PropertyChanged;
 

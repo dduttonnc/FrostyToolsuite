@@ -377,7 +377,7 @@ namespace Frosty.ModSupport
 
             public ProgressDetails(ILogger inLogger)
             {
-                if (Frosty.Core.Windows.ModManagerOptionsData.DetailedProgressView)
+                if (Frosty.Core.Windows.ModManagerOptionsData.IsDetailedProgressView())
                     logger = inLogger as ILoadingListLogger;
             }
 

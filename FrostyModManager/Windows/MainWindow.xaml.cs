@@ -817,7 +817,7 @@ namespace FrostyModManager
 
             // [DAI fix] the Detailed view uses the splash banner, so it looks like the cache window
             SplashHeader header = null;
-            if (ModManagerOptionsData.DetailedProgressView)
+            if (ModManagerOptionsData.IsDetailedProgressView())
             {
                 header = new SplashHeader();
                 header.ShowProfile();

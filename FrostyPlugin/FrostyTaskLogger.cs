@@ -11,7 +11,7 @@ namespace Frosty.Core
     internal class FrostyTaskLogger : ILogger, ILoadingListLogger
     {
         private FrostyTaskWindow task;
-        private bool detailed = ModManagerOptionsData.DetailedProgressView;
+        private bool detailed = ModManagerOptionsData.IsDetailedProgressView();
 
         public FrostyTaskLogger(FrostyTaskWindow inTask)
         {

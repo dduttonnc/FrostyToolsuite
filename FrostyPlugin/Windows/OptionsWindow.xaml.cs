@@ -433,7 +433,8 @@ namespace Frosty.Core.Windows
 
         private static readonly List<string> progressViewNames = new List<string>() { "Detailed", "Simple" };
 
-        public static bool DetailedProgressView => Config.Get<string>("ProgressView", "Detailed") != "Simple";
+        // a method, since the options page would list a static property as a setting
+        public static bool IsDetailedProgressView() => Config.Get<string>("ProgressView", "Detailed") != "Simple";
 
         // [DAI fix] limits for Frosty's worker threads (cache build and applying mods)
         [Category("Performance")]
@@ -489,7 +490,7 @@ namespace Frosty.Core.Windows
             WorkerPriority.SelectedIndex = Math.Max(0, priorityNames.IndexOf(Config.Get<string>("WorkerPriority", "Low")));
 
             ProgressView = new CustomComboData<string, string>(progressViewNames, progressViewNames);
-            ProgressView.SelectedIndex = DetailedProgressView ? 0 : 1;
+            ProgressView.SelectedIndex = IsDetailedProgressView() ? 0 : 1;
         }
 
         public override void Save()
