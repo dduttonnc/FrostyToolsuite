@@ -827,21 +827,18 @@ namespace FrostyModManager
             {
                 try
                 {
-                    foreach (var executionAction in App.PluginManager.ExecutionActions)
-                        executionAction.PreLaunchAction(task.TaskLogger, PluginManagerType.ModManager, cancelToken.Token);
+                    App.PluginManager.RunPreLaunchActions(task.TaskLogger, PluginManagerType.ModManager, cancelToken.Token);
 
                     FrostyModExecutor modExecutor = new FrostyModExecutor();
                     retCode = modExecutor.Run(fs, cancelToken.Token, task.TaskLogger, modsDir.FullName, App.SelectedPack, additionalArgs.Trim(), modPaths.ToArray());
 
-                    foreach (var executionAction in App.PluginManager.ExecutionActions)
-                        executionAction.PostLaunchAction(task.TaskLogger, PluginManagerType.ModManager, cancelToken.Token);
+                    App.PluginManager.RunPostLaunchActions(task.TaskLogger, PluginManagerType.ModManager, cancelToken.Token);
                 }
                 catch (Exception ex) when (ex is OperationCanceledException || ex is SymbolicLinkException)
                 {
                     retCode = -1;
 
-                    foreach (var executionAction in App.PluginManager.ExecutionActions)
-                        executionAction.PostLaunchAction(task.TaskLogger, PluginManagerType.ModManager, cancelToken.Token);
+                    App.PluginManager.RunPostLaunchActions(task.TaskLogger, PluginManagerType.ModManager, cancelToken.Token);
 
                     // process was cancelled
                     App.Logger.Log("Launch Cancelled");
