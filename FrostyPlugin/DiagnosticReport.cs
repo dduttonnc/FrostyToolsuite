@@ -171,7 +171,9 @@ namespace Frosty.Core
 
             foreach (DirectoryInfo pack in new DirectoryInfo(modData).GetDirectories())
             {
-                string dataPath = Directory.Exists(Path.Combine(pack.FullName, "Update", "Patch", "Data")) ? Path.Combine(pack.FullName, "Update", "Patch", "Data") : Path.Combine(pack.FullName, "Data");
+                // where FrostyModExecutor puts them: Update\Patch\Data (DAI and other old games), Data (Veilguard), Patch (MEA and the rest)
+                string[] candidates = { Path.Combine(pack.FullName, "Update", "Patch", "Data"), Path.Combine(pack.FullName, "Data"), Path.Combine(pack.FullName, "Patch") };
+                string dataPath = candidates.FirstOrDefault(c => File.Exists(Path.Combine(c, "mods.json"))) ?? candidates[0];
                 string modsJson = Path.Combine(dataPath, "mods.json");
                 string version = Path.Combine(dataPath, "moddata_version.txt");
                 DiagnosticLog.Log($"ModData pack '{pack.Name}': {pack.FullName}, made {pack.LastWriteTime:yyyy-MM-dd HH:mm}, mods.json {(File.Exists(modsJson) ? "found" : "missing")}, moddata_version {(File.Exists(version) ? File.ReadAllText(version).Trim() : "missing")}");
@@ -210,46 +212,48 @@ namespace Frosty.Core
         // follows the game, and any copy that relaunches it (Steam or the EA app can restart it)
         private static void Watch(string name)
         {
-            HashSet<int> seen = new HashSet<int>();
             TimeSpan wait = TimeSpan.FromSeconds(90);
-            for (int instance = 0; instance < 5; instance++)
-            {
-                int processId = WaitForNewProcess(name, seen, wait);
-                if (processId == 0)
-                {
-                    DiagnosticLog.Log((instance == 0) ? $"{name}.exe wasn't seen running within {wait.TotalSeconds:0}s of the launch" : $"No other {name}.exe started");
-                    return;
-                }
+            HashSet<int> seen = new HashSet<int>();
+            int running = 0;
+            long lastChange = Stopwatch.GetTimestamp();
 
-                WatchProcess(name, processId);
-                wait = TimeSpan.FromSeconds(20);
-            }
-        }
-
-        private static int WaitForNewProcess(string name, HashSet<int> seen, TimeSpan wait)
-        {
-            Stopwatch timer = Stopwatch.StartNew();
-            while (timer.Elapsed < wait)
+            while (seen.Count < 10)
             {
                 foreach (Process process in Process.GetProcessesByName(name))
                 {
                     using (process)
                     {
-                        if (seen.Add(process.Id))
-                            return process.Id;
+                        if (!seen.Add(process.Id))
+                            continue;
+
+                        int processId = process.Id;
+                        IntPtr handle = OpenProcess(Synchronize | QueryLimitedInformation, false, processId);
+                        int openError = Marshal.GetLastWin32Error();
+                        DateTime started;
+                        try { started = process.StartTime; } catch { started = DateTime.Now; }
+
+                        Interlocked.Increment(ref running);
+                        new Thread(() =>
+                        {
+                            Run(() => WatchProcess(name, processId, handle, openError, started));
+                            Interlocked.Exchange(ref lastChange, Stopwatch.GetTimestamp());
+                            Interlocked.Decrement(ref running);
+                        }) { IsBackground = true, Name = "Diagnostics game watcher" }.Start();
                     }
                 }
+
+                double idleSeconds = (Stopwatch.GetTimestamp() - Interlocked.Read(ref lastChange)) / (double)Stopwatch.Frequency;
+                if (Volatile.Read(ref running) == 0 && idleSeconds > wait.TotalSeconds)
+                    break;
                 Thread.Sleep(250);
             }
-            return 0;
+
+            DiagnosticLog.Log((seen.Count == 0) ? $"{name}.exe wasn't seen running within {wait.TotalSeconds:0}s of the launch" : $"No other {name}.exe started within {wait.TotalSeconds:0}s of the last one closing");
         }
 
-        private static void WatchProcess(string name, int processId)
+        private static void WatchProcess(string name, int processId, IntPtr handle, int openError, DateTime started)
         {
-            DateTime started = DateTime.Now;
-            IntPtr handle = OpenProcess(Synchronize | QueryLimitedInformation, false, processId);
-            int openError = Marshal.GetLastWin32Error();
-            DiagnosticLog.Log($"Game process {processId} started, command line: {GetCommandLine(processId) ?? "(couldn't be read)"}");
+            DiagnosticLog.Log($"Game process {processId} started at {started:HH:mm:ss}, command line: {GetCommandLine(processId) ?? "(couldn't be read)"}");
 
             string exit;
             if (handle != IntPtr.Zero)
