@@ -7,6 +7,7 @@ using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 
 namespace LaunchPlatformPlugin.Actions
@@ -86,6 +87,12 @@ namespace LaunchPlatformPlugin.Actions
             // only run platform launch system when PlatformLaunchingEnabled is true
             if (Config.Get("PlatformLaunchingEnabled", false, ConfigScope.Game))
             {
+                if (IsDatapathFixEnabled())
+                {
+                    App.Logger.LogWarning("Launch Platform skipped: DatapathFix is enabled for this game, and the two can't be used together");
+                    return;
+                }
+
                 var platform = (LaunchPlatform)Enum.Parse(typeof(LaunchPlatform), Config.Get("Platform", "Origin", ConfigScope.Game));
                 m_selectedPlatform = m_platforms[platform];
 
@@ -129,7 +136,7 @@ namespace LaunchPlatformPlugin.Actions
         public override Action<ILogger, PluginManagerType, CancellationToken> PostLaunchAction => new Action<ILogger, PluginManagerType, CancellationToken>((ILogger logger, PluginManagerType type, CancellationToken cancelToken) =>
         {
             // only run platform launch system when PlatformLaunchingEnabled is true
-            if (Config.Get("PlatformLaunchingEnabled", false, ConfigScope.Game))
+            if (Config.Get("PlatformLaunchingEnabled", false, ConfigScope.Game) && !IsDatapathFixEnabled())
             {
                 var platform = (LaunchPlatform)Enum.Parse(typeof(LaunchPlatform), Config.Get("Platform", "Origin", ConfigScope.Game));
 
@@ -159,6 +166,13 @@ namespace LaunchPlatformPlugin.Actions
                 }
             }
         });
+
+        // [DAI fix] DatapathFix relaunches the game through its stub exe; closing the launchers when the stub exits breaks that relaunch
+        private static bool IsDatapathFixEnabled()
+        {
+            return Config.Get("DatapathFixEnabled", false)
+                && App.PluginManager.ExecutionActions.Any(a => a.GetType().FullName == "DatapathFixPlugin.Actions.LaunchExecutionAction");
+        }
 
         // Closes and relaunches platform process without the environmental variables
         private void OnGameProcessExited(object sender, EventArgs e)

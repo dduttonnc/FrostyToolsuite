@@ -24,7 +24,7 @@ namespace LaunchPlatformPlugin.Options
     public class LaunchOptions : OptionsExtension
     {
         [Category("General")]
-        [Description("Enables the platform launching system. This is not needed if only Origin is being used.")]
+        [Description("Enables the platform launching system. This is not needed if only Origin is being used. Skipped while DatapathFix is enabled for this game.")]
         [DisplayName("Platform Launching Enabled")]
         [EbxFieldMeta(FrostySdk.IO.EbxFieldType.Boolean)]
         public bool PlatformLaunchingEnabled { get; set; } = false;

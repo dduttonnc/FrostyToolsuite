@@ -12,6 +12,11 @@ Frosty by dduttonnc is built on J-Lyt's Frosty, which is built on the original F
 
 One Frosty Mod Manager for Dragon Age: Inquisition, Dragon Age: The Veilguard and Mass Effect: Andromeda. https://github.com/dduttonnc/FrostyToolsuite
 
+Not released yet
+--------
+Bug Fixes:
+- All games: the Launch Platform plugin no longer runs when the DatapathFix plugin is enabled for the same game, so the two no longer break each other's launch (Launch Platform closed the EA app and Steam while DatapathFix was still relaunching the game through them). DatapathFix takes priority, and the log says Launch Platform was skipped. DatapathFix only tried to turn Platform Launching off when its own options were saved, and the Launch Options page turned it straight back on. Untested: this only matters for Steam and Epic copies, and none was available
+
 v1.7.5 - 2026.11.26.1
 --------
 Dragon Age: Inquisition: Frosty rebuilds each mod pack's ModData once on its next launch, so the fixes below are applied. Nothing needs deleting by hand, and no mod needs importing again. Full details: docs/CHANGELOG.md

@@ -11,6 +11,12 @@ because each has its own version numbers:
 
 Every code change in this section is marked with a `[DAI fix]` comment.
 
+## Not released yet
+
+| Change | Files |
+|---|---|
+| All games: LaunchPlatformPlugin skips its pre- and post-launch actions (with a log warning) when `DatapathFixEnabled` is on for the game and the DatapathFix plugin is loaded. With both on, DatapathFix (loaded first) swapped `<game>.exe` for its stub; Launch Platform then killed and restarted every launcher, and its post-launch wait latched onto the short-lived stub (or `<game>.orig.exe`) and killed the launchers again when that exited, in the middle of the relaunch DatapathFix depends on. DatapathFix's own guard (its options `Save` sets `PlatformLaunchingEnabled` to false) was undone by LaunchPlatformPlugin's `Save`, which runs after it, and answering Yes to its first-launch question skipped it. The 'Platform Launching Enabled' description now says it's skipped while DatapathFix is on. Untested: no Steam or Epic copy was available | `Plugins/LaunchPlatformPlugin/Actions/LaunchExecutionAction.cs`, `Plugins/LaunchPlatformPlugin/Options/LaunchOptions.cs` |
+
 ## 1.7.5
 
 Shows as **1.7.5 - 2026.11.26.1**. Release tag: `2026.11.26.1`. DAI ModData version raised to 4 (the fixes below), so DAI ModData is rebuilt once; MEA and Veilguard numbers unchanged.
