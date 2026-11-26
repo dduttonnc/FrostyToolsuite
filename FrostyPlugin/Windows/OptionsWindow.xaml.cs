@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Globalization;
+using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Data;
@@ -436,6 +437,27 @@ namespace Frosty.Core.Windows
         // a method, since the options page would list a static property as a setting
         public static bool IsDetailedProgressView() => Config.Get<string>("ProgressView", "Detailed") != "Simple";
 
+        // [DAI fix] for troubleshooting someone else's PC; off by default so normal logs stay the same
+        [Category("Manager")]
+        [DisplayName("Diagnostic Logging")]
+        [Description("Adds extra detail to the Log tab for troubleshooting: the game's version and platform, paths, cache, plugins and settings, each mod being applied and where its data is written, how the game is launched, and how it exits.\r\n\r\nThe whole log is also saved to a file in the Logs folder next to FrostyModManager.exe (the last 10 are kept), so it can be sent to whoever is helping. Leave it off normally.")]
+        [EbxFieldMeta(EbxFieldType.Boolean)]
+        public bool DiagnosticLogging { get; set; } = false;
+
+        public static void ApplyDiagnosticSetting()
+        {
+            if (!Config.Get<bool>("DiagnosticLogging", false))
+            {
+                DiagnosticLog.Stop();
+                return;
+            }
+            if (DiagnosticLog.Enabled)
+                return;
+
+            DiagnosticLog.Start(App.Logger, Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs"), (App.Logger as FrostyCore.FrostyLogger)?.LogText);
+            DiagnosticReport.LogProfile();
+        }
+
         // [DAI fix] limits for Frosty's worker threads (cache build and applying mods)
         [Category("Performance")]
         [DisplayName("CPU Threads")]
@@ -475,6 +497,7 @@ namespace Frosty.Core.Windows
             CommandLineArgs = Config.Get<string>("CommandLineArgs", "", ConfigScope.Game);
             UseCustomModsDirectory = Config.Get<bool>("UseCustomModsDirectory", false);
             CustomModsDirectory = Config.Get<string>("CustomModsDirectory", "");
+            DiagnosticLogging = Config.Get<bool>("DiagnosticLogging", false);
 
             List<string> threadValues = new List<string>();
             List<string> threadNames = new List<string>();
@@ -506,7 +529,9 @@ namespace Frosty.Core.Windows
             Config.Add("WorkerThreads", WorkerThreads.SelectedValue);
             Config.Add("WorkerPriority", WorkerPriority.SelectedValue);
             Config.Add("ProgressView", ProgressView.SelectedValue);
+            Config.Add("DiagnosticLogging", DiagnosticLogging);
             ApplyPerformanceSettings();
+            ApplyDiagnosticSetting();
 
             if (RememberChoice)
                 Config.Add("DefaultProfile2", ProfilesLibrary.ProfileName);

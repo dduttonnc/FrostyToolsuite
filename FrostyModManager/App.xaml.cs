@@ -82,6 +82,7 @@ namespace FrostyModManager
         private static void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
         {
             Exception exp = e.Exception;
+            DiagnosticLog.Detail("Unhandled error: " + exp);
 
             FrostyExceptionBox.Show(exp, "Frosty Mod Manager");
             Environment.Exit(0);
@@ -126,6 +127,7 @@ namespace FrostyModManager
             Config.Load();
             // [DAI fix] CPU Threads and CPU Priority options
             Frosty.Core.Windows.ModManagerOptionsData.ApplyPerformanceSettings();
+            Frosty.Core.Windows.ModManagerOptionsData.ApplyDiagnosticSetting();
 
             StringBuilder sb = new StringBuilder();
             if (e.Args.Length > 0)

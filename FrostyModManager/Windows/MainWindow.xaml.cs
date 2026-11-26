@@ -867,6 +867,10 @@ namespace FrostyModManager
 
             RefreshDexMods();
 
+            // [DAI fix] Diagnostic Logging: how the game runs and exits
+            if (retCode == 0)
+                DiagnosticReport.WatchGame();
+
             if (retCode != -1)
                 WindowState = WindowState.Minimized;
 

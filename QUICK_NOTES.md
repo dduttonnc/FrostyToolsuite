@@ -14,6 +14,7 @@ DAI = Dragon Age: Inquisition, DAV = Dragon Age: The Veilguard, MEA = Mass Effec
 - The Discord support links are hidden for now, since the Frosty team's servers don't support this version
 - The download now includes README, PATCH_NOTES and these quick notes
 - DAI: converted .daimods that match your game no longer show the 'different game version' warning, and a short note names any file a later game patch changed
+- New Diagnostic Logging option (off by default): the log shows much more about the PC, the game install, the mods applied and how the game started and exited, and is saved to the Logs folder so it can be sent in
 
 ## 1.7.4
 

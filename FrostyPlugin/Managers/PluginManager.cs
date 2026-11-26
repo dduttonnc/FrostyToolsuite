@@ -168,7 +168,10 @@ namespace Frosty.Core
             {
                 try
                 {
-                    (preLaunch ? executionAction.PreLaunchAction : executionAction.PostLaunchAction)?.Invoke(logger, type, cancelToken);
+                    Action<ILogger, PluginManagerType, CancellationToken> action = preLaunch ? executionAction.PreLaunchAction : executionAction.PostLaunchAction;
+                    if (action != null)
+                        DiagnosticLog.Log($"Running {(preLaunch ? "pre" : "post")}-launch action {executionAction.GetType().FullName}");
+                    action?.Invoke(logger, type, cancelToken);
                 }
                 catch (Exception ex) when (!(ex is OperationCanceledException))
                 {

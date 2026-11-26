@@ -85,6 +85,7 @@ namespace Frosty.ModSupport
             private ManualResetEvent doneEvent;
             private FrostyModExecutor parent;
             private string m_catalog;
+            private readonly List<string> m_casWritten = new List<string>();
 
             public static Dictionary<string, int> CasFiles = new Dictionary<string, int>();
             //private static Dictionary<string, NativeWriter> CasWriters = new Dictionary<string, NativeWriter>();
@@ -1415,10 +1416,31 @@ namespace Frosty.ModSupport
                     }
 
                     casWriter?.Close();
+
+                    // [DAI fix] Diagnostic Logging: where this superbundle's changes went
+                    if (DiagnosticLog.Enabled && (isDefaultTocModified || isSplitTocModified.Any(b => b) || m_casWritten.Count > 0))
+                    {
+                        List<string> written = new List<string>();
+                        string sbExtension = tocFlags.HasFlag(InternalFlags.HasInlineSb) ? "" : " + .sb";
+                        if (isDefaultTocModified)
+                            written.Add(SuperBundleInfo.Name + ".toc" + sbExtension);
+                        for (int splitIndex = 0; splitIndex < isSplitTocModified.Length; splitIndex++)
+                        {
+                            if (isSplitTocModified[splitIndex])
+                                written.Add(SuperBundleInfo.Name.Replace("win32", SuperBundleInfo.SplitSuperBundles[splitIndex]) + ".toc" + sbExtension);
+                        }
+                        written.AddRange(m_casWritten);
+
+                        List<string> changedBundles = bundles.Values.Where(b => b.IsModified).Select(b => b.Name).ToList();
+                        DiagnosticLog.Log($"Superbundle {SuperBundleInfo.Name}: {changedBundles.Count} bundles changed; wrote {string.Join(", ", written)} in {modPath}");
+                        foreach (string bundle in changedBundles)
+                            DiagnosticLog.Detail($"  {SuperBundleInfo.Name}: changed bundle {bundle}");
+                    }
                 }
                 catch (Exception e)
                 {
                     Exception = e;
+                    DiagnosticLog.Log($"Superbundle {SuperBundleInfo.Name} failed: {e}");
                 }
             }
 
@@ -1781,6 +1803,7 @@ namespace Frosty.ModSupport
 
                 FileInfo fi = new FileInfo(parent.m_fs.BasePath + parent.m_modDirName + "\\" + parent.m_patchPath + "\\" + catName + "\\cas_" + casFileIndex.ToString("D2") + ".cas");
                 Directory.CreateDirectory(fi.DirectoryName);
+                m_casWritten.Add(catName + "\\cas_" + casFileIndex.ToString("D2") + ".cas");
 
                 return new NativeWriter(new FileStream(fi.FullName, FileMode.Create));
             }
