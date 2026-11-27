@@ -453,7 +453,7 @@ namespace Frosty.Core.Windows
         // [DAI fix] color theme for the Mod Manager windows, applied as soon as the options are saved
         [Category("Interface")]
         [DisplayName("Theme")]
-        [Description("Colors of the Mod Manager's windows: Dark (the default), Light, Frosty or Dark Frosty. The new theme shows as soon as the options are saved.")]
+        [Description("Colors of the Mod Manager's windows: Dark (the default), Light, Frosty, Dark Frosty or Original (the classic Frosty greys). The new theme shows as soon as the options are saved.")]
         [EbxFieldMeta(EbxFieldType.Struct)]
         [Editor(typeof(FrostyLocalizationLanguageDataEditor))]
         public CustomComboData<string, string> Theme { get; set; }
