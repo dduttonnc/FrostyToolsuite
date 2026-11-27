@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:ctrl="clr-namespace:Frosty.Controls;assembly=FrostyControls"
         mc:Ignorable="d"
-        Title="Options" Height="720" Width="600" Loaded="OptionsWindow_Loaded"
+        Title="Options" Height="720" Width="680" Loaded="OptionsWindow_Loaded"
         ResizeMode="NoResize" WindowStartupLocation="CenterScreen" SnapsToDevicePixels="True">
     <Grid Background="{DynamicResource WindowBackground}">
         <Grid.RowDefinitions>

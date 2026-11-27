@@ -2976,7 +2976,7 @@
                                           Height="64"
                                           HorizontalAlignment="Right"
                                           VerticalAlignment="Top"
-                                          Margin="0,-18,16,0"
+                                          Margin="0,-18,160,0"
                                           RenderTransformOrigin="0.5,0.5">
                                         <Path.RenderTransform>
                                             <RotateTransform Angle="14" />
@@ -2989,7 +2989,7 @@
                                           Height="40"
                                           HorizontalAlignment="Right"
                                           VerticalAlignment="Top"
-                                          Margin="0,2,98,0"
+                                          Margin="0,2,240,0"
                                           Opacity="0.7"
                                           RenderTransformOrigin="0.5,0.5">
                                         <Path.RenderTransform>
@@ -3003,7 +3003,7 @@
                                           Height="26"
                                           HorizontalAlignment="Right"
                                           VerticalAlignment="Top"
-                                          Margin="0,-7,168,0"
+                                          Margin="0,-7,306,0"
                                           Opacity="0.5"
                                           RenderTransformOrigin="0.5,0.5">
                                         <Path.RenderTransform>

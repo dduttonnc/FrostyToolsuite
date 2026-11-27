@@ -530,6 +530,7 @@
                                                                                                             </Grid.ColumnDefinitions>
 
                                                                                                             <Grid Grid.Column="0">
+                                                                                                                <Ellipse x:Name="collectionModIconBack" Width="30" Height="30" Fill="{DynamicResource ControlHighlight}" Visibility="Collapsed"/>
                                                                                                                 <Image x:Name="collectionModIcon" Grid.Column="0" Source="{Binding Path=ModDetails.Icon}" Width="32" RenderOptions.BitmapScalingMode="Fant"/>
                                                                                                                 <Image Source="/FrostyModManager;component/Images/ModImportWarning.png" Width="12" HorizontalAlignment="Left" VerticalAlignment="Top" Opacity="0.75" Visibility="{Binding Path=HasWarnings, Converter={StaticResource booleanToVisibilityConverter}}"/>
                                                                                                             </Grid>
@@ -551,6 +552,7 @@
                                                                                                         <DataTemplate.Triggers>
                                                                                                             <DataTrigger Binding="{Binding Path=ModDetails.Icon}" Value="{x:Null}">
                                                                                                                 <Setter Property="Source" TargetName="collectionModIcon" Value="/FrostyModManager;component/Images/DefaultModIcon.png"/>
+                                                                                                                <Setter Property="Visibility" TargetName="collectionModIconBack" Value="Visible"/>
                                                                                                             </DataTrigger>
                                                                                                         </DataTemplate.Triggers>
                                                                                                     </DataTemplate>
@@ -581,6 +583,7 @@
                                                                         </Grid.ColumnDefinitions>
 
                                                                         <Grid Grid.Column="0">
+                                                                            <Ellipse x:Name="modIconBack" Width="30" Height="30" Fill="{DynamicResource ControlHighlight}" Visibility="Collapsed"/>
                                                                             <Image x:Name="modIcon" Grid.Column="0" Source="{Binding Path=ModDetails.Icon}" Width="32" RenderOptions.BitmapScalingMode="Fant"/>
                                                                             <Image Source="/FrostyModManager;component/Images/ModImportWarning.png" Width="12" HorizontalAlignment="Left" VerticalAlignment="Top" Opacity="0.75" Visibility="{Binding Path=HasWarnings, Converter={StaticResource booleanToVisibilityConverter}}"/>
                                                                         </Grid>
@@ -603,6 +606,7 @@
                                                                 <DataTemplate.Triggers>
                                                                     <DataTrigger Binding="{Binding Path=ModDetails.Icon}" Value="{x:Null}">
                                                                         <Setter Property="Source" TargetName="modIcon" Value="/FrostyModManager;component/Images/DefaultModIcon.png"/>
+                                                                        <Setter Property="Visibility" TargetName="modIconBack" Value="Visible"/>
                                                                     </DataTrigger>
                                                                     <DataTrigger Binding="{Binding Path=Mods}" Value="{x:Null}">
                                                                         <Setter Property="Visibility" TargetName="modsExpander" Value="Collapsed"/>
