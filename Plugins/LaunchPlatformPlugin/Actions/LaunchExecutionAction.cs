@@ -81,6 +81,13 @@ namespace LaunchPlatformPlugin.Actions
         };
         private Platform m_selectedPlatform;
         private bool m_shouldRelaunchPlatform = false;
+        private int m_launchId;
+        private readonly object m_launchLock = new object();
+
+        // the EA app or Steam can relaunch the game after its first process closes, once the EA app has started and signed in
+        private const int RelaunchWaitSeconds = 180;
+        private const int ClosedWaitSeconds = 10;
+        private const int PlayedSeconds = 30;
 
         public override Action<ILogger, PluginManagerType, CancellationToken> PreLaunchAction => new Action<ILogger, PluginManagerType, CancellationToken>((ILogger logger, PluginManagerType type, CancellationToken cancelToken) =>
         {
@@ -92,6 +99,10 @@ namespace LaunchPlatformPlugin.Actions
                     App.Logger.LogWarning("Launch Platform skipped: DatapathFix is enabled for this game, and the two can't be used together");
                     return;
                 }
+
+                // a watcher from the last launch must not close the launcher started below
+                lock (m_launchLock)
+                    m_launchId++;
 
                 var platform = (LaunchPlatform)Enum.Parse(typeof(LaunchPlatform), Config.Get("Platform", "Origin", ConfigScope.Game));
                 m_selectedPlatform = m_platforms[platform];
@@ -156,8 +167,23 @@ namespace LaunchPlatformPlugin.Actions
                             gameProcess = WaitForProcess(ProfilesLibrary.ProfileName, cancelToken, false, logger);
                         }
 
-                        gameProcess.EnableRaisingEvents = true;
-                        gameProcess.Exited += new EventHandler(OnGameProcessExited);
+                        // [DAI fix] watching only this process closed Steam and the EA app as soon as it handed the launch over to them
+                        int launchId = Volatile.Read(ref m_launchId);
+                        string gameName = ProfilesLibrary.ProfileName;
+                        Platform selectedPlatform = m_selectedPlatform;
+                        bool relaunch = m_shouldRelaunchPlatform;
+                        new Thread(() =>
+                        {
+                            try
+                            {
+                                CloseLaunchersAfterGame(gameName, launchId, selectedPlatform, relaunch);
+                            }
+                            catch (Exception e)
+                            {
+                                // an exception on this thread would close Frosty
+                                App.Logger.LogWarning("Launch Platform couldn't close the launchers: {0}", e.Message);
+                            }
+                        }) { IsBackground = true, Name = "Launch Platform game watcher" }.Start();
 
                     }
                     catch (OperationCanceledException)
@@ -174,14 +200,65 @@ namespace LaunchPlatformPlugin.Actions
                 && App.PluginManager.ExecutionActions.Any(a => a.GetType().FullName == "DatapathFixPlugin.Actions.LaunchExecutionAction");
         }
 
-        // Closes and relaunches platform process without the environmental variables
-        private void OnGameProcessExited(object sender, EventArgs e)
+        // Closes and relaunches platform process without the environmental variables, once no copy of the game is running
+        private void CloseLaunchersAfterGame(string gameName, int launchId, Platform selectedPlatform, bool relaunch)
         {
-            KillPlatformProcesses();
-            if (m_shouldRelaunchPlatform)
+            Stopwatch notRunning = Stopwatch.StartNew();
+            Stopwatch running = new Stopwatch();
+            bool played = false;
+
+            while (notRunning.Elapsed.TotalSeconds < (played ? ClosedWaitSeconds : RelaunchWaitSeconds))
             {
-                FrostyModExecutor.ExecuteProcess(m_selectedPlatform.Path, "");
+                Thread.Sleep(1000);
+
+                if (launchId != Volatile.Read(ref m_launchId))
+                    return;
+
+                if (IsGameRunning(gameName))
+                {
+                    notRunning.Restart();
+                    running.Start();
+                    played |= running.Elapsed.TotalSeconds >= PlayedSeconds;
+                }
+                else
+                {
+                    running.Reset();
+                }
             }
+
+            lock (m_launchLock)
+            {
+                // a newer launch has taken over the launchers
+                if (launchId != m_launchId)
+                    return;
+
+                string reason = played ? $"{gameName} closed" : $"{gameName} hasn't run for {RelaunchWaitSeconds}s";
+                DiagnosticLog.Log($"Launch Platform: {reason}, closing the launchers{(relaunch ? " and starting " + selectedPlatform.ProcessName + " again" : "")}");
+                KillPlatformProcesses();
+                if (relaunch)
+                {
+                    FrostyModExecutor.ExecuteProcess(selectedPlatform.Path, "");
+                }
+            }
+        }
+
+        private static bool IsGameRunning(string name)
+        {
+            foreach (Process process in Process.GetProcesses())
+            {
+                using (process)
+                {
+                    try
+                    {
+                        if (process.ProcessName.StartsWith(name, StringComparison.OrdinalIgnoreCase))
+                            return true;
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+            }
+            return false;
         }
 
         private void RunPlatformProcess(string platformPath, string gamePath)
