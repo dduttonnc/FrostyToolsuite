@@ -395,7 +395,7 @@ namespace Frosty.Core.Windows
         // [DAI fix] groups and order shown on this page; settings keep their config keys
         private static readonly string[][] categoryLayout =
         {
-            new[] { "Launch", nameof(UseSteamProtocol), nameof(DisableShaderCacheSymLink), nameof(DisableLaunchProcessCheck), nameof(CommandLineArgs) },
+            new[] { "Launch", nameof(UseSteamProtocol), nameof(DisableShaderCacheSymLink), nameof(DisableLaunchProcessCheck), nameof(TerminateStuckGame), nameof(CommandLineArgs) },
             new[] { "Mods & ModData", nameof(UseCustomModsDirectory), nameof(CustomModsDirectory), nameof(MaxCasFileSize), nameof(UseAltSymLink) },
             new[] { "Logging", nameof(PrintLog), nameof(DiagnosticLogging), nameof(AutoLogCleanup), nameof(LogCleanupDays) },
             new[] { "Interface", nameof(RememberChoice), nameof(ProgressView) },
@@ -416,6 +416,13 @@ namespace Frosty.Core.Windows
         [Description("Command line arguments to run on launch.")]
         [EbxFieldMeta(EbxFieldType.Boolean)]
         public string CommandLineArgs { get; set; } = "";
+
+        // [DAI fix] off gives the old behaviour: refuse to launch while the game is running
+        [Category("Launch")]
+        [DisplayName("Terminate Stuck Game")]
+        [Description("When the game is still running in the background as you launch (for example its window closed but it never fully shut down), Frosty asks whether to end it. On Yes it ends the game, losing anything not saved in it, asking for admin rights through the Windows prompt only if needed, and launches once the old game has fully closed. If it can't be ended, Frosty explains how to end it in Task Manager.\r\n\r\nWhen off, Frosty only says the game is already running and doesn't launch. Not used while Disable Launch Process Check is on.")]
+        [EbxFieldMeta(EbxFieldType.Boolean)]
+        public bool TerminateStuckGame { get; set; } = true;
 
         [Category("Mods & ModData")]
         [DisplayName("Enable Custom Mods Directory")]
@@ -532,6 +539,7 @@ namespace Frosty.Core.Windows
             
             RememberChoice = Config.Get<bool>("UseDefaultProfile2", false);
             CommandLineArgs = Config.Get<string>("CommandLineArgs", "", ConfigScope.Game);
+            TerminateStuckGame = Config.Get<bool>("TerminateStuckGame", true);
             UseCustomModsDirectory = Config.Get<bool>("UseCustomModsDirectory", false);
             CustomModsDirectory = Config.Get<string>("CustomModsDirectory", "");
             DiagnosticLogging = Config.Get<bool>("DiagnosticLogging", false);
@@ -564,6 +572,7 @@ namespace Frosty.Core.Windows
             
             Config.Add("UseDefaultProfile2", RememberChoice);
             Config.Add("CommandLineArgs", CommandLineArgs, ConfigScope.Game);
+            Config.Add("TerminateStuckGame", TerminateStuckGame);
             
             Config.Add("UseCustomModsDirectory", UseCustomModsDirectory);
             Config.Add("CustomModsDirectory", CustomModsDirectory);

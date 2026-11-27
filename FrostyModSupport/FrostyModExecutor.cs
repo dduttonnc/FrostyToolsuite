@@ -1429,19 +1429,8 @@ namespace Frosty.ModSupport
             }
 
             // check for already running process
-            if (!Config.Get<bool>("DisableLaunchProcessCheck", false))
-            {
-                Process[] processes = Process.GetProcesses();
-                string processName = ProfilesLibrary.ProfileName;
-                foreach (Process process in processes)
-                {
-                    if (process.ProcessName.Equals(processName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        FrostyMessageBox.Show(string.Format("Unable to launch process as there is already a running process with process Id {0}", process.Id), "Frosty Toolsuite");
-                        return -1;
-                    }
-                }
-            }
+            if (!Config.Get<bool>("DisableLaunchProcessCheck", false) && !EndRunningGame())
+                return -1;
 
             Stopwatch watch = new Stopwatch();
             watch.Start();
@@ -2635,6 +2624,118 @@ namespace Frosty.ModSupport
 
             GC.Collect();
             return 0;
+        }
+
+        // [DAI fix] a game left running (e.g. its window closed but the process stayed) can be ended from here
+        private bool EndRunningGame()
+        {
+            string processName = ProfilesLibrary.ProfileName;
+            List<int> ids = GetRunningGameIds(processName, null);
+            if (ids.Count == 0)
+                return true;
+
+            string gameName = ProfilesLibrary.DisplayName;
+            string idText = string.Join(", ", ids);
+            DiagnosticLog.Log($"Launch: {processName}.exe is already running (process ID {idText})");
+
+            if (!Config.Get<bool>("TerminateStuckGame", true))
+            {
+                if (FrostyMessageBox.Show($"{gameName} is already running (process ID {idText}), so it can't be launched again. This can happen when the game closes but doesn't fully shut down.\r\n\r\nDo you want Frosty to turn on Terminate Stuck Game and end {gameName} now? Anything not saved in that game will be lost. The option can be turned off again in Options.",
+                    "Frosty Toolsuite", System.Windows.MessageBoxButton.YesNo) != System.Windows.MessageBoxResult.Yes)
+                {
+                    DiagnosticLog.Log("Launch: cancelled, the game was left running (Terminate Stuck Game is off)");
+                    return false;
+                }
+
+                Config.Add("TerminateStuckGame", true);
+                Config.Save();
+                DiagnosticLog.Log("Launch: Terminate Stuck Game turned on");
+            }
+            else if (FrostyMessageBox.Show($"{gameName} is still running (process ID {idText}), so it can't be launched again yet. This can happen when the game closes but doesn't fully shut down.\r\n\r\nDo you want Frosty to end it now and then launch? Anything not saved in that game will be lost.",
+                "Frosty Toolsuite", System.Windows.MessageBoxButton.YesNo) != System.Windows.MessageBoxResult.Yes)
+            {
+                DiagnosticLog.Log("Launch: cancelled, the game was left running");
+                return false;
+            }
+
+            Logger.Log("Ending the running game");
+            List<int> denied = new List<int>();
+            foreach (int id in ids)
+            {
+                try
+                {
+                    using (Process process = Process.GetProcessById(id))
+                        process.Kill();
+                }
+                catch (ArgumentException)
+                {
+                    // already exited
+                }
+                catch (System.ComponentModel.Win32Exception e)
+                {
+                    DiagnosticLog.Log($"Launch: could not end process {id}: {e.Message}");
+                    denied.Add(id);
+                }
+                catch (Exception e)
+                {
+                    DiagnosticLog.Log($"Launch: could not end process {id}: {e.Message}");
+                }
+            }
+
+            bool adminRefused = false;
+            denied = GetRunningGameIds(processName, denied);
+            if (denied.Count > 0)
+            {
+                DiagnosticLog.Log("Launch: asking for admin rights to end the game");
+                try
+                {
+                    ProcessStartInfo info = new ProcessStartInfo("taskkill.exe", "/F " + string.Join(" ", denied.Select(id => "/PID " + id)))
+                    {
+                        UseShellExecute = true,
+                        Verb = "runas",
+                        WindowStyle = ProcessWindowStyle.Hidden
+                    };
+                    using (Process taskkill = Process.Start(info))
+                        taskkill?.WaitForExit(15000);
+                }
+                catch (System.ComponentModel.Win32Exception e)
+                {
+                    // 1223: the Windows admin prompt was answered No
+                    adminRefused = e.NativeErrorCode == 1223;
+                    DiagnosticLog.Log($"Launch: ending the game as admin failed: {e.Message}");
+                }
+            }
+
+            Logger.Log("Waiting for the game to close");
+            Stopwatch wait = Stopwatch.StartNew();
+            while (GetRunningGameIds(processName, ids).Count > 0 && !adminRefused && wait.Elapsed.TotalSeconds < 20)
+                Thread.Sleep(250);
+
+            List<int> left = GetRunningGameIds(processName, ids);
+            if (left.Count == 0)
+            {
+                DiagnosticLog.Log($"Launch: the old game process closed after {wait.Elapsed.TotalSeconds:0.0}s");
+                return true;
+            }
+
+            DiagnosticLog.Log($"Launch: the game is still running (process ID {string.Join(", ", left)}), launch cancelled");
+            string reason = adminRefused ? "Windows needs admin rights to end it, and the admin prompt was declined." : "It didn't close when asked.";
+            FrostyMessageBox.Show($"Frosty couldn't end {gameName} (process ID {string.Join(", ", left)}). {reason}\r\n\r\nTo end it yourself:\r\n1. Press Ctrl+Shift+Esc to open Task Manager. If that doesn't open it, press Ctrl+Alt+Del and choose Task Manager.\r\n2. If it opens as a small window, click More details.\r\n3. Go to the Details tab (on Windows 11 it's in the list on the left).\r\n4. Find {processName}.exe, right-click it and choose End task.\r\n\r\nThen launch again. If it still won't close, restart your PC.",
+                "Frosty Toolsuite");
+            return false;
+        }
+
+        // ids of the game's processes still running; only those in 'among' when it is given
+        private static List<int> GetRunningGameIds(string processName, List<int> among)
+        {
+            List<int> ids = new List<int>();
+            foreach (Process process in Process.GetProcessesByName(processName))
+            {
+                if (among == null || among.Contains(process.Id))
+                    ids.Add(process.Id);
+                process.Dispose();
+            }
+            return ids;
         }
 
         public static void LaunchGame(string basePath, string modDirName, string modDataPath, string additionalArgs)
