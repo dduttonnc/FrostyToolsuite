@@ -14,6 +14,9 @@ One Frosty Mod Manager for Dragon Age: Inquisition, Dragon Age: The Veilguard an
 
 Not released yet
 --------
+Improvements:
+- All games: the separate 'Applying Thread Count' option (Options, Mod Manager Options, General) is gone. Applying mods follows the Performance options, CPU Threads and CPU Priority, the same as building the cache. Dragon Age: Inquisition, Mass Effect: Andromeda and Veilguard already applied mods with those options: the old setting only capped Windows' shared thread pool, which can't be set below one thread per CPU core, so it had no real effect there. A value saved by an older version is ignored and removed the next time Options are saved
+
 Bug Fixes:
 - All games: the Launch Platform plugin no longer runs when the DatapathFix plugin is enabled for the same game, so the two no longer break each other's launch (Launch Platform closed the EA app and Steam while DatapathFix was still relaunching the game through them). DatapathFix takes priority, and the log says Launch Platform was skipped. DatapathFix only tried to turn Platform Launching off when its own options were saved, and the Launch Options page turned it straight back on. Untested: this only matters for Steam and Epic copies, and none was available
 

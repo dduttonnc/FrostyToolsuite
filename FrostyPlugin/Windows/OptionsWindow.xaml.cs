@@ -60,12 +60,6 @@ namespace Frosty.Core.Windows
         //public bool UpdateCheckPrerelease { get; set; } = false;
 
         [Category("General")]
-        [DisplayName("Applying Thread Count")]
-        [Description("The thread count that should be used when applying mods. By default is set to the number of processors on the machine")]
-        [EbxFieldMeta(EbxFieldType.Int32)]
-        public int ApplyingThreadCount { get; set; } = Environment.ProcessorCount;
-
-        [Category("General")]
         [DisplayName("CAS Max File Size")]
         [Description("Change the maximum size of written cas files when applying mods.\r\n\r\nHigher Values decrease system stability but ensure mod compatibility.")]
         [EbxFieldMeta(EbxFieldType.Struct)]
@@ -109,8 +103,6 @@ namespace Frosty.Core.Windows
             UpdateCheck = Config.Get<bool>("UpdateCheck", true);
             //UpdateCheckPrerelease = Config.Get<bool>("UpdateCheckPrerelease", false);
 
-            ApplyingThreadCount = Config.Get<int>("ApplyingThreadCount", Environment.ProcessorCount);
-
             List<string> sizes = new List<string>() { "1GB", "512MB", "256MB" };
             MaxCasFileSize = new CustomComboData<string, string>(sizes, sizes);
             MaxCasFileSize.SelectedIndex = sizes.IndexOf(Config.Get<string>("MaxCasFileSize", "1GB"));
@@ -129,7 +121,8 @@ namespace Frosty.Core.Windows
             Config.Add("UpdateCheck", UpdateCheck);
             //Config.Add("UpdateCheckPrerelease", UpdateCheckPrerelease);
             
-            Config.Add("ApplyingThreadCount", ApplyingThreadCount);
+            // [DAI fix] applying mods uses the Performance options; drop the old separate setting
+            Config.Remove("ApplyingThreadCount");
             Config.Add("MaxCasFileSize", MaxCasFileSize.SelectedName);
 
             Config.Add("DisableLaunchProcessCheck", DisableLaunchProcessCheck);

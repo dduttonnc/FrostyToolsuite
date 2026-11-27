@@ -1885,10 +1885,6 @@ namespace Frosty.ModSupport
                 logStepTime("Cleaning up ModData");
                 List<string> slowSuperBundles = new List<string>();
 
-                // set max threads to processor amount (stop hitching)
-                ThreadPool.GetMaxThreads(out int workerThreads, out int completionPortThreads);
-                ThreadPool.SetMaxThreads(Config.Get("ApplyingThreadCount", Environment.ProcessorCount), completionPortThreads);
-
                 // modify tocs and sbs
                 cancelToken.ThrowIfCancellationRequested();
                 progress.Begin("Applying mods");
@@ -2065,7 +2061,7 @@ namespace Frosty.ModSupport
                     foreach (CatalogInfo ci in m_fs.EnumerateCatalogInfos())
                     {
                         FifaBundleAction action = new FifaBundleAction(ci, doneEvent, this, cancelToken);
-                        ThreadPool.QueueUserWorkItem(action.ThreadPoolCallback, null);
+                        WorkerPool.Post(() => action.ThreadPoolCallback(null));
                         actions.Add(action);
                         m_numTasks++;
                         totalTasks++;
@@ -2142,7 +2138,7 @@ namespace Frosty.ModSupport
                     foreach (List<ModBundleInfo> task in tasks.Values)
                     {
                         ManifestBundleAction action = new ManifestBundleAction(task, doneEvent, this, cancelToken);
-                        ThreadPool.QueueUserWorkItem(action.ThreadPoolCallback, null);
+                        WorkerPool.Post(() => action.ThreadPoolCallback(null));
                         actions.Add(action);
                         m_numTasks++;
                         totalTasks++;
@@ -2316,9 +2312,6 @@ namespace Frosty.ModSupport
                     if (!RunSymbolicLinkProcess(cmdArgs))
                         DiagnosticLog.Log("Some of those links could not be created");
                 }
-
-                // reset threadpool
-                ThreadPool.SetMaxThreads(workerThreads, completionPortThreads);
 
                 logStepTime("Applying mods");
                 foreach (string line in slowSuperBundles)
