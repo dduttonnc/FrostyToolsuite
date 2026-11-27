@@ -85,8 +85,8 @@ namespace Frosty.Core.Windows
         public bool UseSteamProtocol { get; set; } = false;
 
         [Category("General")]
-        [DisplayName("Print Log")]
-        [Description("Prints a 'log.txt' file to your Frosty directory when creating ModData that shows all added and modified assets.")]
+        [DisplayName("ModData Build Log")]
+        [Description("Each time ModData is built, writes a 'log.txt' file to the Frosty folder listing the superbundles, bundles and chunks the mods added or changed, by name and ID.\r\n\r\nMeant for mod authors. Diagnostic Logging covers troubleshooting.")]
         [EbxFieldMeta(EbxFieldType.Boolean)]
         public bool PrintLog { get; set; } = false;
         
@@ -390,27 +390,40 @@ namespace Frosty.Core.Windows
     }
 
     [DisplayName("Mod Manager Options")]
-    public class ModManagerOptionsData : BaseOptionsData
+    public class ModManagerOptionsData : BaseOptionsData, IPropertyGridLayout
     {
-        [Category("Manager")]
+        // [DAI fix] groups and order shown on this page; settings keep their config keys
+        private static readonly string[][] categoryLayout =
+        {
+            new[] { "Launch", nameof(UseSteamProtocol), nameof(DisableShaderCacheSymLink), nameof(DisableLaunchProcessCheck), nameof(CommandLineArgs) },
+            new[] { "Mods & ModData", nameof(UseCustomModsDirectory), nameof(CustomModsDirectory), nameof(MaxCasFileSize), nameof(UseAltSymLink) },
+            new[] { "Logging", nameof(PrintLog), nameof(DiagnosticLogging), nameof(AutoLogCleanup), nameof(LogCleanupDays) },
+            new[] { "Interface", nameof(RememberChoice), nameof(ProgressView) },
+            new[] { "Performance", nameof(WorkerPriority), nameof(WorkerThreads) },
+            new[] { "Updates", nameof(UpdateCheck) },
+        };
+
+        public string[][] GetCategoryLayout() => categoryLayout;
+
+        [Category("Interface")]
         [DisplayName("Remember Profile Choice")]
         [Description("If true, the last chosen profile will be automatically loaded when starting the Mod Manager.")]
         [EbxFieldMeta(EbxFieldType.Boolean)]
         public bool RememberChoice { get; set; } = false;
 
-        [Category("Manager")]
+        [Category("Launch")]
         [DisplayName("Command Line Arguments")]
         [Description("Command line arguments to run on launch.")]
         [EbxFieldMeta(EbxFieldType.Boolean)]
         public string CommandLineArgs { get; set; } = "";
 
-        [Category("Manager")]
+        [Category("Mods & ModData")]
         [DisplayName("Enable Custom Mods Directory")]
         [Description("Enables custom directory to load mods from.")]
         [EbxFieldMeta(EbxFieldType.Boolean)]
         public bool UseCustomModsDirectory { get; set; } = false;
 
-        [Category("Manager")]
+        [Category("Mods & ModData")]
         [DisplayName("Custom Mods Directory")]
         [Description("Select directory to load mods from upon startup.")]
         [Editor(typeof(FrostyCustomPathEditor))]
@@ -418,7 +431,7 @@ namespace Frosty.Core.Windows
         public string CustomModsDirectory { get; set; } = "";
 
         // [DAI fix] one setting for the cache window and the apply window
-        [Category("Manager")]
+        [Category("Interface")]
         [DisplayName("Progress View")]
         [Description("How much the progress windows show while Frosty builds its cache and applies mods.\r\n\r\nDetailed (the default) shows a taller window with each step, how long it took, and what each CPU thread is working on. Simple shows only the current step on one line.")]
         [EbxFieldMeta(EbxFieldType.Struct)]
@@ -431,19 +444,19 @@ namespace Frosty.Core.Windows
         public static bool IsDetailedProgressView() => Config.Get<string>("ProgressView", "Detailed") != "Simple";
 
         // [DAI fix] for troubleshooting someone else's PC; off by default so normal logs stay the same
-        [Category("Manager")]
+        [Category("Logging")]
         [DisplayName("Diagnostic Logging")]
         [Description("Adds extra detail to the Log tab for troubleshooting: the game's version and platform, paths, cache, plugins and settings, each mod being applied and where its data is written, how the game is launched, and how it exits.\r\n\r\nThe whole log is also saved to a file in the Logs folder next to FrostyModManager.exe so it can be sent to whoever is helping. Leave it off normally, or turn on Automatic Log Cleanup below so old files are deleted.")]
         [EbxFieldMeta(EbxFieldType.Boolean)]
         public bool DiagnosticLogging { get; set; } = false;
 
-        [Category("Manager")]
+        [Category("Logging")]
         [DisplayName("Automatic Log Cleanup")]
         [Description("Deletes Diagnostic Logging files in the Logs folder that are older than the age chosen below, each time the Mod Manager starts and when these options are saved. Only Frosty's own Diagnostics files are deleted.\r\n\r\nWhen off, every file is kept.")]
         [EbxFieldMeta(EbxFieldType.Boolean)]
         public bool AutoLogCleanup { get; set; } = false;
 
-        [Category("Manager")]
+        [Category("Logging")]
         [DisplayName("Delete Logs Older Than")]
         [Description("How old a Diagnostic Logging file must be before Automatic Log Cleanup deletes it.")]
         [EbxFieldMeta(EbxFieldType.Struct)]

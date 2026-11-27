@@ -25,6 +25,12 @@ namespace Frosty.Core.Controls
 {
     #region -- Converters/Comparers --
 
+    // [DAI fix] each row is a category name followed by its property names, in display order
+    public interface IPropertyGridLayout
+    {
+        string[][] GetCategoryLayout();
+    }
+
     public class PropertyComparer : IComparer<PropertyInfo>
     {
         public int Compare(PropertyInfo x, PropertyInfo y)
@@ -1714,6 +1720,10 @@ namespace Frosty.Core.Controls
 
             Array.Sort(pis, new PropertyComparer());
 
+            string[][] layout = (value as IPropertyGridLayout)?.GetCategoryLayout();
+            if (layout != null)
+                pis = pis.OrderBy(p => GetLayoutPosition(layout, p.Name)).ToArray();
+
             foreach (PropertyInfo pi in pis)
             {
                 AttributeList attributes = new AttributeList();
@@ -1734,6 +1744,10 @@ namespace Frosty.Core.Controls
                 string category = "Misc";
                 if (attributes.GetCustomAttribute<FrostySdk.Attributes.CategoryAttribute>() != null)
                     category = attributes.GetCustomAttribute<FrostySdk.Attributes.CategoryAttribute>().Name;
+
+                int layoutPosition = (layout != null) ? GetLayoutPosition(layout, pi.Name) : int.MaxValue;
+                if (layoutPosition != int.MaxValue)
+                    category = layout[layoutPosition / 1000][0];
 
                 if (!categories.ContainsKey(category))
                     categories.Add(category, new FrostyPropertyGridItemData(category));
@@ -1779,7 +1793,31 @@ namespace Frosty.Core.Controls
                 }
             }
 
+            if (layout != null)
+                return categories.OrderBy(kv => GetLayoutCategoryIndex(layout, kv.Key)).Select(kv => kv.Value).ToArray();
             return categories.Values.ToArray();
+        }
+
+        // category index * 1000 + position in it; int.MaxValue when not listed
+        private static int GetLayoutPosition(string[][] layout, string propertyName)
+        {
+            for (int i = 0; i < layout.Length; i++)
+            {
+                int index = Array.IndexOf(layout[i], propertyName, 1);
+                if (index > 0)
+                    return i * 1000 + index;
+            }
+            return int.MaxValue;
+        }
+
+        private static int GetLayoutCategoryIndex(string[][] layout, string category)
+        {
+            for (int i = 0; i < layout.Length; i++)
+            {
+                if (layout[i][0] == category)
+                    return i;
+            }
+            return int.MaxValue;
         }
 
         private void SubItem_PreModified(object sender, ItemPreModifiedEventArgs e)
