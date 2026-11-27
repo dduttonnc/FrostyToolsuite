@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:FrostyModManager"
         xmlns:ctrl="clr-namespace:Frosty.Controls;assembly=FrostyControls"
         mc:Ignorable="d"
-        Title="Installation Report" Height="300" Width="600"
+        Title="Installation Report" Height="360" Width="720"
         ResizeMode="NoResize" WindowStartupLocation="CenterOwner"
         Icon="/FrostyModManager;component/AppIcon.ico">
     <ctrl:FrostyDockableWindow.Resources>
@@ -18,27 +18,27 @@
             <RowDefinition Height="38"/>
         </Grid.RowDefinitions>
 
-        <ListView x:Name="errorListView">
+        <ListView x:Name="errorListView" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
             <ListView.View>
                 <GridView>
                     <GridView.Columns>
-                        <GridViewColumn Header="Filename">
+                        <GridViewColumn Header="Filename" Width="190">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Grid Height="22">
-                                        <TextBlock Text="{Binding Path=Filename}" FontFamily="Global User Interface" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <Grid MinHeight="22" Margin="0,2">
+                                        <TextBlock Text="{Binding Path=Filename}" FontFamily="Global User Interface" VerticalAlignment="Top" Margin="0,3,10,0" TextWrapping="Wrap"/>
                                     </Grid>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-                        <GridViewColumn Header="Status">
+                        <GridViewColumn Header="Status" Width="490">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Grid Height="22">
-                                        <StackPanel Orientation="Horizontal">
-                                            <Image Height="20" Margin="4,0,8,0" Source="{Binding Path=IsWarning, Converter={StaticResource modStatusToBitmapSourceConverter}}" Opacity="0.5"/>
-                                            <TextBlock Text="{Binding Path=Error}" FontFamily="Global User Interface" VerticalAlignment="Center"/>
-                                        </StackPanel>
+                                    <Grid MinHeight="22" Margin="0,2">
+                                        <DockPanel>
+                                            <Image DockPanel.Dock="Left" Height="20" Margin="4,0,8,0" VerticalAlignment="Top" Source="{Binding Path=IsWarning, Converter={StaticResource modStatusToBitmapSourceConverter}}" Opacity="0.5"/>
+                                            <TextBlock Text="{Binding Path=Error}" FontFamily="Global User Interface" VerticalAlignment="Top" Margin="0,3,0,0" TextWrapping="Wrap"/>
+                                        </DockPanel>
                                     </Grid>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
