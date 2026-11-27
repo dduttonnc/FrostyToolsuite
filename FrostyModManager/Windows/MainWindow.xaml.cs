@@ -1300,23 +1300,58 @@ namespace FrostyModManager
             public uint[] MipSizes;
         }
 
+        // the <resource> elements, counted the way the converter and the bundle entry ids count them
+        private static List<ScriptResourceEntry> DaiReadScriptEntries(string xml)
+        {
+            System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
+            doc.LoadXml(xml);
+
+            List<ScriptResourceEntry> entries = new List<ScriptResourceEntry>();
+            System.Xml.XmlElement resourcesElem = doc["daimod"]?["resources"];
+            if (resourcesElem == null)
+                return entries;
+
+            foreach (System.Xml.XmlNode node in resourcesElem.ChildNodes)
+            {
+                if (node is System.Xml.XmlElement elem)
+                {
+                    int resId;
+                    if (!int.TryParse(elem.GetAttribute("resourceId"), out resId))
+                        resId = -1;
+                    entries.Add(new ScriptResourceEntry { Name = elem.GetAttribute("name"), ResourceId = resId });
+                }
+            }
+            return entries;
+        }
+
+        // null entries: no script, everything as in the file
+        private static bool DaiEntryEnabled(List<ScriptResourceEntry> entries, int index) => entries == null || index >= entries.Count || entries[index].Enabled;
+
         // keyed by the chunk id each texture points at
-        private static Dictionary<Guid, DaiTextureLayout> DaiReadTextureLayouts(System.Xml.XmlElement resourcesElem, List<byte[]> resources)
+        private static Dictionary<Guid, DaiTextureLayout> DaiReadTextureLayouts(System.Xml.XmlElement resourcesElem, List<byte[]> resources, List<ScriptResourceEntry> scriptEntries)
         {
             const uint TextureResType = 0x5C4954A6;
             Dictionary<Guid, DaiTextureLayout> layouts = new Dictionary<Guid, DaiTextureLayout>();
 
+            int index = -1;
             foreach (System.Xml.XmlNode node in resourcesElem.ChildNodes)
             {
                 System.Xml.XmlElement elem = node as System.Xml.XmlElement;
-                if (elem == null || elem.GetAttribute("type") != "res" || elem.GetAttribute("action") == "remove")
+                if (elem == null)
+                    continue;
+                index++;
+                if (elem.GetAttribute("type") != "res" || elem.GetAttribute("action") == "remove" || !DaiEntryEnabled(scriptEntries, index))
                     continue;
 
                 uint resType;
                 int resId;
                 if (!uint.TryParse(elem.GetAttribute("resType"), out resType) || resType != TextureResType)
                     continue;
-                if (!int.TryParse(elem.GetAttribute("resourceId"), out resId) || resId < 0 || resId >= resources.Count)
+                if (!int.TryParse(elem.GetAttribute("resourceId"), out resId))
+                    resId = -1;
+                if (scriptEntries != null && index < scriptEntries.Count)
+                    resId = scriptEntries[index].ResourceId;
+                if (resId < 0 || resId >= resources.Count)
                     continue;
 
                 byte[] header;
@@ -1502,7 +1537,7 @@ namespace FrostyModManager
         // DAI Mod Manager skipped a file whose game copy was no longer the one the mod was made from
         private static class DaiPatchCheck
         {
-            public static List<string> FindChangedFiles(AssetManager am, System.Xml.XmlElement resourcesElem, out int checkedFiles)
+            public static List<string> FindChangedFiles(AssetManager am, System.Xml.XmlElement resourcesElem, List<ScriptResourceEntry> scriptEntries, out int checkedFiles)
             {
                 List<string> changed = new List<string>();
                 HashSet<string> seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -1510,10 +1545,14 @@ namespace FrostyModManager
                 if (am == null || resourcesElem == null)
                     return changed;
 
+                int index = -1;
                 foreach (System.Xml.XmlNode node in resourcesElem.ChildNodes)
                 {
                     System.Xml.XmlElement elem = node as System.Xml.XmlElement;
-                    if (elem == null || elem.GetAttribute("action") != "modify" || !elem.HasAttribute("originalSha1"))
+                    if (elem == null)
+                        continue;
+                    index++;
+                    if (elem.GetAttribute("action") != "modify" || !elem.HasAttribute("originalSha1") || !DaiEntryEnabled(scriptEntries, index))
                         continue;
 
                     string type = elem.GetAttribute("type");
@@ -2011,16 +2050,15 @@ namespace FrostyModManager
 
                 int resCount = reader.ReadInt();
                 List<byte[]> resources = new List<byte[]>();
-                List<bool> shouldWrite = new List<bool>();
 
                 for (int i = 0; i < resCount; i++)
-                {
                     resources.Add(reader.ReadBytes(reader.ReadInt()));
-                    shouldWrite.Add(true);
-                }
 
                 // [DAI fix] to spot resources the script replaced
                 byte[][] originalResources = resources.ToArray();
+
+                // [DAI fix] what the script can turn off or repoint, per resource entry as in DAI Mod Manager
+                List<ScriptResourceEntry> scriptEntries = code != "" ? DaiReadScriptEntries(xml) : null;
 
                 string configValues = "";
                 Dictionary<string, string> chosenSettings = null;
@@ -2033,7 +2071,7 @@ namespace FrostyModManager
                         // [DAI fix] script errors used to crash the import, and closing with X imported it unconfigured
                         try
                         {
-                            ConfigWindow win = new ConfigWindow(code, resources, shouldWrite, savedSettings, legacyDescription);
+                            ConfigWindow win = new ConfigWindow(code, resources, scriptEntries, savedSettings, legacyDescription);
                             if (!string.IsNullOrEmpty(name))
                                 win.Title = "Mod Configuration - " + name;
                             win.ShowDialog();
@@ -2096,6 +2134,19 @@ namespace FrostyModManager
                 DbObject actionsList = new DbObject(false);
                 DbObject screenshotList = new DbObject(false);
 
+                // without a script every data block is written, as before; with one, only those an enabled entry uses
+                bool[] shouldWrite = new bool[resources.Count];
+                for (int i = 0; i < shouldWrite.Length; i++)
+                    shouldWrite[i] = scriptEntries == null;
+                if (scriptEntries != null)
+                {
+                    foreach (ScriptResourceEntry entry in scriptEntries)
+                    {
+                        if (entry.Enabled && entry.ResourceId >= 0 && entry.ResourceId < shouldWrite.Length)
+                            shouldWrite[entry.ResourceId] = true;
+                    }
+                }
+
                 // [DAI fix] offsets in resource-id order, which is how the archive is written (was XML order)
                 long[] archiveOffsets = new long[resources.Count];
                 long runningOffset = 0;
@@ -2155,10 +2206,10 @@ namespace FrostyModManager
                 }
 
                 // [DAI fix] the texture header's firstMip wins; a wrong 0 gave black/rainbow textures at a distance
-                Dictionary<Guid, DaiTextureLayout> textureLayouts = DaiReadTextureLayouts(resourcesElem, resources);
+                Dictionary<Guid, DaiTextureLayout> textureLayouts = DaiReadTextureLayouts(resourcesElem, resources, scriptEntries);
 
                 // [DAI fix] files a game patch changed after the mod was made
-                List<string> changedFiles = DaiPatchCheck.FindChangedFiles(am, resourcesElem, out int checkedFiles);
+                List<string> changedFiles = DaiPatchCheck.FindChangedFiles(am, resourcesElem, scriptEntries, out int checkedFiles);
 
                 foreach (System.Xml.XmlNode resNode in resourcesElem.ChildNodes)
                 {
@@ -2167,6 +2218,10 @@ namespace FrostyModManager
                         continue;
 
                     index++;
+
+                    ScriptResourceEntry scriptEntry = scriptEntries != null && index < scriptEntries.Count ? scriptEntries[index] : null;
+                    if (scriptEntry != null && !scriptEntry.Enabled)
+                        continue;
 
                     string type = subElem.GetAttribute("type");
                     string resAction = subElem.GetAttribute("action");
@@ -2224,16 +2279,19 @@ namespace FrostyModManager
                     }
 
                     int resId;
-                    if (!int.TryParse(subElem.GetAttribute("resourceId"), out resId) || resId < 0 || resId >= resources.Count)
+                    if (!int.TryParse(subElem.GetAttribute("resourceId"), out resId))
+                        resId = -1;
+                    int fileResId = resId;
+                    if (scriptEntry != null)
+                        resId = scriptEntry.ResourceId;
+                    if (resId < 0 || resId >= resources.Count)
                     {
                         errors.Add(new ImportErrorInfo() { filename = fi.Name, error = "Skipped " + resName + ": it points at a resource that is not in the file.", isWarning = true });
                         continue;
                     }
-                    if (shouldWrite[resId] == false)
-                        continue;
 
                     byte[] data = resources[resId];
-                    bool scriptModified = !ReferenceEquals(data, originalResources[resId]);
+                    bool scriptModified = resId != fileResId || !ReferenceEquals(data, originalResources[resId]);
 
                     DbObject resource = new DbObject();
                     resource.AddValue("name", resName);
@@ -2282,32 +2340,35 @@ namespace FrostyModManager
                     {
                         uint logicalOffset = uint.Parse(subElem.GetAttribute("logicalOffset"));
                         uint logicalSize = uint.Parse(subElem.GetAttribute("logicalSize"));
-
-                        // [DAI fix] recalculate if the script replaced it (only safe without a mip offset)
-                        if (scriptModified)
-                        {
-                            if (logicalOffset == 0)
-                            {
-                                long newSize = DaiDecompressedLength(data);
-                                if (newSize >= 0)
-                                    logicalSize = (uint)newSize;
-                            }
-                            else
-                            {
-                                errors.Add(new ImportErrorInfo() { filename = fi.Name, error = "The configuration script changed texture chunk " + resName + "; its size information was kept as-is and may be wrong.", isWarning = true });
-                            }
-                        }
-
                         uint rangeStart = uint.Parse(subElem.GetAttribute("rangeStart"));
                         uint rangeEnd = uint.Parse(subElem.GetAttribute("rangeEnd"));
 
                         // [DAI fix] little-endian int in the meta; was read as big-endian hex (3 became 50331648)
                         int firstMip = DaiParseFirstMip(subElem.GetAttribute("meta"));
 
-                        // [DAI fix] match the texture header
                         DaiTextureLayout texLayout;
-                        if (textureLayouts.TryGetValue(chunkGuid, out texLayout) && texLayout.FirstMip != firstMip)
+                        bool hasTexLayout = textureLayouts.TryGetValue(chunkGuid, out texLayout);
+                        if (scriptModified)
                         {
+                            // [DAI fix] new data from the script: split it by its texture header, else the whole chunk with the range reset, as DAI Mod Manager does
+                            if (!hasTexLayout || !DaiCalcTextureRange(texLayout, data, ref firstMip, ref logicalOffset, ref logicalSize, ref rangeStart, ref rangeEnd))
+                            {
+                                long newSize = DaiDecompressedLength(data);
+                                if (newSize >= 0)
+                                {
+                                    logicalOffset = (uint)(newSize & 0xFF000000);
+                                    logicalSize = (uint)(newSize & 0x00FFFFFF);
+                                }
+                                if (rangeStart != 0 || rangeEnd != 0)
+                                {
+                                    rangeStart = 0;
+                                    rangeEnd = (uint)data.Length;
+                                }
+                            }
+                        }
+                        else if (hasTexLayout && texLayout.FirstMip != firstMip)
+                        {
+                            // [DAI fix] match the texture header
                             if (DaiCalcTextureRange(texLayout, data, ref firstMip, ref logicalOffset, ref logicalSize, ref rangeStart, ref rangeEnd))
                                 numTexFixed++;
                         }

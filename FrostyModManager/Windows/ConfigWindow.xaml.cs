@@ -33,6 +33,29 @@ namespace FrostyModManager
         }
 
         public override string ToString() => displayName;
+
+        public virtual string DisplayText => currentValue?.ToString() ?? "";
+
+        // culture-independent, for Reconfigure
+        public virtual string SaveText
+        {
+            get
+            {
+                if (currentValue is float f)
+                    return f.ToString("R", CultureInfo.InvariantCulture);
+                if (currentValue is IFormattable formattable)
+                    return formattable.ToString(null, CultureInfo.InvariantCulture);
+                return currentValue?.ToString() ?? "";
+            }
+        }
+    }
+
+    // [DAI fix] one per <resource> entry of the .daimod, in file order
+    class ScriptResourceEntry
+    {
+        public string Name;
+        public int ResourceId;
+        public bool Enabled = true;
     }
 
     class ConfigElement<T> : ConfigElement
@@ -51,15 +74,20 @@ namespace FrostyModManager
         }
     }
 
+    // the value is the dropdown position, as in DAI Mod Manager
     class EnumConfigElement : ConfigElement
     {
-        int defValue;
-        public EnumConfigElement(string inId, string inDisplayName, Type inType, int inDefValue)
+        string[] names;
+        public EnumConfigElement(string inId, string inDisplayName, string[] inNames, int inDefValue)
             : base(inId, inDisplayName)
         {
-            defValue = inDefValue;
-            currentValue = defValue;
+            names = inNames;
+            currentValue = inDefValue;
         }
+
+        public override string DisplayText => (currentValue is int i && i >= 0 && i < names.Length) ? names[i] : base.DisplayText;
+
+        public override string SaveText => DisplayText;
     }
 
     class StringConfigElement : ConfigElement
@@ -99,8 +127,11 @@ namespace FrostyModManager
 
         public IEnumerable<KeyValuePair<string, ConfigElement>> Elements => elements;
 
-        private bool TryGetSaved(string id, string name, out string value)
+        private bool TryGetSaved(string id, string name, out string value) => TryGetSaved(id, name, out value, out bool _);
+
+        private bool TryGetSaved(string id, string name, out string value, out bool fromDescription)
         {
+            fromDescription = false;
             if (savedValues != null && savedValues.TryGetValue(id, out value) && value != null)
                 return true;
 
@@ -112,6 +143,7 @@ namespace FrostyModManager
                     if (legacyLines[i].StartsWith(prefix, StringComparison.Ordinal))
                     {
                         value = legacyLines[i].Substring(prefix.Length);
+                        fromDescription = true;
                         return true;
                     }
                 }
@@ -151,7 +183,7 @@ namespace FrostyModManager
                 initial = Math.Max(minValue, Math.Min(maxValue, savedInt));
             ce.CurrentValue = initial;
 
-            Label lbl = new Label {Content = name};
+            Label lbl = NameLabel(name);
 
             TextBox tb = new TextBox
             {
@@ -201,7 +233,7 @@ namespace FrostyModManager
                 initial = Math.Max(minValue, Math.Min(maxValue, savedFloat));
             ce.CurrentValue = initial;
 
-            Label lbl = new Label {Content = name};
+            Label lbl = NameLabel(name);
 
             TextBox tb = new TextBox
             {
@@ -251,7 +283,7 @@ namespace FrostyModManager
                 initial = savedBool;
             ce.CurrentValue = initial;
 
-            Label lbl = new Label {Content = name};
+            Label lbl = NameLabel(name);
 
             CheckBox cb = new CheckBox
             {
@@ -270,46 +302,28 @@ namespace FrostyModManager
 
         public override void AddEnumElement(string id, string name, Type enumType, int defValue)
         {
-            EnumConfigElement ce = new EnumConfigElement(id, name, enumType, defValue);
+            // [DAI fix] the script gets the dropdown position and defValue is one, as in DAI Mod Manager (1.0.6.4-dai.1 to 1.7.5 passed the enum value)
+            string[] names = Enum.GetNames(enumType);
+            EnumConfigElement ce = new EnumConfigElement(id, name, names, defValue);
             AddElement(id, ce);
 
-            Label lbl = new Label {Content = name};
+            Label lbl = NameLabel(name);
 
-            // [DAI fix] pass the enum value, not the dropdown index (they differ unless the values are 0, 1, 2...)
-            string[] names = Enum.GetNames(enumType);
-            int[] values = new int[names.Length];
-            bool valuesUsable = true;
-            try
-            {
-                Array rawValues = Enum.GetValues(enumType);
-                for (int i = 0; i < values.Length; i++)
-                    values[i] = Convert.ToInt32(rawValues.GetValue(i), CultureInfo.InvariantCulture);
-            }
-            catch (Exception)
-            {
-                valuesUsable = false;
-            }
-            if (!valuesUsable)
-            {
-                for (int i = 0; i < values.Length; i++)
-                    values[i] = i;
-            }
+            int selectedIndex = (defValue >= 0 && defValue < names.Length) ? defValue : -1;
 
-            // defValue is normally an enum value, but may be an index
-            int selectedIndex = Array.IndexOf(values, defValue);
-            if (selectedIndex < 0 && defValue >= 0 && defValue < values.Length)
-                selectedIndex = defValue;
-
-            // saved as the enum value
-            if (TryGetSaved(id, name, out string saved) && int.TryParse(saved.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int savedEnum))
+            // saved as the name; settings files from before hold the enum value, old descriptions the position
+            if (TryGetSaved(id, name, out string saved, out bool fromDescription))
             {
-                int savedIndex = Array.IndexOf(values, savedEnum);
-                if (savedIndex >= 0)
+                string savedText = saved.Trim();
+                int savedIndex = Array.IndexOf(names, savedText);
+                if (savedIndex < 0 && int.TryParse(savedText, NumberStyles.Integer, CultureInfo.InvariantCulture, out int savedNumber))
+                    savedIndex = fromDescription ? savedNumber : DaiEnumIndexOfValue(enumType, savedNumber);
+                if (savedIndex >= 0 && savedIndex < names.Length)
+                {
                     selectedIndex = savedIndex;
+                    ce.CurrentValue = savedIndex;
+                }
             }
-
-            if (selectedIndex >= 0)
-                ce.CurrentValue = values[selectedIndex];
 
             ComboBox cb = new ComboBox
             {
@@ -323,11 +337,105 @@ namespace FrostyModManager
 
             cb.SelectionChanged += (o, e) =>
             {
-                if (cb.SelectedIndex >= 0 && cb.SelectedIndex < values.Length)
-                    ce.CurrentValue = values[cb.SelectedIndex];
+                if (cb.SelectedIndex >= 0)
+                    ce.CurrentValue = cb.SelectedIndex;
             };
 
             theWindow.valuesStackPanel.Children.Add(cb);
+            theWindow.namesStackPanel.Children.Add(lbl);
+        }
+
+        private static int DaiEnumIndexOfValue(Type enumType, int value)
+        {
+            try
+            {
+                Array rawValues = Enum.GetValues(enumType);
+                for (int i = 0; i < rawValues.Length; i++)
+                {
+                    if (Convert.ToInt64(rawValues.GetValue(i), CultureInfo.InvariantCulture) == value)
+                        return i;
+                }
+            }
+            catch (Exception)
+            {
+                // treat it as a position
+            }
+            return value;
+        }
+
+        private static bool TryParseColor(string text, out DAIMod.Color color)
+        {
+            color = null;
+            try
+            {
+                System.Windows.Media.Color c = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(text.Trim());
+                color = new DAIMod.Color(c.R / 255.0f, c.G / 255.0f, c.B / 255.0f, c.A / 255.0f);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private static System.Windows.Media.Color ToMediaColor(DAIMod.Color color) => (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(color.ToString());
+
+        // [DAI fix] colour settings, which DAI Mod Manager has; typed as #RRGGBB or #AARRGGBB
+        public override void AddColorElement(string id, string name, DAIMod.Color defValue)
+        {
+            DAIMod.Color def = defValue ?? new DAIMod.Color(1, 1, 1, 1);
+            ConfigElement ce = new ConfigElement(id, name) { CurrentValue = def };
+            AddElement(id, ce);
+
+            DAIMod.Color initial = def;
+            if (TryGetSaved(id, name, out string saved) && TryParseColor(saved, out DAIMod.Color savedColor))
+                initial = savedColor;
+            ce.CurrentValue = initial;
+
+            Label lbl = NameLabel(name);
+
+            Border swatch = new Border
+            {
+                Width = 22,
+                Margin = new Thickness(1),
+                BorderThickness = new Thickness(1),
+                BorderBrush = System.Windows.Media.Brushes.Gray,
+                Background = new System.Windows.Media.SolidColorBrush(ToMediaColor(initial))
+            };
+
+            TextBox tb = new TextBox
+            {
+                Text = initial.ToString(),
+                Height = 24,
+                Margin = new Thickness(1),
+                Padding = new Thickness(2, 0, 0, 0),
+                BorderThickness = new Thickness(1),
+                VerticalContentAlignment = VerticalAlignment.Center
+            };
+
+            DockPanel panel = new DockPanel { Height = 26 };
+            DockPanel.SetDock(swatch, Dock.Left);
+            panel.Children.Add(swatch);
+            panel.Children.Add(tb);
+
+            Action commit = () =>
+            {
+                if (!TryParseColor(tb.Text, out DAIMod.Color newValue))
+                {
+                    newValue = def;
+                    FrostyMessageBox.Show("Invalid colour entered for \"" + name + "\", using the default instead", "Frosty Mod Manager");
+                }
+
+                tb.Text = newValue.ToString();
+                swatch.Background = new System.Windows.Media.SolidColorBrush(ToMediaColor(newValue));
+                ce.CurrentValue = newValue;
+            };
+            commitActions.Add(commit);
+
+            tb.LostFocus += (o, e) => commit();
+            tb.KeyDown += (o, e) => { if (e.Key == Key.Enter) { tb.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next)); } };
+
+            theWindow.valuesStackPanel.Children.Add(panel);
             theWindow.namesStackPanel.Children.Add(lbl);
         }
 
@@ -342,7 +450,7 @@ namespace FrostyModManager
                 initial = saved;
             ce.CurrentValue = initial;
 
-            Label lbl = new Label {Content = name};
+            Label lbl = NameLabel(name);
 
             TextBox tb = new TextBox
             {
@@ -364,6 +472,9 @@ namespace FrostyModManager
             theWindow.namesStackPanel.Children.Add(lbl);
         }
 
+        // [DAI fix] as plain text, so an underscore in the name shows instead of underlining the next letter
+        private static Label NameLabel(string name) => new Label { Content = new TextBlock { Text = name } };
+
         public ConfigElement GetElement(string name) => !elements.ContainsKey(name) ? null : elements[name];
 
         public ConfigElement GetElement(int index) => index >= elements.Count ? null : elements.Values.ElementAt(index);
@@ -373,14 +484,22 @@ namespace FrostyModManager
     {
         public FrostyConfigElementsList config;
         public List<byte[]> resources;
-        public List<bool> resourceState;
+        public List<ScriptResourceEntry> entries;
         public List<string> log = new List<string>();
 
-        public FrostyScripting(FrostyConfigElementsList inConfig, List<byte[]> inResources, List<bool> inStates)
+        public FrostyScripting(FrostyConfigElementsList inConfig, List<byte[]> inResources, List<ScriptResourceEntry> inEntries)
         {
             config = inConfig;
             resources = inResources;
-            resourceState = inStates;
+            entries = inEntries;
+        }
+
+        private ScriptResourceEntry FindEntry(string name)
+        {
+            ScriptResourceEntry entry = name == null ? null : entries.Find(e => string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
+            if (entry == null)
+                log.Add("Unable to find resource with name " + name);
+            return entry;
         }
 
         public object GetConfigParam(string name)
@@ -417,14 +536,49 @@ namespace FrostyModManager
             resources[index] = FrostySdk.Utils.CompressFile(data);
         }
 
+        // [DAI fix] the index is the entry's position in the mod's resource list (was the data block, so removals couldn't be turned off)
         public void SetResourceEnabled(int index, bool enabled)
         {
-            if (index < 0 || index >= resourceState.Count)
+            if (index < 0 || index >= entries.Count)
             {
                 log.Add("Script tried to enable/disable resource " + index + ", which does not exist; ignored");
                 return;
             }
-            resourceState[index] = enabled;
+            entries[index].Enabled = enabled;
+        }
+
+        public void SetResourceEnabled(string name, bool enabled)
+        {
+            ScriptResourceEntry entry = FindEntry(name);
+            if (entry != null)
+                entry.Enabled = enabled;
+        }
+
+        public bool ChangeResourceId(int index, int newResourceId)
+        {
+            if (index < 0 || index >= entries.Count)
+            {
+                log.Add("Script tried to change resource " + index + ", which does not exist; ignored");
+                return false;
+            }
+            return ChangeResourceId(entries[index], newResourceId);
+        }
+
+        public bool ChangeResourceId(string name, int newResourceId)
+        {
+            ScriptResourceEntry entry = FindEntry(name);
+            return entry != null && ChangeResourceId(entry, newResourceId);
+        }
+
+        private bool ChangeResourceId(ScriptResourceEntry entry, int newResourceId)
+        {
+            if (newResourceId < 0 || newResourceId >= resources.Count)
+            {
+                log.Add("Script tried to point " + entry.Name + " at data " + newResourceId + ", which does not exist; ignored");
+                return false;
+            }
+            entry.ResourceId = newResourceId;
+            return true;
         }
     }
 
@@ -442,7 +596,7 @@ namespace FrostyModManager
         private FrostyScripting scripting;
 
         // [DAI fix] savedValues / legacyDescription pre-fill the settings (Reconfigure)
-        public ConfigWindow(string code, List<byte[]> inResources, List<bool> inStates, IDictionary<string, string> savedValues = null, string legacyDescription = null)
+        internal ConfigWindow(string code, List<byte[]> inResources, List<ScriptResourceEntry> inEntries, IDictionary<string, string> savedValues = null, string legacyDescription = null)
         {
             InitializeComponent();
 
@@ -497,7 +651,7 @@ namespace FrostyModManager
             if (modScript == null)
                 throw new InvalidOperationException("The mod's configuration script does not contain a ModScript class.");
 
-            scripting = new FrostyScripting(new FrostyConfigElementsList(this, savedValues, legacyDescription), inResources, inStates);
+            scripting = new FrostyScripting(new FrostyConfigElementsList(this, savedValues, legacyDescription), inResources, inEntries);
             DAIMod.Scripting.SetScriptInterface(scripting);
 
             modScript.ConstructUI(scripting.config);
@@ -509,7 +663,7 @@ namespace FrostyModManager
             for (int i = 0; i < scripting.config.NumElements; i++)
             {
                 ConfigElement elem = scripting.config.GetElement(i);
-                sb.AppendLine(elem.ToString() + " " + (elem.CurrentValue?.ToString() ?? ""));
+                sb.AppendLine(elem.ToString() + " " + elem.DisplayText);
             }
 
             return sb.ToString();
@@ -520,19 +674,9 @@ namespace FrostyModManager
         {
             Dictionary<string, string> values = new Dictionary<string, string>();
             foreach (KeyValuePair<string, ConfigElement> pair in scripting.config.Elements)
-            {
-                object value = pair.Value.CurrentValue;
-                if (value is float f)
-                    values[pair.Key] = f.ToString("R", CultureInfo.InvariantCulture);
-                else if (value is IFormattable formattable)
-                    values[pair.Key] = formattable.ToString(null, CultureInfo.InvariantCulture);
-                else
-                    values[pair.Key] = value?.ToString() ?? "";
-            }
+                values[pair.Key] = pair.Value.SaveText;
             return values;
         }
-
-        public List<bool> GetResourceStates() => scripting.resourceState;
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
