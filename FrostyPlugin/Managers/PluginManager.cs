@@ -164,6 +164,9 @@ namespace Frosty.Core
         // [DAI fix] a launch action from an outdated plugin is logged and skipped instead of crashing the launch
         private void RunExecutionActions(bool preLaunch, ILogger logger, PluginManagerType type, CancellationToken cancelToken)
         {
+            if (preLaunch)
+                SkipDatapathFixQuestionForSteamCopy();
+
             foreach (ExecutionAction executionAction in m_executionActions)
             {
                 try
@@ -178,6 +181,23 @@ namespace Frosty.Core
                     App.Logger.LogError("{0} failed: {1}", executionAction.GetType().Assembly.GetName().Name, ex.Message);
                 }
             }
+        }
+
+        // [DAI fix] DatapathFix's question says Steam copies need it, but DAI/MEA Steam copies with steam_appid.txt launch through Steam with mods, and DatapathFix loses the Steam overlay
+        private void SkipDatapathFixQuestionForSteamCopy()
+        {
+            if (!ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeInquisition, ProfileVersion.MassEffectAndromeda))
+                return;
+
+            if (!m_executionActions.Exists(a => a.GetType().FullName == "DatapathFixPlugin.Actions.LaunchExecutionAction")
+                || !Config.Get("DatapathFixFirstLaunch", true)
+                || !File.Exists(Path.Combine(App.FileSystemManager.BasePath, "steam_appid.txt")))
+                return;
+
+            Config.Add("DatapathFixEnabled", false);
+            Config.Add("DatapathFixFirstLaunch", false);
+            Config.Save();
+            App.Logger.Log("DatapathFix left off: this Steam copy launches through Steam, which loads mods without it");
         }
 
         /// <summary>
