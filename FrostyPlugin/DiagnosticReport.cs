@@ -151,7 +151,7 @@ namespace Frosty.Core
 
         private static void LogSettings()
         {
-            string[] global = { "ApplyingThreadCount", "WorkerThreads", "WorkerPriority", "MaxCasFileSize", "UseSteamProtocol", "DatapathFixEnabled", "DisableLaunchProcessCheck",
+            string[] global = { "WorkerThreads", "WorkerPriority", "MaxCasFileSize", "UseSteamProtocol", "DatapathFixEnabled", "DisableLaunchProcessCheck",
                 "DisableShaderCacheSymLink", "UseAltSymLink", "PrintLog", "UseCustomModsDirectory", "CustomModsDirectory", "ApplyModOrder", "ProgressView" };
             string[] game = { "CommandLineArgs", "PlatformLaunchingEnabled", "Platform", "ShouldRelaunchPlatform" };
 
