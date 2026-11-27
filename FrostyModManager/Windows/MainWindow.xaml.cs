@@ -2071,6 +2071,14 @@ namespace FrostyModManager
 
                 System.Xml.XmlElement rootElem = xmlDoc["daimod"];
                 System.Xml.XmlElement elem = rootElem["details"];
+
+                // [DAI fix] DAI Mod Manager's Patch.daimod is its copy of the official patch, not a mod
+                if (DaiXmlText(elem, "name") == "Official Patch" && DaiXmlText(elem, "author") == "Bioware")
+                {
+                    errors.Add(new ImportErrorInfo() { filename = fi.Name, error = "Not installed: this is DAI Mod Manager's copy of the official game patch, not a mod. Frosty reads the patch from the game folder and doesn't need it." });
+                    return false;
+                }
+
                 string newDesc = "(Converted from .daimod)\r\n\r\n" + DaiXmlText(elem, "description") + "\r\n\r\n" + configValues;
 
                 DbObject modObject = new DbObject();
@@ -2135,7 +2143,7 @@ namespace FrostyModManager
                 AssetManager am = DaiGetAssetManager();
                 Dictionary<string, int> bundleIds = DaiBuildBundleIdMap(am);
 
-                int numAdded = 0, numModified = 0, numRemoved = 0, numFallback = 0, numTexFixed = 0;
+                int numAdded = 0, numModified = 0, numRemoved = 0, numFallback = 0, numTexFixed = 0, numDelta = 0;
                 string firstMissingBundle = null;
                 int index = -1;
 
@@ -2205,6 +2213,13 @@ namespace FrostyModManager
                         }
 
                         resourcesList.Add(removal);
+                        continue;
+                    }
+
+                    // [DAI fix] patch="2" means the game's base data plus a patch delta, so the mod carries no data for it
+                    if (subElem.GetAttribute("patch") == "2")
+                    {
+                        numDelta++;
                         continue;
                     }
 
@@ -2349,6 +2364,9 @@ namespace FrostyModManager
                 // [DAI fix] a mod that matches this game gets its version, so it no longer shows the "different game version" warning
                 if (am != null && numFallback == 0 && changedFiles.Count == 0)
                     modObject.SetValue("gameVersion", (int)fs.Head);
+
+                if (numDelta > 0)
+                    errors.Add(new ImportErrorInfo() { filename = fi.Name, error = string.Format("{0} of this mod's files were skipped: they are stored as changes to the game's own copy (a patch delta), which Frosty can't install from a .daimod. The rest of the mod is installed.", numDelta), isWarning = true });
 
                 if (changedFiles.Count > 0)
                 {
