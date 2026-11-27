@@ -1309,7 +1309,7 @@ namespace FrostyModManager
             foreach (System.Xml.XmlNode node in resourcesElem.ChildNodes)
             {
                 System.Xml.XmlElement elem = node as System.Xml.XmlElement;
-                if (elem == null || elem.GetAttribute("type") != "res" || elem.GetAttribute("action") == "remove")
+                if (elem == null || elem.GetAttribute("type") != "res" || elem.GetAttribute("action") == "remove" || elem.GetAttribute("patch") == "2")
                     continue;
 
                 uint resType;
@@ -2205,6 +2205,13 @@ namespace FrostyModManager
                         }
 
                         resourcesList.Add(removal);
+                        continue;
+                    }
+
+                    // [DAI fix] only the difference from the game's copy is stored; installed as the whole file it would break it
+                    if (subElem.GetAttribute("patch") == "2")
+                    {
+                        errors.Add(new ImportErrorInfo() { filename = fi.Name, error = "Skipped " + resName + ": the mod only stores the changes to the game's copy of this file (a delta), which Frosty can't install. The rest of the mod is installed, but it may not work fully.", isWarning = true });
                         continue;
                     }
 
