@@ -398,7 +398,7 @@ namespace Frosty.Core.Windows
             new[] { "Launch", nameof(UseSteamProtocol), nameof(DisableShaderCacheSymLink), nameof(DisableLaunchProcessCheck), nameof(TerminateStuckGame), nameof(CommandLineArgs) },
             new[] { "Mods & ModData", nameof(UseCustomModsDirectory), nameof(CustomModsDirectory), nameof(MaxCasFileSize), nameof(UseAltSymLink) },
             new[] { "Logging", nameof(PrintLog), nameof(DiagnosticLogging), nameof(AutoLogCleanup), nameof(LogCleanupDays) },
-            new[] { "Interface", nameof(RememberChoice), nameof(ProgressView) },
+            new[] { "Interface", nameof(Theme), nameof(RememberChoice), nameof(ProgressView) },
             new[] { "Performance", nameof(WorkerPriority), nameof(WorkerThreads) },
             new[] { "Updates", nameof(UpdateCheck) },
         };
@@ -449,6 +449,16 @@ namespace Frosty.Core.Windows
 
         // a method, since the options page would list a static property as a setting
         public static bool IsDetailedProgressView() => Config.Get<string>("ProgressView", "Detailed") != "Simple";
+
+        // [DAI fix] colour theme for the Mod Manager windows, applied as soon as the options are saved
+        [Category("Interface")]
+        [DisplayName("Theme")]
+        [Description("Colours of the Mod Manager's windows.\r\n\r\nDark (the default) is near black with a cyan accent, Light is white and grey with a blue accent, and Frosty is snow white and light blues. The new theme shows as soon as the options are saved.")]
+        [EbxFieldMeta(EbxFieldType.Struct)]
+        [Editor(typeof(FrostyLocalizationLanguageDataEditor))]
+        public CustomComboData<string, string> Theme { get; set; }
+
+        public static void ApplyTheme() => FrostyThemeManager.Apply(Config.Get<string>("Theme", FrostyThemeManager.DefaultTheme));
 
         // [DAI fix] for troubleshooting someone else's PC; off by default so normal logs stay the same
         [Category("Logging")]
@@ -561,6 +571,10 @@ namespace Frosty.Core.Windows
             ProgressView = new CustomComboData<string, string>(progressViewNames, progressViewNames);
             ProgressView.SelectedIndex = IsDetailedProgressView() ? 0 : 1;
 
+            List<string> themeNames = FrostyThemeManager.ThemeNames.ToList();
+            Theme = new CustomComboData<string, string>(themeNames, themeNames.Select(t => (t == FrostyThemeManager.DefaultTheme) ? t + " (default)" : t).ToList());
+            Theme.SelectedIndex = Math.Max(0, themeNames.IndexOf(Config.Get<string>("Theme", FrostyThemeManager.DefaultTheme)));
+
             LogCleanupDays = new CustomComboData<string, string>(logCleanupDayValues, logCleanupDayValues.Select(d => (d == DefaultLogCleanupDays) ? d + " days (default)" : d + " days").ToList());
             int dayIndex = logCleanupDayValues.IndexOf(Config.Get<string>("LogCleanupDays", DefaultLogCleanupDays));
             LogCleanupDays.SelectedIndex = (dayIndex < 0) ? logCleanupDayValues.IndexOf(DefaultLogCleanupDays) : dayIndex;
@@ -580,12 +594,14 @@ namespace Frosty.Core.Windows
             Config.Add("WorkerThreads", WorkerThreads.SelectedValue);
             Config.Add("WorkerPriority", WorkerPriority.SelectedValue);
             Config.Add("ProgressView", ProgressView.SelectedValue);
+            Config.Add("Theme", Theme.SelectedValue);
             Config.Add("DiagnosticLogging", DiagnosticLogging);
             Config.Add("AutoLogCleanup", AutoLogCleanup);
             Config.Add("LogCleanupDays", LogCleanupDays.SelectedValue);
             ApplyPerformanceSettings();
             ApplyLogCleanup();
             ApplyDiagnosticSetting();
+            ApplyTheme();
 
             if (RememberChoice)
                 Config.Add("DefaultProfile2", ProfilesLibrary.ProfileName);

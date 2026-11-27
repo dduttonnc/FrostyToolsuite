@@ -12,7 +12,7 @@
     
     <Grid MouseLeftButtonDown="Grid_MouseLeftButtonDown">
 
-        <Border Background="{StaticResource WindowBackground}" BorderThickness="1" BorderBrush="{StaticResource ListBackground}">
+        <Border Background="{DynamicResource WindowBackground}" BorderThickness="1" BorderBrush="{DynamicResource ListBackground}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="175"/>
@@ -41,9 +41,9 @@
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
 
-                    <ProgressBar x:Name="progressBar" Grid.ColumnSpan="2" Minimum="0" MaxHeight="100" Value="0" Background="Transparent" BorderBrush="Transparent" Foreground="{StaticResource ListBackground}"/>
+                    <ProgressBar x:Name="progressBar" Grid.ColumnSpan="2" Minimum="0" MaxHeight="100" Value="0" Background="Transparent" BorderBrush="Transparent" Foreground="{DynamicResource ListBackground}"/>
                     <ctrl2:FrostySpinner Width="20" Height="20"/>
-                    <TextBlock x:Name="logTextBox" Grid.Column="1" Background="Transparent" Text="" Padding="4,5,4,0" Foreground="{StaticResource FontColor}" FontFamily="Global User Interface" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="logTextBox" Grid.Column="1" Background="Transparent" Text="" Padding="4,5,4,0" Foreground="{DynamicResource FontColor}" FontFamily="Global User Interface" TextTrimming="CharacterEllipsis"/>
                 </Grid>
                 
             </Grid>

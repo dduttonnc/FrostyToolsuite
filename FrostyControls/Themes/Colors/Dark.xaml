@@ -1,0 +1,82 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- Dark theme: Near-black blue charcoal with an electric cyan accent and a cyan-to-violet edge. Every theme file defines the same keys. -->
+
+    <!-- window backdrop behind panels -->
+    <SolidColorBrush x:Key="WindowBackground" Color="#0D0F13" />
+    <!-- title bar (solid) -->
+    <SolidColorBrush x:Key="TitlebarBackground" Color="#08090C" />
+    <!-- main text -->
+    <SolidColorBrush x:Key="FontColor" Color="#E6EAF1" />
+    <!-- buttons, toolbars, headers -->
+    <SolidColorBrush x:Key="ControlBackground" Color="#222731" />
+    <!-- hover on controls -->
+    <SolidColorBrush x:Key="ControlHighlight" Color="#2D3440" />
+    <!-- pressed controls -->
+    <SolidColorBrush x:Key="ControlPressed" Color="#191D24" />
+    <!-- small glyphs drawn on controls (arrows) -->
+    <SolidColorBrush x:Key="ButtonImage" Color="#8E98AA" />
+    <!-- scroll bar track -->
+    <SolidColorBrush x:Key="ScrollbarBackground" Color="#101318" />
+    <!-- top-level menu hover -->
+    <SolidColorBrush x:Key="MenuItemHighlight" Color="#2A303B" />
+    <!-- menu bar and menu popups -->
+    <SolidColorBrush x:Key="MenuItemBackground" Color="#0F1115" />
+    <!-- submenu item hover -->
+    <SolidColorBrush x:Key="SubMenuItemHighlight" Color="#262C37" />
+    <!-- list/tree row hover -->
+    <SolidColorBrush x:Key="SubItemHighlight" Color="#1C2129" />
+    <!-- list/tree row selected -->
+    <SolidColorBrush x:Key="SubItemPressed" Color="#123642" />
+    <!-- lists and content areas -->
+    <SolidColorBrush x:Key="ListBackground" Color="#14171D" />
+
+    <SolidColorBrush x:Key="AccentBrush" Color="#22D3EE" />
+    <SolidColorBrush x:Key="AccentHoverBrush" Color="#67E8F9" />
+    <SolidColorBrush x:Key="AccentPressedBrush" Color="#0FB5CF" />
+    <SolidColorBrush x:Key="AccentForegroundBrush" Color="#031318" />
+    <SolidColorBrush x:Key="AccentSubtleBrush" Color="#2622D3EE" />
+    <SolidColorBrush x:Key="Accent2Brush" Color="#8B5CF6" />
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#181B22" />
+    <SolidColorBrush x:Key="SurfaceAltBrush" Color="#1D2129" />
+    <SolidColorBrush x:Key="InputBackgroundBrush" Color="#0F1216" />
+    <SolidColorBrush x:Key="ControlBorderBrush" Color="#303744" />
+    <SolidColorBrush x:Key="ControlBorderHoverBrush" Color="#46505F" />
+    <SolidColorBrush x:Key="DividerBrush" Color="#252A33" />
+    <SolidColorBrush x:Key="FocusBrush" Color="#22D3EE" />
+    <SolidColorBrush x:Key="SecondaryFontBrush" Color="#98A2B3" />
+    <SolidColorBrush x:Key="DisabledFontBrush" Color="#5A6372" />
+    <SolidColorBrush x:Key="IconBrush" Color="#C9D0DC" />
+    <SolidColorBrush x:Key="PopupBackgroundBrush" Color="#181C23" />
+    <SolidColorBrush x:Key="PopupBorderBrush" Color="#2C323D" />
+    <SolidColorBrush x:Key="SuccessBrush" Color="#34D399" />
+    <SolidColorBrush x:Key="WarningBrush" Color="#FBBF24" />
+    <SolidColorBrush x:Key="ErrorBrush" Color="#F87171" />
+    <SolidColorBrush x:Key="InfoBrush" Color="#60A5FA" />
+    <SolidColorBrush x:Key="CaptionCloseHoverBrush" Color="#E81123" />
+    <SolidColorBrush x:Key="CaptionCloseHoverForegroundBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="ScrollThumbBrush" Color="#3A4250" />
+    <SolidColorBrush x:Key="ScrollThumbHoverBrush" Color="#4F5A6C" />
+    <SolidColorBrush x:Key="SelectionBrush" Color="#6622D3EE" />
+    <SolidColorBrush x:Key="BadgeBackgroundBrush" Color="#2A3140" />
+    <SolidColorBrush x:Key="BadgeForegroundBrush" Color="#C9D0DC" />
+    <SolidColorBrush x:Key="HeaderFontBrush" Color="#F4F7FB" />
+
+    <Color x:Key="AccentColor">#22D3EE</Color>
+    <Color x:Key="Accent2Color">#8B5CF6</Color>
+    <Color x:Key="ShadowColor">#000000</Color>
+    <sys:Double x:Key="ShadowOpacity">0.55</sys:Double>
+    <sys:Double x:Key="TitlebarDecoOpacity">0</sys:Double>
+
+    <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#22D3EE" Offset="0" />
+        <GradientStop Color="#8B5CF6" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="TitlebarGradientBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#08090C" Offset="0" />
+        <GradientStop Color="#0F121A" Offset="1" />
+    </LinearGradientBrush>
+
+</ResourceDictionary>

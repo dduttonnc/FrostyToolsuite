@@ -30,14 +30,14 @@
                                     <RowDefinition Height="100"/>
                                 </Grid.RowDefinitions>
 
-                                <Grid Grid.Row="0" Background="{StaticResource ControlBackground}">
+                                <Grid Grid.Row="0" Background="{DynamicResource ControlBackground}">
 
                                     <DockPanel LastChildFill="True" >
                                         <Image x:Name="PART_ModIcon" Source="{Binding Path=Mod.ModDetails.Icon, RelativeSource={RelativeSource TemplatedParent}}" Margin="5" Width="50" Visibility="Collapsed"/>
                                         <StackPanel Grid.Column="1" Orientation="Vertical" Margin="5">
-                                            <TextBlock Text="{Binding Path=Mod.ModDetails.Title, RelativeSource={RelativeSource TemplatedParent}}" Foreground="{StaticResource FontColor}" FontSize="16"/>
+                                            <TextBlock Text="{Binding Path=Mod.ModDetails.Title, RelativeSource={RelativeSource TemplatedParent}}" Foreground="{DynamicResource FontColor}" FontSize="16"/>
                                             <DockPanel LastChildFill="True">
-                                                <TextBlock Foreground="{StaticResource FontColor}">
+                                                <TextBlock Foreground="{DynamicResource FontColor}">
                                                     <TextBlock.Text>
                                                         <Binding Path="Mod.ModDetails.Author" StringFormat="by {0}">
                                                             <Binding.RelativeSource>
@@ -46,7 +46,7 @@
                                                         </Binding>
                                                     </TextBlock.Text>
                                                 </TextBlock>
-                                                <TextBlock Text="{Binding Path=Mod.ModDetails.Version, RelativeSource={RelativeSource TemplatedParent}}" HorizontalAlignment="Right" Foreground="{StaticResource FontColor}"/>
+                                                <TextBlock Text="{Binding Path=Mod.ModDetails.Version, RelativeSource={RelativeSource TemplatedParent}}" HorizontalAlignment="Right" Foreground="{DynamicResource FontColor}"/>
                                             </DockPanel>
                                         </StackPanel>
                                     </DockPanel>
@@ -107,7 +107,7 @@
                                     </ListBox.ItemTemplate>
                                 </ListBox>
 
-                                <TextBlock x:Name="PART_LoadingText" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource FontColor}" Text="Loading..."/>
+                                <TextBlock x:Name="PART_LoadingText" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource FontColor}" Text="Loading..."/>
                             </Grid>
                         </ctrl:FrostyDockablePanel>
 

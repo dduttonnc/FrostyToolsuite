@@ -11,9 +11,9 @@
         <Setter Property="ContentTemplate">
             <Setter.Value>
                 <DataTemplate>
-                    <Border BorderBrush="Black" BorderThickness="1" Background="{StaticResource ControlBackground}">
+                    <Border BorderBrush="Black" BorderThickness="1" Background="{DynamicResource ControlBackground}">
                         <Grid>
-                            <TextBlock Text="{Binding Path=NotificationTitle, RelativeSource={RelativeSource AncestorType={x:Type local:FrostyNotification}}}" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="16 " Foreground="{StaticResource FontColor}" Margin="10 0 0 0" TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding Path=NotificationTitle, RelativeSource={RelativeSource AncestorType={x:Type local:FrostyNotification}}}" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="16 " Foreground="{DynamicResource FontColor}" Margin="10 0 0 0" TextWrapping="Wrap"/>
                         </Grid>
                     </Border>
                 </DataTemplate>

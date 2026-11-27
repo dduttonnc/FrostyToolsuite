@@ -11,14 +11,14 @@
         mc:Ignorable="d"
         Title="Manage ModData" SizeToContent="Height" Width="400" Height="Auto" MaxHeight="250"
         ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
-    <Grid Background="{StaticResource ListBackground}">
+    <Grid Background="{DynamicResource ListBackground}">
         <Grid.RowDefinitions>
             <RowDefinition/>
             <RowDefinition Height="0"/>
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Orientation="Vertical" Margin="8">
-            <TextBlock Text="ModData:" Foreground="{StaticResource FontColor}" HorizontalAlignment="Left" VerticalAlignment="Center" Height="16" Margin="0,0,0,1"/>
-            <ListBox x:Name="modDataList" HorizontalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled" MinHeight="32" MaxHeight="128" BorderBrush="{StaticResource ControlBackground}" BorderThickness="1" Background="{StaticResource WindowBackground}" Padding="0">
+            <TextBlock Text="ModData:" Foreground="{DynamicResource FontColor}" HorizontalAlignment="Left" VerticalAlignment="Center" Height="16" Margin="0,0,0,1"/>
+            <ListBox x:Name="modDataList" HorizontalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled" MinHeight="32" MaxHeight="128" BorderBrush="{DynamicResource ControlBackground}" BorderThickness="1" Background="{DynamicResource WindowBackground}" Padding="0">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Grid>
@@ -56,7 +56,7 @@
                 </ListBox.ItemContainerStyle>
             </ListBox>
 
-            <TextBlock Text="Path:" Foreground="{StaticResource FontColor}" HorizontalAlignment="Left" VerticalAlignment="Center" Height="16" Margin="0,8,0,1"/>
+            <TextBlock Text="Path:" Foreground="{DynamicResource FontColor}" HorizontalAlignment="Left" VerticalAlignment="Center" Height="16" Margin="0,8,0,1"/>
             <TextBox IsReadOnly="True" x:Name="modDataNameTextBox" BorderThickness="1" VerticalContentAlignment="Center" Height="22"/>
         </StackPanel>
     </Grid>

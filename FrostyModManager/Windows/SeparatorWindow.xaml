@@ -18,14 +18,14 @@
     </Window.Resources>
 
     <Grid>
-        <Grid Background="{StaticResource ListBackground}">
+        <Grid Background="{DynamicResource ListBackground}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="52"/>
                 <RowDefinition Height="30"/>
             </Grid.RowDefinitions>
             <StackPanel Grid.Row="0" Orientation="Vertical" Margin="4,7,4,4" VerticalAlignment="Top">
                 <ctrl:FrostyWatermarkTextBox x:Name="nameSeparatorTextBox" WatermarkText="Name" BorderThickness="1" VerticalContentAlignment="Center" Height="22" TextChanged="nameSeparatorTextBox_TextChanged"/>
-                <TextBlock x:Name="charsTextBox" Foreground="{StaticResource FontColor}" VerticalAlignment="Center" Height="16" Margin="0,4,0,0" Text=""/>
+                <TextBlock x:Name="charsTextBox" Foreground="{DynamicResource FontColor}" VerticalAlignment="Center" Height="16" Margin="0,4,0,0" Text=""/>
             </StackPanel>
 
             <Grid Grid.Row="1" Margin="4">

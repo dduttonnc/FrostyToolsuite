@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="Add Pack" Height="95" Width="300"
         ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
-    <Grid Background="{StaticResource ListBackground}">
+    <Grid Background="{DynamicResource ListBackground}">
         <Grid.RowDefinitions>
             <RowDefinition/>
             <RowDefinition Height="30"/>

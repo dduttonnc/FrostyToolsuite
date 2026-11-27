@@ -17,18 +17,18 @@
             <RowDefinition Height="38"/>
         </Grid.RowDefinitions>
         
-        <Grid Background="{StaticResource ListBackground}">
+        <Grid Background="{DynamicResource ListBackground}">
             <StackPanel x:Name="GameInfoStackPanel" Margin="8">
-                <TextBlock x:Name="ProfileNameTextBlock" Foreground="{StaticResource FontColor}" FontSize="14" FontWeight="Medium"/>
-                <TextBlock x:Name="ProfilePathTextBlock" Foreground="{StaticResource FontColor}" FontSize="10"/>
+                <TextBlock x:Name="ProfileNameTextBlock" Foreground="{DynamicResource FontColor}" FontSize="14" FontWeight="Medium"/>
+                <TextBlock x:Name="ProfilePathTextBlock" Foreground="{DynamicResource FontColor}" FontSize="10"/>
             </StackPanel>
-            <TextBlock x:Name="SelectGameTextBlock" Text="Select Game" Foreground="{StaticResource FontColor}" FontSize="14" FontWeight="Medium" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <TextBlock x:Name="SelectGameTextBlock" Text="Select Game" Foreground="{DynamicResource FontColor}" FontSize="14" FontWeight="Medium" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Grid>
         
-        <Border Grid.Row="1" Background="{StaticResource ControlBackground}"/>
+        <Border Grid.Row="1" Background="{DynamicResource ControlBackground}"/>
         
         <Grid Grid.Row="2">
-            <ListBox x:Name="ConfigurationListView" ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="ConfigurationListView_OnSelectionChanged" MouseDoubleClick="ConfigurationListView_OnMouseDoubleClick" Background="{StaticResource WindowBackground}">
+            <ListBox x:Name="ConfigurationListView" ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="ConfigurationListView_OnSelectionChanged" MouseDoubleClick="ConfigurationListView_OnMouseDoubleClick" Background="{DynamicResource WindowBackground}">
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <WrapPanel IsItemsHost="true" Orientation="Horizontal"/>
@@ -54,7 +54,7 @@
             </ListBox>
         </Grid>
 
-        <Grid Grid.Row="3" Background="{StaticResource ListBackground}" >
+        <Grid Grid.Row="3" Background="{DynamicResource ListBackground}" >
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
                 <Button x:Name="AddConfigurationButton" Content="Add" Padding="12,0" Margin="6,6,0,6" Click="AddConfigurationButton_OnClick"/>
                 <Button x:Name="RemoveConfigurationButton" Content="Remove" Padding="12,0" Margin="6,6,0,6" Click="RemoveConfigurationButton_OnClick"/>

@@ -9,7 +9,7 @@
         mc:Ignorable="d"
         Title="Select a class instance" Height="500" Width="600"
         WindowStartupLocation="CenterScreen" >
-    <Grid Background="{StaticResource WindowBackground}">
+    <Grid Background="{DynamicResource WindowBackground}">
         <Grid.RowDefinitions>
             <RowDefinition Height="26"/>
             <RowDefinition Height="26"/>
@@ -24,7 +24,7 @@
             </Grid.ColumnDefinitions>
 
             <DockPanel Margin="0,1,0,1">
-                <Border Background="{StaticResource ControlBackground}" HorizontalAlignment="Left" DockPanel.Dock="Left">
+                <Border Background="{DynamicResource ControlBackground}" HorizontalAlignment="Left" DockPanel.Dock="Left">
                     <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
                         <Button x:Name="createInstanceButton" Margin="0,0,0,0" Height="20" Click="CreateInstanceButton_Click" >
                             <StackPanel Orientation="Horizontal" Margin="4 0 4 0">
@@ -76,10 +76,10 @@
                                 </Border>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" TargetName="Border" Value="{StaticResource SubItemHighlight}"/>
+                                        <Setter Property="Background" TargetName="Border" Value="{DynamicResource SubItemHighlight}"/>
                                     </Trigger>
                                     <Trigger Property="IsSelected" Value="True">
-                                        <Setter Property="Background" TargetName="Border" Value="{StaticResource SubItemPressed}"/>
+                                        <Setter Property="Background" TargetName="Border" Value="{DynamicResource SubItemPressed}"/>
                                     </Trigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>

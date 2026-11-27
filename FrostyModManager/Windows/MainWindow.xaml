@@ -20,7 +20,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate>
-                        <Expander Header="{Binding Name}" IsExpanded="True" Foreground="{StaticResource FontColor}">
+                        <Expander Header="{Binding Name}" IsExpanded="True" Foreground="{DynamicResource FontColor}">
                             <Expander.Template>
                                 <ControlTemplate TargetType="{x:Type Expander}">
                                     <DockPanel>
@@ -149,7 +149,7 @@
         
     </ctrl:FrostyWindow.Resources>
 
-    <Grid Background="{StaticResource ListBackground}">
+    <Grid Background="{DynamicResource ListBackground}">
         <Grid.RowDefinitions>
             <RowDefinition Height="112*"/>
             <RowDefinition Height="557*"/>
@@ -202,19 +202,19 @@
             </Menu>
 
             <!-- Toolbar -->
-            <Grid Grid.Row="1" Background="{StaticResource ListBackground}">
+            <Grid Grid.Row="1" Background="{DynamicResource ListBackground}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <Border BorderBrush="{StaticResource ControlBackground}" BorderThickness="2,0,2,0">
+                <Border BorderBrush="{DynamicResource ControlBackground}" BorderThickness="2,0,2,0">
                     <DockPanel Margin="1">
                         <!-- Profile Selection -->
-                        <Border Background="{StaticResource ControlBackground}" HorizontalAlignment="Left" DockPanel.Dock="Left" RenderOptions.EdgeMode="Aliased">
+                        <Border Background="{DynamicResource ControlBackground}" HorizontalAlignment="Left" DockPanel.Dock="Left" RenderOptions.EdgeMode="Aliased">
                             <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
                                 <!-- Deco -->
-                                <TextBlock Text="Pack: " VerticalAlignment="Center" Foreground="{StaticResource FontColor}"/>
+                                <TextBlock Text="Pack: " VerticalAlignment="Center" Foreground="{DynamicResource FontColor}"/>
                                 <!-- Profiles ComboBox -->
                                 <ComboBox x:Name="packsComboBox" Width="150" Height="22" Margin="4,0,0,0" SelectionChanged="packsComboBox_SelectionChanged" Padding="4,2,4,2">
                                     <ComboBox.ItemTemplate>
@@ -242,7 +242,7 @@
                             </StackPanel>
                         </Border>
                         <!-- Launch -->
-                        <Border Background="{StaticResource ControlBackground}" Margin="1 0 0 0" DockPanel.Dock="Left" RenderOptions.EdgeMode="Aliased">
+                        <Border Background="{DynamicResource ControlBackground}" Margin="1 0 0 0" DockPanel.Dock="Left" RenderOptions.EdgeMode="Aliased">
                             <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Margin="6,0,6,0">
                                 <Button x:Name="launchButton" Height="20" ToolTip="Launch game with selected mods applied" Click="launchButton_Click">
                                     <StackPanel Orientation="Horizontal">
@@ -267,7 +267,7 @@
 
                 <!-- Available Mods / Plugins -->
                 <ctrl:FrostyDockablePanel Title="Available Mods" Grid.Column="0" TitleBarVisible="False">
-                    <Grid Background="{StaticResource ListBackground}">
+                    <Grid Background="{DynamicResource ListBackground}">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="33"/>
                             <RowDefinition Height="2"/>
@@ -328,17 +328,17 @@
                                                                 <RepeatButton Content="&lt;" x:Name="PART_ScrollLeft" Width="21">
                                                                     <RepeatButton.Template>
                                                                         <ControlTemplate TargetType="{x:Type RepeatButton}">
-                                                                            <Border Background="{StaticResource ScrollbarBackground}">
-                                                                                <Border x:Name="border" Background="{StaticResource ControlBackground}" Margin="1">
-                                                                                    <Polygon Points="0,0 3.5,3.5 3.5,-3.5" Stroke="{StaticResource ButtonImage}" Fill="{StaticResource ButtonImage}" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="7,10,0,0"/>
+                                                                            <Border Background="{DynamicResource ScrollbarBackground}">
+                                                                                <Border x:Name="border" Background="{DynamicResource ControlBackground}" Margin="1">
+                                                                                    <Polygon Points="0,0 3.5,3.5 3.5,-3.5" Stroke="{DynamicResource ButtonImage}" Fill="{DynamicResource ButtonImage}" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="7,10,0,0"/>
                                                                                 </Border>
                                                                             </Border>
                                                                             <ControlTemplate.Triggers>
                                                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                                                    <Setter Property="Background" TargetName="border" Value="{StaticResource ControlHighlight}"/>
+                                                                                    <Setter Property="Background" TargetName="border" Value="{DynamicResource ControlHighlight}"/>
                                                                                 </Trigger>
                                                                                 <Trigger Property="IsPressed" Value="True">
-                                                                                    <Setter Property="Background" TargetName="border" Value="{StaticResource ControlPressed}"/>
+                                                                                    <Setter Property="Background" TargetName="border" Value="{DynamicResource ControlPressed}"/>
                                                                                 </Trigger>
                                                                             </ControlTemplate.Triggers>
                                                                         </ControlTemplate>
@@ -350,17 +350,17 @@
                                                                 <RepeatButton Content="&gt;" x:Name="PART_ScrollRight" Width="21">
                                                                     <RepeatButton.Template>
                                                                         <ControlTemplate TargetType="{x:Type RepeatButton}">
-                                                                            <Border Background="{StaticResource ScrollbarBackground}">
-                                                                                <Border x:Name="border" Background="{StaticResource ControlBackground}" Margin="1">
-                                                                                    <Polygon Points="0,0 -3.5,3.5 -3.5,-3.5" Stroke="{StaticResource ButtonImage}" Fill="{StaticResource ButtonImage}" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="12,10,0,0"/>
+                                                                            <Border Background="{DynamicResource ScrollbarBackground}">
+                                                                                <Border x:Name="border" Background="{DynamicResource ControlBackground}" Margin="1">
+                                                                                    <Polygon Points="0,0 -3.5,3.5 -3.5,-3.5" Stroke="{DynamicResource ButtonImage}" Fill="{DynamicResource ButtonImage}" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="12,10,0,0"/>
                                                                                 </Border>
                                                                             </Border>
                                                                             <ControlTemplate.Triggers>
                                                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                                                    <Setter Property="Background" TargetName="border" Value="{StaticResource ControlHighlight}"/>
+                                                                                    <Setter Property="Background" TargetName="border" Value="{DynamicResource ControlHighlight}"/>
                                                                                 </Trigger>
                                                                                 <Trigger Property="IsPressed" Value="True">
-                                                                                    <Setter Property="Background" TargetName="border" Value="{StaticResource ControlPressed}"/>
+                                                                                    <Setter Property="Background" TargetName="border" Value="{DynamicResource ControlPressed}"/>
                                                                                 </Trigger>
                                                                             </ControlTemplate.Triggers>
                                                                         </ControlTemplate>
@@ -416,10 +416,10 @@
                                     </Grid.RowDefinitions>
 
                                     <!-- Add/Remove/Apply Mods -->
-                                    <Border Grid.Row="0" BorderBrush="{StaticResource ControlBackground}" BorderThickness="0,0,0,2">
+                                    <Border Grid.Row="0" BorderBrush="{DynamicResource ControlBackground}" BorderThickness="0,0,0,2">
                                         <DockPanel Margin="1">
                                             <!-- Add/Remove/Apply List -->
-                                            <Border Background="{StaticResource ControlBackground}" DockPanel.Dock="Left" RenderOptions.EdgeMode="Aliased">
+                                            <Border Background="{DynamicResource ControlBackground}" DockPanel.Dock="Left" RenderOptions.EdgeMode="Aliased">
                                                 <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Margin="6,0,6,0">
                                                     <!-- Install Mod Button -->
                                                     <Button x:Name="installModButton" Height="20" IsEnabled="True" ToolTip="Import mod(s) from file" Click="installModButton_Click">
@@ -438,7 +438,7 @@
                                                 </StackPanel>
                                             </Border>
                                             <!-- Apply List -->
-                                            <Border Background="{StaticResource ControlBackground}" DockPanel.Dock="Right" RenderOptions.EdgeMode="Aliased">
+                                            <Border Background="{DynamicResource ControlBackground}" DockPanel.Dock="Right" RenderOptions.EdgeMode="Aliased">
                                                 <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Margin="6,0,6,0">
                                                     <!-- Apply Mod Button -->
                                                     <Button x:Name="addModButton" Height="20" Click="addModButton_Click" IsEnabled="False" ToolTip="Add mod(s) to applied list">
@@ -536,7 +536,7 @@
                                                                                                                     <RowDefinition Height="16"/>
                                                                                                                 </Grid.RowDefinitions>
 
-                                                                                                                <TextBlock Grid.Row="0" Text="{Binding Path=ModDetails.Title}" VerticalAlignment="Center" Foreground="{StaticResource FontColor}" Margin="8,0,0,0"/>
+                                                                                                                <TextBlock Grid.Row="0" Text="{Binding Path=ModDetails.Title}" VerticalAlignment="Center" Foreground="{DynamicResource FontColor}" Margin="8,0,0,0"/>
                                                                                                                 <TextBlock Grid.Row="1" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#808080">
                                                                                                                     <TextBlock.Text>
                                                                                                                         <Binding Path="ModDetails.Author" StringFormat="by {0}"/>
@@ -587,7 +587,7 @@
                                                                                 <RowDefinition Height="16"/>
                                                                             </Grid.RowDefinitions>
 
-                                                                            <TextBlock Grid.Row="0" Text="{Binding Path=ModDetails.Title}" VerticalAlignment="Center" Foreground="{StaticResource FontColor}" Margin="8,0,0,0"/>
+                                                                            <TextBlock Grid.Row="0" Text="{Binding Path=ModDetails.Title}" VerticalAlignment="Center" Foreground="{DynamicResource FontColor}" Margin="8,0,0,0"/>
                                                                             <TextBlock Grid.Row="1" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#808080">
                                                                                 <TextBlock.Text>
                                                                                     <Binding Path="ModDetails.Author" StringFormat="by {0}"/>
@@ -773,16 +773,16 @@
                             <!-- Log -->
                             <ctrl:FrostyTabItem Header="Log">
                                 <Grid>
-                                    <Border BorderBrush="{StaticResource ControlBackground}" RenderOptions.EdgeMode="Aliased" BorderThickness="0,2,0,0">
-                                        <TextBox x:Name="tb" FontFamily="Consolas" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Background="{StaticResource ListBackground}" TextChanged="logTextBox_TextChanged"/>
+                                    <Border BorderBrush="{DynamicResource ControlBackground}" RenderOptions.EdgeMode="Aliased" BorderThickness="0,2,0,0">
+                                        <TextBox x:Name="tb" FontFamily="Consolas" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Background="{DynamicResource ListBackground}" TextChanged="logTextBox_TextChanged"/>
                                     </Border>
                                 </Grid>
                             </ctrl:FrostyTabItem>
                         </ctrl:FrostyTabControl>
 
-                        <Grid Grid.Row="1" Height="2" Background="{StaticResource ControlBackground}"/>
+                        <Grid Grid.Row="1" Height="2" Background="{DynamicResource ControlBackground}"/>
 
-                        <ctrl:FrostyDetachedTabControl Grid.Row="2" x:Name="availableModsTabContent" Foreground="{StaticResource FontColor}" Margin="0,0,0,26" />
+                        <ctrl:FrostyDetachedTabControl Grid.Row="2" x:Name="availableModsTabContent" Foreground="{DynamicResource FontColor}" Margin="0,0,0,26" />
 
                         <!-- J-Lyt | Set Left and Right Margin to 0 -->
                         <ctrl:FrostyWatermarkTextBox Grid.Row="3"
@@ -793,7 +793,7 @@
                                                      Margin="0,1,0,0"
                                                      VerticalAlignment="Bottom"
                                                      VerticalContentAlignment="Center"
-                                                     Background="{StaticResource ControlBackground}" />
+                                                     Background="{DynamicResource ControlBackground}" />
                     </Grid>
                 </ctrl:FrostyDockablePanel>
 
@@ -801,7 +801,7 @@
 
                 <!-- Applied Mods / Mod Description / Conflicts -->
                 <ctrl:FrostyDockablePanel Grid.Column="1" TitleBarVisible="False">
-                    <Grid Background="{StaticResource ListBackground}">
+                    <Grid Background="{DynamicResource ListBackground}">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="33"/>
                             <RowDefinition Height="2"/>
@@ -862,17 +862,17 @@
                                                                 <RepeatButton Content="&lt;" x:Name="PART_ScrollLeft" Width="21">
                                                                     <RepeatButton.Template>
                                                                         <ControlTemplate TargetType="{x:Type RepeatButton}">
-                                                                            <Border Background="{StaticResource ScrollbarBackground}">
-                                                                                <Border x:Name="border" Background="{StaticResource ControlBackground}" Margin="1">
-                                                                                    <Polygon Points="0,0 3.5,3.5 3.5,-3.5" Stroke="{StaticResource ButtonImage}" Fill="{StaticResource ButtonImage}" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="7,10,0,0"/>
+                                                                            <Border Background="{DynamicResource ScrollbarBackground}">
+                                                                                <Border x:Name="border" Background="{DynamicResource ControlBackground}" Margin="1">
+                                                                                    <Polygon Points="0,0 3.5,3.5 3.5,-3.5" Stroke="{DynamicResource ButtonImage}" Fill="{DynamicResource ButtonImage}" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="7,10,0,0"/>
                                                                                 </Border>
                                                                             </Border>
                                                                             <ControlTemplate.Triggers>
                                                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                                                    <Setter Property="Background" TargetName="border" Value="{StaticResource ControlHighlight}"/>
+                                                                                    <Setter Property="Background" TargetName="border" Value="{DynamicResource ControlHighlight}"/>
                                                                                 </Trigger>
                                                                                 <Trigger Property="IsPressed" Value="True">
-                                                                                    <Setter Property="Background" TargetName="border" Value="{StaticResource ControlPressed}"/>
+                                                                                    <Setter Property="Background" TargetName="border" Value="{DynamicResource ControlPressed}"/>
                                                                                 </Trigger>
                                                                             </ControlTemplate.Triggers>
                                                                         </ControlTemplate>
@@ -884,17 +884,17 @@
                                                                 <RepeatButton Content="&gt;" x:Name="PART_ScrollRight" Width="21">
                                                                     <RepeatButton.Template>
                                                                         <ControlTemplate TargetType="{x:Type RepeatButton}">
-                                                                            <Border Background="{StaticResource ScrollbarBackground}">
-                                                                                <Border x:Name="border" Background="{StaticResource ControlBackground}" Margin="1">
-                                                                                    <Polygon Points="0,0 -3.5,3.5 -3.5,-3.5" Stroke="{StaticResource ButtonImage}" Fill="{StaticResource ButtonImage}" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="12,10,0,0"/>
+                                                                            <Border Background="{DynamicResource ScrollbarBackground}">
+                                                                                <Border x:Name="border" Background="{DynamicResource ControlBackground}" Margin="1">
+                                                                                    <Polygon Points="0,0 -3.5,3.5 -3.5,-3.5" Stroke="{DynamicResource ButtonImage}" Fill="{DynamicResource ButtonImage}" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="12,10,0,0"/>
                                                                                 </Border>
                                                                             </Border>
                                                                             <ControlTemplate.Triggers>
                                                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                                                    <Setter Property="Background" TargetName="border" Value="{StaticResource ControlHighlight}"/>
+                                                                                    <Setter Property="Background" TargetName="border" Value="{DynamicResource ControlHighlight}"/>
                                                                                 </Trigger>
                                                                                 <Trigger Property="IsPressed" Value="True">
-                                                                                    <Setter Property="Background" TargetName="border" Value="{StaticResource ControlPressed}"/>
+                                                                                    <Setter Property="Background" TargetName="border" Value="{DynamicResource ControlPressed}"/>
                                                                                 </Trigger>
                                                                             </ControlTemplate.Triggers>
                                                                         </ControlTemplate>
@@ -948,9 +948,9 @@
                                         <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
 
-                                    <Border Grid.Row="0" BorderBrush="{StaticResource ControlBackground}" BorderThickness="0,0,0,2">
+                                    <Border Grid.Row="0" BorderBrush="{DynamicResource ControlBackground}" BorderThickness="0,0,0,2">
                                         <DockPanel Margin="1">
-                                            <Border Background="{StaticResource ControlBackground}" DockPanel.Dock="Left" RenderOptions.EdgeMode="Aliased">
+                                            <Border Background="{DynamicResource ControlBackground}" DockPanel.Dock="Left" RenderOptions.EdgeMode="Aliased">
                                                 <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Margin="4,0,4,0">
                                                     <!-- Down Button -->
                                                     <Button x:Name="downButton" IsEnabled="False" Click="downButton_Click" ToolTip="Move mod down in list &#x0a;Shift click to move down 5 spaces &#x0a;Ctrl Shift click to move to bottom">
@@ -972,7 +972,7 @@
                                             </Border>
 
                                             <!-- Loading Order -->
-                                            <Border Background="{StaticResource ControlBackground}" DockPanel.Dock="Right" RenderOptions.EdgeMode="Aliased">
+                                            <Border Background="{DynamicResource ControlBackground}" DockPanel.Dock="Right" RenderOptions.EdgeMode="Aliased">
                                                 <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
                                                     <TextBlock Margin="6,0,0,0" Text="Load Order:" VerticalAlignment="Center"/>
                                                     <!-- [DAI fix] was List/Priority; still saved by index -->
@@ -1010,7 +1010,7 @@
                                                     <Image Grid.Column="1" Source="{Binding Path=ModIcon}" Margin="8,0,0,0" Width="16" RenderOptions.BitmapScalingMode="Fant" ToolTip="{Binding Path=ModTooltip}"/>
                                                     <TextBlock Grid.Column="2" FontWeight="{Binding Path=ModFontWeight}" Text="{Binding Path=ModName}" Margin="8,0,0,0" VerticalAlignment="Center" HorizontalAlignment="{Binding Path=ModHorizontalAlignment}" ToolTip="{Binding Path=ModTooltip}"/>
                                                     <TextBlock Grid.Column="3" Text="{Binding Path=ModPriority}" Margin="8,0,40,0" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                                                    <Border Grid.Column="4" BorderThickness="1" BorderBrush="{StaticResource FontColor}" VerticalAlignment="Center" HorizontalAlignment="Right" Width="30">
+                                                    <Border Grid.Column="4" BorderThickness="1" BorderBrush="{DynamicResource FontColor}" VerticalAlignment="Center" HorizontalAlignment="Right" Width="30">
                                                         <TextBlock Text="{Binding Path=ModIndex}" HorizontalAlignment="Center" />
                                                     </Border>
                                                 </Grid>
@@ -1039,12 +1039,12 @@
                                         <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
 
-                                    <Border Grid.Row="0" BorderBrush="{StaticResource ControlBackground}" BorderThickness="0,0,0,2">
+                                    <Border Grid.Row="0" BorderBrush="{DynamicResource ControlBackground}" BorderThickness="0,0,0,2">
                                         <DockPanel Margin="1">
-                                            <Border Background="{StaticResource ControlBackground}" DockPanel.Dock="Left" RenderOptions.EdgeMode="Aliased">
+                                            <Border Background="{DynamicResource ControlBackground}" DockPanel.Dock="Left" RenderOptions.EdgeMode="Aliased">
                                                 <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Margin="6,0,6,0">
-                                                    <CheckBox x:Name="showOnlyReplacementsCheckBox" VerticalAlignment="Center" Margin="0,0,0,0" Checked="PART_ShowOnlyReplacementsCheckBox_Checked" Unchecked="PART_ShowOnlyReplacementsCheckBox_Unchecked" IsChecked="False" ToolTip="Filter the list so only resources with conflicts are shown." Foreground="{StaticResource FontColor}">
-                                                        <TextBlock Text="Show conflicts only" Margin="4,-1,0,0" VerticalAlignment="Center" Foreground="{StaticResource FontColor}"/>
+                                                    <CheckBox x:Name="showOnlyReplacementsCheckBox" VerticalAlignment="Center" Margin="0,0,0,0" Checked="PART_ShowOnlyReplacementsCheckBox_Checked" Unchecked="PART_ShowOnlyReplacementsCheckBox_Unchecked" IsChecked="False" ToolTip="Filter the list so only resources with conflicts are shown." Foreground="{DynamicResource FontColor}">
+                                                        <TextBlock Text="Show conflicts only" Margin="4,-1,0,0" VerticalAlignment="Center" Foreground="{DynamicResource FontColor}"/>
                                                     </CheckBox>
                                                 </StackPanel>
                                             </Border>
@@ -1053,7 +1053,7 @@
                                         </DockPanel>
                                     </Border>
 
-                                    <Border Grid.Row="1" Background="{StaticResource ListBackground}" Margin="2">
+                                    <Border Grid.Row="1" Background="{DynamicResource ListBackground}" Margin="2">
                                         <ListView x:Name="conflictsListView">
                                             <ListView.Resources>
                                                 <local:ModPrimaryActionConverter x:Key="ModPrimaryActionConverter"/>
@@ -1095,16 +1095,16 @@
                             </ctrl:FrostyTabItem>
                         </ctrl:FrostyTabControl>
 
-                        <Grid Grid.Row="1" Height="2" Background="{StaticResource ControlBackground}"/>
+                        <Grid Grid.Row="1" Height="2" Background="{DynamicResource ControlBackground}"/>
 
-                        <ctrl:FrostyDetachedTabControl Grid.Row="2" x:Name="tabContent" Foreground="{StaticResource FontColor}" Grid.ColumnSpan="2"/>
+                        <ctrl:FrostyDetachedTabControl Grid.Row="2" x:Name="tabContent" Foreground="{DynamicResource FontColor}" Grid.ColumnSpan="2"/>
                     </Grid>
                 </ctrl:FrostyDockablePanel>
             </Grid>
 
             <!-- Deco -->
             <Grid Grid.Row="4">
-                <Border BorderThickness="2,0,2,2" BorderBrush="{StaticResource ControlBackground}" Background="#FF141414"/>
+                <Border BorderThickness="2,0,2,2" BorderBrush="{DynamicResource ControlBackground}" Background="#FF141414"/>
             </Grid>
         </Grid>
 
