@@ -2964,7 +2964,7 @@
                             </Grid.RowDefinitions>
 
                             <Grid Grid.Row="0">
-                                <!-- Frost: TitlebarDecoOpacity is 0 outside the Frosty theme -->
+                                <!-- Frost: TitlebarDecoOpacity is 0 outside the Frosty themes -->
                                 <Grid x:Name="titlebarFrost"
                                       ClipToBounds="True"
                                       IsHitTestVisible="False"

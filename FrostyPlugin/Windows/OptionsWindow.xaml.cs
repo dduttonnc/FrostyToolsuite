@@ -453,7 +453,7 @@ namespace Frosty.Core.Windows
         // [DAI fix] colour theme for the Mod Manager windows, applied as soon as the options are saved
         [Category("Interface")]
         [DisplayName("Theme")]
-        [Description("Colours of the Mod Manager's windows.\r\n\r\nDark (the default) is near black with a cyan accent, Light is white and grey with a blue accent, and Frosty is snow white and light blues. The new theme shows as soon as the options are saved.")]
+        [Description("Colours of the Mod Manager's windows.\r\n\r\nDark (the default) is near black with a cyan accent, Light is white and grey with a blue accent, Frosty is snow white and light blues, and Dark Frosty is midnight blue with ice blue frost. The new theme shows as soon as the options are saved.")]
         [EbxFieldMeta(EbxFieldType.Struct)]
         [Editor(typeof(FrostyLocalizationLanguageDataEditor))]
         public CustomComboData<string, string> Theme { get; set; }
@@ -572,7 +572,7 @@ namespace Frosty.Core.Windows
             ProgressView.SelectedIndex = IsDetailedProgressView() ? 0 : 1;
 
             List<string> themeNames = FrostyThemeManager.ThemeNames.ToList();
-            Theme = new CustomComboData<string, string>(themeNames, themeNames.Select(t => (t == FrostyThemeManager.DefaultTheme) ? t + " (default)" : t).ToList());
+            Theme = new CustomComboData<string, string>(themeNames, themeNames.Select((t, i) => FrostyThemeManager.ThemeDisplayNames[i] + ((t == FrostyThemeManager.DefaultTheme) ? " (default)" : "")).ToList());
             Theme.SelectedIndex = Math.Max(0, themeNames.IndexOf(Config.Get<string>("Theme", FrostyThemeManager.DefaultTheme)));
 
             LogCleanupDays = new CustomComboData<string, string>(logCleanupDayValues, logCleanupDayValues.Select(d => (d == DefaultLogCleanupDays) ? d + " days (default)" : d + " days").ToList());
