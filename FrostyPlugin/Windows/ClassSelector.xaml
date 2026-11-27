@@ -8,7 +8,7 @@
         mc:Ignorable="d"
         Title="Select a class" Height="400" Width="500"
         WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
-    <Grid Background="{StaticResource WindowBackground}">
+    <Grid Background="{DynamicResource WindowBackground}">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="38"/>

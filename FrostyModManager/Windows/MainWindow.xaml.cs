@@ -207,6 +207,30 @@ namespace FrostyModManager
             throw new NotImplementedException();
         }
     }
+
+    // Wraps an ImageSource converter so its image can be used as an OpacityMask
+    public class ImageSourceMaskConverter : IValueConverter
+    {
+        private readonly IValueConverter imageConverter;
+
+        public ImageSourceMaskConverter(IValueConverter inImageConverter)
+        {
+            imageConverter = inImageConverter;
+        }
+
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (imageConverter.Convert(value, typeof(ImageSource), parameter, culture) is ImageSource source)
+                return new ImageBrush(source) { Stretch = Stretch.Uniform };
+
+            return Brushes.Transparent;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
     public class ModAppliedConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -483,10 +507,14 @@ namespace FrostyModManager
             if (toolsMenuItem.Items.Count != 0)
                 toolsMenuItem.Items.Add(new Separator());
 
+            TextBlock optionsIcon = new TextBlock() { Text = "\uE713" };
+            optionsIcon.SetResourceReference(FrameworkElement.StyleProperty, "GlyphTextStyle");
+            optionsIcon.SetResourceReference(TextBlock.ForegroundProperty, "IconBrush");
+
             MenuItem optionsMenuItem = new MenuItem()
             {
                 Header = "Options",
-                Icon = new Image() { Source = new ImageSourceConverter().ConvertFromString("pack://application:,,,/FrostyCore;component/Images/Settings.png") as ImageSource },
+                Icon = optionsIcon,
             };
             optionsMenuItem.Click += optionsMenuItem_Click;
             toolsMenuItem.Items.Add(optionsMenuItem);
@@ -2983,6 +3011,29 @@ namespace FrostyModManager
             conflictsTabItem.Visibility = Visibility.Visible;
         }
 
+        // The hidden Image keeps the old cell size; the masked Rectangle draws the white icon in the theme colour
+        private static FrameworkElementFactory CreateTintedActionIcon(Binding sourceBinding, IValueConverter imageConverter, string modFilename, Binding tooltipBinding)
+        {
+            FrameworkElementFactory icon = new FrameworkElementFactory(typeof(Grid));
+            icon.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            icon.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+            icon.SetValue(UIElement.OpacityProperty, 0.75d);
+            icon.SetValue(FrameworkElement.ToolTipProperty, tooltipBinding);
+
+            FrameworkElementFactory sizer = new FrameworkElementFactory(typeof(Image));
+            sizer.SetBinding(Image.SourceProperty, sourceBinding);
+            sizer.SetValue(FrameworkElement.HeightProperty, 18.0d);
+            sizer.SetValue(UIElement.OpacityProperty, 0.0d);
+
+            FrameworkElementFactory tint = new FrameworkElementFactory(typeof(System.Windows.Shapes.Rectangle));
+            tint.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, "IconBrush");
+            tint.SetBinding(UIElement.OpacityMaskProperty, new Binding("") { Converter = new ImageSourceMaskConverter(imageConverter), ConverterParameter = modFilename });
+
+            icon.AppendChild(sizer);
+            icon.AppendChild(tint);
+            return icon;
+        }
+
         private void UpdateConflicts()
         {
             bool onlyShowReplacements = (bool)showOnlyReplacementsCheckBox.IsChecked;
@@ -3140,21 +3191,8 @@ namespace FrostyModManager
                 factory.SetValue(StackPanel.HorizontalAlignmentProperty, HorizontalAlignment.Center);
                 factory.SetValue(Grid.HeightProperty, 22.0d);
 
-                FrameworkElementFactory img = new FrameworkElementFactory(typeof(Image));
-                img.SetBinding(Image.SourceProperty, primaryActionBinding);
-                img.SetValue(Image.HeightProperty, 18.0d);
-                img.SetValue(Image.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-                img.SetValue(Image.VerticalAlignmentProperty, VerticalAlignment.Center);
-                img.SetValue(Image.OpacityProperty, 0.75d);
-                img.SetValue(Image.ToolTipProperty, primaryTooltipBinding);
-
-                FrameworkElementFactory simg = new FrameworkElementFactory(typeof(Image));
-                simg.SetBinding(Image.SourceProperty, secondaryActionBinding);
-                simg.SetValue(Image.HeightProperty, 18.0d);
-                simg.SetValue(Image.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-                simg.SetValue(Image.VerticalAlignmentProperty, VerticalAlignment.Center);
-                simg.SetValue(Image.OpacityProperty, 0.75d);
-                simg.SetValue(Image.ToolTipProperty, secondaryTooltipBinding);
+                FrameworkElementFactory img = CreateTintedActionIcon(primaryActionBinding, new ModPrimaryActionConverter(), appliedMod.Mod.Filename, primaryTooltipBinding);
+                FrameworkElementFactory simg = CreateTintedActionIcon(secondaryActionBinding, new ModSecondaryActionConverter(), appliedMod.Mod.Filename, secondaryTooltipBinding);
 
                 factory.AppendChild(img);
                 factory.AppendChild(simg);

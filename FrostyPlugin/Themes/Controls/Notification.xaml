@@ -11,9 +11,16 @@
         <Setter Property="ContentTemplate">
             <Setter.Value>
                 <DataTemplate>
-                    <Border BorderBrush="Black" BorderThickness="1" Background="{StaticResource ControlBackground}">
+                    <Border BorderBrush="{DynamicResource PopupBorderBrush}" BorderThickness="1" Background="{DynamicResource PopupBackgroundBrush}">
                         <Grid>
-                            <TextBlock Text="{Binding Path=NotificationTitle, RelativeSource={RelativeSource AncestorType={x:Type local:FrostyNotification}}}" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="16 " Foreground="{StaticResource FontColor}" Margin="10 0 0 0" TextWrapping="Wrap"/>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="3"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Background="{DynamicResource AccentBrush}"/>
+                            <TextBlock Grid.Column="1" Text="&#xE946;" FontFamily="{DynamicResource IconFontFamily}" FontSize="16" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="12 0 0 0"/>
+                            <TextBlock Grid.Column="2" Text="{Binding Path=NotificationTitle, RelativeSource={RelativeSource AncestorType={x:Type local:FrostyNotification}}}" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="16 " Foreground="{DynamicResource HeaderFontBrush}" Margin="10 0 0 0" TextWrapping="Wrap"/>
                         </Grid>
                     </Border>
                 </DataTemplate>

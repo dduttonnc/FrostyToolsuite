@@ -17,18 +17,18 @@
             <RowDefinition Height="38"/>
         </Grid.RowDefinitions>
         
-        <Grid Background="{StaticResource ListBackground}">
+        <Grid Background="{DynamicResource SurfaceBrush}">
             <StackPanel x:Name="GameInfoStackPanel" Margin="8">
-                <TextBlock x:Name="ProfileNameTextBlock" Foreground="{StaticResource FontColor}" FontSize="14" FontWeight="Medium"/>
-                <TextBlock x:Name="ProfilePathTextBlock" Foreground="{StaticResource FontColor}" FontSize="10"/>
+                <TextBlock x:Name="ProfileNameTextBlock" Foreground="{DynamicResource HeaderFontBrush}" FontSize="14" FontWeight="SemiBold"/>
+                <TextBlock x:Name="ProfilePathTextBlock" Foreground="{DynamicResource SecondaryFontBrush}" FontSize="10" TextTrimming="CharacterEllipsis"/>
             </StackPanel>
-            <TextBlock x:Name="SelectGameTextBlock" Text="Select Game" Foreground="{StaticResource FontColor}" FontSize="14" FontWeight="Medium" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <TextBlock x:Name="SelectGameTextBlock" Text="Select Game" Foreground="{DynamicResource SecondaryFontBrush}" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Grid>
         
-        <Border Grid.Row="1" Background="{StaticResource ControlBackground}"/>
+        <Border Grid.Row="1" Background="{DynamicResource AccentGradientBrush}"/>
         
         <Grid Grid.Row="2">
-            <ListBox x:Name="ConfigurationListView" ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="ConfigurationListView_OnSelectionChanged" MouseDoubleClick="ConfigurationListView_OnMouseDoubleClick" Background="{StaticResource WindowBackground}">
+            <ListBox x:Name="ConfigurationListView" ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="ConfigurationListView_OnSelectionChanged" MouseDoubleClick="ConfigurationListView_OnMouseDoubleClick" Background="{DynamicResource WindowBackground}">
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <WrapPanel IsItemsHost="true" Orientation="Horizontal"/>
@@ -49,21 +49,47 @@
                     <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource {x:Type ListBoxItem}}">
                         <Setter Property="Padding" Value="4"/>
                         <Setter Property="Cursor" Value="Hand"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                    <Grid SnapsToDevicePixels="True">
+                                        <Border x:Name="Bd" Background="Transparent" CornerRadius="4"/>
+                                        <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                        <Border x:Name="Stroke" BorderBrush="Transparent" BorderThickness="2" CornerRadius="4" IsHitTestVisible="False"/>
+                                        <Border x:Name="Check" Width="14" Height="14" CornerRadius="7" Margin="0,1,1,0" HorizontalAlignment="Right" VerticalAlignment="Top" Background="{DynamicResource AccentBrush}" Visibility="Collapsed" IsHitTestVisible="False">
+                                            <TextBlock Text="&#xE73E;" FontFamily="{DynamicResource IconFontFamily}" FontSize="8" Foreground="{DynamicResource AccentForegroundBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </Grid>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SubItemHighlight}"/>
+                                            <Setter TargetName="Stroke" Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentSubtleBrush}"/>
+                                            <Setter TargetName="Stroke" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                            <Setter TargetName="Check" Property="Visibility" Value="Visible"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
                     </Style>
                 </ListBox.ItemContainerStyle>
             </ListBox>
         </Grid>
 
-        <Grid Grid.Row="3" Background="{StaticResource ListBackground}" >
+        <Grid Grid.Row="3" Background="{DynamicResource SurfaceAltBrush}" >
+            <Border BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0"/>
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
-                <Button x:Name="AddConfigurationButton" Content="Add" Padding="12,0" Margin="6,6,0,6" Click="AddConfigurationButton_OnClick"/>
-                <Button x:Name="RemoveConfigurationButton" Content="Remove" Padding="12,0" Margin="6,6,0,6" Click="RemoveConfigurationButton_OnClick"/>
-                <Button x:Name="SelectConfigurationButton" Content="Select" Padding="12,0" Margin="6,6,6,6" Click="SelectConfigurationButton_OnClick"/>
+                <Button x:Name="AddConfigurationButton" Content="Add" Padding="12,0" Margin="6,7,0,6" Click="AddConfigurationButton_OnClick"/>
+                <Button x:Name="RemoveConfigurationButton" Content="Remove" Padding="12,0" Margin="6,7,0,6" Click="RemoveConfigurationButton_OnClick"/>
+                <Button x:Name="SelectConfigurationButton" Content="Select" Padding="12,0" Margin="6,7,6,6" Click="SelectConfigurationButton_OnClick" Style="{StaticResource AccentButtonStyle}"/>
             </StackPanel>
 
             <StackPanel HorizontalAlignment="Left" Orientation="Horizontal">
-                <Button x:Name="CancelButton" Content="Cancel" Padding="12,0" Margin="6,6,0,6" Click="CancelButton_OnClick"/>
-                <Button x:Name="RefreshButton" Content="Scan" Padding="12,0" Margin="6,6,0,6" Click="RefreshButton_OnClick"/>
+                <Button x:Name="CancelButton" Content="Cancel" Padding="12,0" Margin="6,7,0,6" Click="CancelButton_OnClick"/>
+                <Button x:Name="RefreshButton" Content="Scan" Padding="12,0" Margin="6,7,0,6" Click="RefreshButton_OnClick"/>
             </StackPanel>
         </Grid>
     </Grid>

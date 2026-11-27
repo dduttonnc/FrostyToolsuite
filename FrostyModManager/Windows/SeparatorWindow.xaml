@@ -9,34 +9,28 @@
         mc:Ignorable="d"
         Title="Add Separator" Height="110" Width="300" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
 
-    <Window.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="/FrostyControls;component/Themes/Generic.xaml"/>
-            </ResourceDictionary.MergedDictionaries>
-        </ResourceDictionary>
-    </Window.Resources>
-
     <Grid>
-        <Grid Background="{StaticResource ListBackground}">
+        <Grid Background="{DynamicResource SurfaceBrush}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="52"/>
                 <RowDefinition Height="30"/>
             </Grid.RowDefinitions>
             <StackPanel Grid.Row="0" Orientation="Vertical" Margin="4,7,4,4" VerticalAlignment="Top">
                 <ctrl:FrostyWatermarkTextBox x:Name="nameSeparatorTextBox" WatermarkText="Name" BorderThickness="1" VerticalContentAlignment="Center" Height="22" TextChanged="nameSeparatorTextBox_TextChanged"/>
-                <TextBlock x:Name="charsTextBox" Foreground="{StaticResource FontColor}" VerticalAlignment="Center" Height="16" Margin="0,4,0,0" Text=""/>
+                <TextBlock x:Name="charsTextBox" Foreground="{DynamicResource SecondaryFontBrush}" VerticalAlignment="Center" Height="16" Margin="0,4,0,0" Text=""/>
             </StackPanel>
 
-            <Grid Grid.Row="1" Margin="4">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition/>
-                    <ColumnDefinition/>
-                </Grid.ColumnDefinitions>
+            <Border Grid.Row="1" Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0">
+                <Grid Margin="4,3,4,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
 
-                <Button Grid.Column="0" x:Name="cancelButton" Content="Cancel" Width="50" Height="22" HorizontalAlignment="Left" Click="cancelButton_Click"/>
-                <Button Grid.Column="1" x:Name="doneButton" Content="OK" Width="50" Height="22" HorizontalAlignment="Right" Click="doneButton_Click"/>
-            </Grid>
+                    <Button Grid.Column="0" x:Name="cancelButton" Content="Cancel" Width="50" Height="22" HorizontalAlignment="Left" Click="cancelButton_Click"/>
+                    <Button Grid.Column="1" x:Name="doneButton" Content="OK" Width="50" Height="22" HorizontalAlignment="Right" Click="doneButton_Click" Style="{StaticResource AccentButtonStyle}"/>
+                </Grid>
+            </Border>
         </Grid>
     </Grid>
 </ctrl:FrostyDockableWindow>

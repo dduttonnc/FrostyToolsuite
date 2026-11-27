@@ -89,6 +89,22 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Themes\Colors\Dark.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\Colors\DarkFrosty.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\Colors\Frosty.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\Colors\Light.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FrostyAutoSizedGridView.cs" />
@@ -103,6 +119,7 @@
     <Compile Include="FrostySvgImage.cs" />
     <Compile Include="FrostyTabControl.cs" />
     <Compile Include="FrostyTabItem.cs" />
+    <Compile Include="FrostyThemeManager.cs" />
     <Compile Include="FrostyWatermarkTextBox.cs" />
     <Compile Include="FrostyWindow.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">

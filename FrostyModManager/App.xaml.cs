@@ -129,6 +129,7 @@ namespace FrostyModManager
             Frosty.Core.Windows.ModManagerOptionsData.ApplyPerformanceSettings();
             Frosty.Core.Windows.ModManagerOptionsData.ApplyLogCleanup();
             Frosty.Core.Windows.ModManagerOptionsData.ApplyDiagnosticSetting();
+            Frosty.Core.Windows.ModManagerOptionsData.ApplyTheme();
 
             StringBuilder sb = new StringBuilder();
             if (e.Args.Length > 0)

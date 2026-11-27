@@ -20,18 +20,18 @@
             <RowDefinition Height="38"/>
         </Grid.RowDefinitions>
 
-        <Grid Background="{StaticResource ListBackground}">
-            <StackPanel x:Name="GameInfoStackPanel" Margin="8">
-                <TextBlock x:Name="ProfileNameTextBlock" Foreground="{StaticResource FontColor}" FontSize="14" FontWeight="Medium"/>
-                <TextBlock x:Name="ProfilePathTextBlock" Foreground="{StaticResource FontColor}" FontSize="10"/>
+        <Grid Background="{DynamicResource SurfaceBrush}">
+            <StackPanel x:Name="GameInfoStackPanel" Margin="10,8">
+                <TextBlock x:Name="ProfileNameTextBlock" Foreground="{DynamicResource HeaderFontBrush}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                <TextBlock x:Name="ProfilePathTextBlock" Foreground="{DynamicResource SecondaryFontBrush}" FontSize="10" TextTrimming="CharacterEllipsis"/>
             </StackPanel>
-            <TextBlock x:Name="SelectGameTextBlock" Text="Select Game" Foreground="{StaticResource FontColor}" FontSize="14" FontWeight="Medium" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <TextBlock x:Name="SelectGameTextBlock" Text="Select Game" Foreground="{DynamicResource SecondaryFontBrush}" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Grid>
 
-        <Border Grid.Row="1" Background="{StaticResource ControlBackground}"/>
+        <Border Grid.Row="1" Background="{DynamicResource AccentGradientBrush}"/>
 
         <Grid Grid.Row="2">
-            <ListBox x:Name="ConfigurationListView" ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="ConfigurationListView_OnSelectionChanged" MouseDoubleClick="ConfigurationListView_OnMouseDoubleClick" Background="{StaticResource WindowBackground}">
+            <ListBox x:Name="ConfigurationListView" ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="ConfigurationListView_OnSelectionChanged" MouseDoubleClick="ConfigurationListView_OnMouseDoubleClick" Background="{DynamicResource WindowBackground}" Padding="6">
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <WrapPanel IsItemsHost="true" Orientation="Horizontal"/>
@@ -51,26 +51,53 @@
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource {x:Type ListBoxItem}}">
                         <Setter Property="Padding" Value="4"/>
+                        <Setter Property="Margin" Value="2"/>
                         <Setter Property="Cursor" Value="Hand"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                    <Grid SnapsToDevicePixels="True">
+                                        <Border x:Name="Bd" Background="{DynamicResource SurfaceBrush}" CornerRadius="4"/>
+                                        <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                        <Border x:Name="Stroke" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1" CornerRadius="4" IsHitTestVisible="False"/>
+                                        <Border x:Name="Check" Width="14" Height="14" CornerRadius="7" Margin="0,1,1,0" HorizontalAlignment="Right" VerticalAlignment="Top" Background="{DynamicResource AccentBrush}" Visibility="Collapsed" IsHitTestVisible="False">
+                                            <TextBlock Text="&#xE73E;" FontFamily="{DynamicResource IconFontFamily}" FontSize="8" Foreground="{DynamicResource AccentForegroundBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </Grid>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SubItemHighlight}"/>
+                                            <Setter TargetName="Stroke" Property="BorderBrush" Value="{DynamicResource ControlBorderHoverBrush}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentSubtleBrush}"/>
+                                            <Setter TargetName="Stroke" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                            <Setter TargetName="Stroke" Property="BorderThickness" Value="2"/>
+                                            <Setter TargetName="Check" Property="Visibility" Value="Visible"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
                     </Style>
                 </ListBox.ItemContainerStyle>
             </ListBox>
         </Grid>
 
-        <Border Grid.Row="3" Background="{StaticResource ControlBackground}"/>
-        <Grid Grid.Row="4" Background="{StaticResource ListBackground}" >
+        <Border Grid.Row="3" Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0"/>
+        <Grid Grid.Row="4" Background="{DynamicResource SurfaceAltBrush}" >
             <StackPanel HorizontalAlignment="Left" Orientation="Horizontal">
-                <CheckBox x:Name="RememberProfileCheckBox" VerticalAlignment="Center" IsChecked="False" Content="Remember Profile" ToolTip="Automatically load profile when starting the Mod Manager." Padding="4, 0, 0, 1" Margin="6,0,0,0" Foreground="White"/>
+                <CheckBox x:Name="RememberProfileCheckBox" VerticalAlignment="Center" IsChecked="False" Content="Remember Profile" ToolTip="Automatically load profile when starting the Mod Manager." Padding="4, 0, 0, 1" Margin="8,0,0,0" Foreground="{DynamicResource SecondaryFontBrush}"/>
             </StackPanel>
         </Grid>
-        <Border Grid.Row="5" Background="{StaticResource ControlBackground}"/>
+        <Border Grid.Row="5" Background="{DynamicResource SurfaceAltBrush}"/>
         
-        <Grid Grid.Row="6" Background="{StaticResource ListBackground}" >
+        <Grid Grid.Row="6" Background="{DynamicResource SurfaceAltBrush}" >
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
                 <Button x:Name="AddConfigurationButton" Content="Add" Padding="12,0" Margin="6,6,0,6" Click="AddConfigurationButton_OnClick"/>
                 <Button x:Name="ModifyConfigurationButton" Content="Modify" Padding="12,0" Margin="6,6,0,6" Click="ModifyConfigurationButton_OnClick"/>
                 <Button x:Name="RemoveConfigurationButton" Content="Remove" Padding="12,0" Margin="6,6,0,6" Click="RemoveConfigurationButton_OnClick"/>
-                <Button x:Name="LaunchConfigurationButton" Content="Select" Padding="12,0" Margin="6,6,6,6" Click="LaunchConfigurationButton_OnClick"/>
+                <Button x:Name="LaunchConfigurationButton" Content="Select" Padding="12,0" Margin="6,6,6,6" Click="LaunchConfigurationButton_OnClick" Style="{StaticResource AccentButtonStyle}"/>
             </StackPanel>
 
             <StackPanel HorizontalAlignment="Left" Orientation="Horizontal">

@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="Add Pack" Height="95" Width="300"
         ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
-    <Grid Background="{StaticResource ListBackground}">
+    <Grid Background="{DynamicResource SurfaceBrush}">
         <Grid.RowDefinitions>
             <RowDefinition/>
             <RowDefinition Height="30"/>
@@ -16,14 +16,16 @@
             <ctrl:FrostyWatermarkTextBox x:Name="profileNameTextBox" WatermarkText="Pack Name" BorderThickness="1" VerticalContentAlignment="Center" Height="22"/>
         </StackPanel>
 
-        <Grid Grid.Row="1" Margin="4">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
-            </Grid.ColumnDefinitions>
+        <Border Grid.Row="1" Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0">
+            <Grid Margin="4,3,4,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
 
-            <Button Grid.Column="0" x:Name="cancelButton" Content="Cancel" Width="60" Height="22" HorizontalAlignment="Left" Click="cancelButton_Click"/>
-            <Button Grid.Column="1" x:Name="addButton" Content="Add" Width="60" Height="22" HorizontalAlignment="Right" Click="addButton_Click"/>
-        </Grid>
+                <Button Grid.Column="0" x:Name="cancelButton" Content="Cancel" Width="60" Height="22" HorizontalAlignment="Left" Click="cancelButton_Click"/>
+                <Button Grid.Column="1" x:Name="addButton" Content="Add" Width="60" Height="22" HorizontalAlignment="Right" Click="addButton_Click" Style="{StaticResource AccentButtonStyle}"/>
+            </Grid>
+        </Border>
     </Grid>
 </ctrl:FrostyDockableWindow>

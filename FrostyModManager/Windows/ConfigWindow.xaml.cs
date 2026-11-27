@@ -399,9 +399,9 @@ namespace FrostyModManager
                 Width = 22,
                 Margin = new Thickness(1),
                 BorderThickness = new Thickness(1),
-                BorderBrush = System.Windows.Media.Brushes.Gray,
                 Background = new System.Windows.Media.SolidColorBrush(ToMediaColor(initial))
             };
+            swatch.SetResourceReference(Border.BorderBrushProperty, "ControlBorderBrush");
 
             TextBox tb = new TextBox
             {
