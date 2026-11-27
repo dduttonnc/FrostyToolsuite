@@ -183,7 +183,7 @@ namespace FrostyModManager
                 initial = Math.Max(minValue, Math.Min(maxValue, savedInt));
             ce.CurrentValue = initial;
 
-            Label lbl = new Label {Content = name};
+            Label lbl = NameLabel(name);
 
             TextBox tb = new TextBox
             {
@@ -233,7 +233,7 @@ namespace FrostyModManager
                 initial = Math.Max(minValue, Math.Min(maxValue, savedFloat));
             ce.CurrentValue = initial;
 
-            Label lbl = new Label {Content = name};
+            Label lbl = NameLabel(name);
 
             TextBox tb = new TextBox
             {
@@ -283,7 +283,7 @@ namespace FrostyModManager
                 initial = savedBool;
             ce.CurrentValue = initial;
 
-            Label lbl = new Label {Content = name};
+            Label lbl = NameLabel(name);
 
             CheckBox cb = new CheckBox
             {
@@ -307,7 +307,7 @@ namespace FrostyModManager
             EnumConfigElement ce = new EnumConfigElement(id, name, names, defValue);
             AddElement(id, ce);
 
-            Label lbl = new Label {Content = name};
+            Label lbl = NameLabel(name);
 
             int selectedIndex = (defValue >= 0 && defValue < names.Length) ? defValue : -1;
 
@@ -392,7 +392,7 @@ namespace FrostyModManager
                 initial = savedColor;
             ce.CurrentValue = initial;
 
-            Label lbl = new Label {Content = name};
+            Label lbl = NameLabel(name);
 
             Border swatch = new Border
             {
@@ -450,7 +450,7 @@ namespace FrostyModManager
                 initial = saved;
             ce.CurrentValue = initial;
 
-            Label lbl = new Label {Content = name};
+            Label lbl = NameLabel(name);
 
             TextBox tb = new TextBox
             {
@@ -471,6 +471,9 @@ namespace FrostyModManager
             theWindow.valuesStackPanel.Children.Add(tb);
             theWindow.namesStackPanel.Children.Add(lbl);
         }
+
+        // [DAI fix] as plain text, so an underscore in the name shows instead of underlining the next letter
+        private static Label NameLabel(string name) => new Label { Content = new TextBlock { Text = name } };
 
         public ConfigElement GetElement(string name) => !elements.ContainsKey(name) ? null : elements[name];
 
