@@ -17,7 +17,7 @@ DAI = Dragon Age: Inquisition, DAV = Dragon Age: The Veilguard, MEA = Mass Effec
 - DAI: .daimod settings windows behave like DAI Mod Manager's: on/off options switch the right part, colour settings work, dropdowns pass the right value
 - Options: new Automatic Log Cleanup setting (off by default) deletes Diagnostic Logging and ModData Build Log files older than 14, 30, 60 or 90 days
 - Launching while the game is stuck in the background: Frosty offers to end it (asks for admin rights only if needed), waits until it has closed, and otherwise explains how to end it in Task Manager (new 'Terminate Stuck Game' option, on by default)
-- New look for the Mod Manager with four themes to pick from (Options > Interface > Theme): Dark (default), Light, Frosty and Dark Frosty
+- New look for the Mod Manager with five themes to pick from (Options > Interface > Theme): Dark (default), Light, Frosty, Dark Frosty and Original (the classic Frosty greys)
 
 ## 1.7.5
 

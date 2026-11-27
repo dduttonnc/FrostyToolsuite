@@ -6,8 +6,8 @@ namespace Frosty.Controls
     public static class FrostyThemeManager
     {
         public const string DefaultTheme = "Dark";
-        public static readonly string[] ThemeNames = { "Dark", "Light", "Frosty", "DarkFrosty" };
-        public static readonly string[] ThemeDisplayNames = { "Dark", "Light", "Frosty", "Dark Frosty" };
+        public static readonly string[] ThemeNames = { "Dark", "Light", "Frosty", "DarkFrosty", "Original" };
+        public static readonly string[] ThemeDisplayNames = { "Dark", "Light", "Frosty", "Dark Frosty", "Original" };
 
         public static string CurrentTheme { get; private set; } = DefaultTheme;
 
