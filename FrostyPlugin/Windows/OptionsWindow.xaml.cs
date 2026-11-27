@@ -433,9 +433,40 @@ namespace Frosty.Core.Windows
         // [DAI fix] for troubleshooting someone else's PC; off by default so normal logs stay the same
         [Category("Manager")]
         [DisplayName("Diagnostic Logging")]
-        [Description("Adds extra detail to the Log tab for troubleshooting: the game's version and platform, paths, cache, plugins and settings, each mod being applied and where its data is written, how the game is launched, and how it exits.\r\n\r\nThe whole log is also saved to a file in the Logs folder next to FrostyModManager.exe (the last 10 are kept), so it can be sent to whoever is helping. Leave it off normally.")]
+        [Description("Adds extra detail to the Log tab for troubleshooting: the game's version and platform, paths, cache, plugins and settings, each mod being applied and where its data is written, how the game is launched, and how it exits.\r\n\r\nThe whole log is also saved to a file in the Logs folder next to FrostyModManager.exe so it can be sent to whoever is helping. Leave it off normally, or turn on Automatic Log Cleanup below so old files are deleted.")]
         [EbxFieldMeta(EbxFieldType.Boolean)]
         public bool DiagnosticLogging { get; set; } = false;
+
+        [Category("Manager")]
+        [DisplayName("Automatic Log Cleanup")]
+        [Description("Deletes Diagnostic Logging files in the Logs folder that are older than the age chosen below, each time the Mod Manager starts and when these options are saved. Only Frosty's own Diagnostics files are deleted.\r\n\r\nWhen off, every file is kept.")]
+        [EbxFieldMeta(EbxFieldType.Boolean)]
+        public bool AutoLogCleanup { get; set; } = false;
+
+        [Category("Manager")]
+        [DisplayName("Delete Logs Older Than")]
+        [Description("How old a Diagnostic Logging file must be before Automatic Log Cleanup deletes it.")]
+        [EbxFieldMeta(EbxFieldType.Struct)]
+        [Editor(typeof(FrostyLocalizationLanguageDataEditor))]
+        [DependsOn("AutoLogCleanup")]
+        public CustomComboData<string, string> LogCleanupDays { get; set; }
+
+        private static readonly List<string> logCleanupDayValues = new List<string>() { "14", "30", "60", "90" };
+        private const string DefaultLogCleanupDays = "30";
+
+        public static void ApplyLogCleanup()
+        {
+            if (!Config.Get<bool>("AutoLogCleanup", false))
+                return;
+
+            string days = Config.Get<string>("LogCleanupDays", DefaultLogCleanupDays);
+            if (!logCleanupDayValues.Contains(days))
+                days = DefaultLogCleanupDays;
+
+            int deleted = DiagnosticLog.DeleteOldFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs"), int.Parse(days));
+            if (deleted > 0)
+                App.Logger?.Log("Automatic Log Cleanup deleted {0} Diagnostics log file(s) older than {1} days.", deleted, days);
+        }
 
         public static void ApplyDiagnosticSetting()
         {
@@ -491,6 +522,7 @@ namespace Frosty.Core.Windows
             UseCustomModsDirectory = Config.Get<bool>("UseCustomModsDirectory", false);
             CustomModsDirectory = Config.Get<string>("CustomModsDirectory", "");
             DiagnosticLogging = Config.Get<bool>("DiagnosticLogging", false);
+            AutoLogCleanup = Config.Get<bool>("AutoLogCleanup", false);
 
             List<string> threadValues = new List<string>();
             List<string> threadNames = new List<string>();
@@ -507,6 +539,10 @@ namespace Frosty.Core.Windows
 
             ProgressView = new CustomComboData<string, string>(progressViewNames, progressViewNames);
             ProgressView.SelectedIndex = IsDetailedProgressView() ? 0 : 1;
+
+            LogCleanupDays = new CustomComboData<string, string>(logCleanupDayValues, logCleanupDayValues.Select(d => (d == DefaultLogCleanupDays) ? d + " days (default)" : d + " days").ToList());
+            int dayIndex = logCleanupDayValues.IndexOf(Config.Get<string>("LogCleanupDays", DefaultLogCleanupDays));
+            LogCleanupDays.SelectedIndex = (dayIndex < 0) ? logCleanupDayValues.IndexOf(DefaultLogCleanupDays) : dayIndex;
         }
 
         public override void Save()
@@ -523,7 +559,10 @@ namespace Frosty.Core.Windows
             Config.Add("WorkerPriority", WorkerPriority.SelectedValue);
             Config.Add("ProgressView", ProgressView.SelectedValue);
             Config.Add("DiagnosticLogging", DiagnosticLogging);
+            Config.Add("AutoLogCleanup", AutoLogCleanup);
+            Config.Add("LogCleanupDays", LogCleanupDays.SelectedValue);
             ApplyPerformanceSettings();
+            ApplyLogCleanup();
             ApplyDiagnosticSetting();
 
             if (RememberChoice)

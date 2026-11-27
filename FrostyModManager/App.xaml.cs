@@ -127,6 +127,7 @@ namespace FrostyModManager
             Config.Load();
             // [DAI fix] CPU Threads and CPU Priority options
             Frosty.Core.Windows.ModManagerOptionsData.ApplyPerformanceSettings();
+            Frosty.Core.Windows.ModManagerOptionsData.ApplyLogCleanup();
             Frosty.Core.Windows.ModManagerOptionsData.ApplyDiagnosticSetting();
 
             StringBuilder sb = new StringBuilder();

@@ -11,6 +11,7 @@ DAI = Dragon Age: Inquisition, DAV = Dragon Age: The Veilguard, MEA = Mass Effec
 - DAI: DAI Mod Manager's own Patch.daimod is no longer installed as a mod (Frosty doesn't need it)
 - Installation Report window: long messages wrap instead of being cut off
 - DAI: .daimod settings windows behave like DAI Mod Manager's: on/off options switch the right part, colour settings work, dropdowns pass the right value
+- Options: new Automatic Log Cleanup setting (off by default) deletes Diagnostic Logging files older than 14, 30, 60 or 90 days
 
 ## 1.7.5
 
