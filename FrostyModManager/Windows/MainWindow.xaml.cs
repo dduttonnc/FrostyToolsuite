@@ -2079,7 +2079,7 @@ namespace FrostyModManager
                     return false;
                 }
 
-                string newDesc ="(Converted from .daimod)\r\n\r\n" + DaiXmlText(elem, "description") + "\r\n\r\n" + configValues;
+                string newDesc = "(Converted from .daimod)\r\n\r\n" + DaiXmlText(elem, "description") + "\r\n\r\n" + configValues;
 
                 DbObject modObject = new DbObject();
                 modObject.AddValue("magic", "FBMODV3");
@@ -2370,7 +2370,7 @@ namespace FrostyModManager
 
                 if (changedFiles.Count > 0)
                 {
-                    string list =string.Join(", ", changedFiles.Take(3)) + (changedFiles.Count > 3 ? string.Format(" and {0} more", changedFiles.Count - 3) : "");
+                    string list = string.Join(", ", changedFiles.Take(3)) + (changedFiles.Count > 3 ? string.Format(" and {0} more", changedFiles.Count - 3) : "");
                     string text = changedFiles.Count == 1
                         ? "No action needed: 1 of the {0} game files this mod changes was updated by a game patch after the mod was made ({1}). The mod is installed and works as usual. It uses its own copy of that file, so what the patch changed in it is replaced, which is usually harmless."
                         : "No action needed: {2} of the {0} game files this mod changes were updated by a game patch after the mod was made ({1}). The mod is installed and works as usual. It uses its own copies of those files, so what the patches changed in them is replaced, which is usually harmless.";
