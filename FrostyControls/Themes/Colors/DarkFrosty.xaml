@@ -29,7 +29,7 @@
     <!-- list/tree row hover -->
     <SolidColorBrush x:Key="SubItemHighlight" Color="#13253A" />
     <!-- list/tree row selected -->
-    <SolidColorBrush x:Key="SubItemPressed" Color="#0F3A55" />
+    <SolidColorBrush x:Key="SubItemPressed" Color="#13486A" />
     <!-- lists and content areas -->
     <SolidColorBrush x:Key="ListBackground" Color="#0F1D2B" />
 
@@ -42,8 +42,8 @@
     <SolidColorBrush x:Key="SurfaceBrush" Color="#112131" />
     <SolidColorBrush x:Key="SurfaceAltBrush" Color="#142638" />
     <SolidColorBrush x:Key="InputBackgroundBrush" Color="#0B1823" />
-    <SolidColorBrush x:Key="ControlBorderBrush" Color="#23405A" />
-    <SolidColorBrush x:Key="ControlBorderHoverBrush" Color="#345A7A" />
+    <SolidColorBrush x:Key="ControlBorderBrush" Color="#33597A" />
+    <SolidColorBrush x:Key="ControlBorderHoverBrush" Color="#4A77A0" />
     <SolidColorBrush x:Key="DividerBrush" Color="#1A3046" />
     <SolidColorBrush x:Key="FocusBrush" Color="#4FC3F7" />
     <SolidColorBrush x:Key="SecondaryFontBrush" Color="#8FB0C8" />

@@ -450,10 +450,10 @@ namespace Frosty.Core.Windows
         // a method, since the options page would list a static property as a setting
         public static bool IsDetailedProgressView() => Config.Get<string>("ProgressView", "Detailed") != "Simple";
 
-        // [DAI fix] colour theme for the Mod Manager windows, applied as soon as the options are saved
+        // [DAI fix] color theme for the Mod Manager windows, applied as soon as the options are saved
         [Category("Interface")]
         [DisplayName("Theme")]
-        [Description("Colours of the Mod Manager's windows.\r\n\r\nDark (the default) is near black with a cyan accent, Light is white and grey with a blue accent, Frosty is snow white and light blues, and Dark Frosty is midnight blue with ice blue frost. The new theme shows as soon as the options are saved.")]
+        [Description("Colors of the Mod Manager's windows: Dark (the default), Light, Frosty or Dark Frosty. The new theme shows as soon as the options are saved.")]
         [EbxFieldMeta(EbxFieldType.Struct)]
         [Editor(typeof(FrostyLocalizationLanguageDataEditor))]
         public CustomComboData<string, string> Theme { get; set; }
