@@ -8,6 +8,7 @@ DAI = Dragon Age: Inquisition, DAV = Dragon Age: The Veilguard, MEA = Mass Effec
 
 - Options: the extra 'Applying Thread Count' setting is gone; applying mods uses the Performance settings (CPU Threads, CPU Priority) like the cache
 - Launch Platform and DatapathFix no longer break the launch when both are turned on: Launch Platform is skipped while DatapathFix is on (Steam and Epic only, untested)
+- DAI: .daimod settings windows behave like DAI Mod Manager's: on/off options switch the right part, colour settings work, dropdowns pass the right value
 
 ## 1.7.5
 
