@@ -2640,11 +2640,18 @@ namespace Frosty.ModSupport
 
             if (!Config.Get<bool>("TerminateStuckGame", true))
             {
-                FrostyMessageBox.Show($"{gameName} is already running (process ID {idText}), so it can't be launched again. Close it first, or turn on Terminate Stuck Game in Options to let Frosty end it.", "Frosty Toolsuite");
-                return false;
-            }
+                if (FrostyMessageBox.Show($"{gameName} is already running (process ID {idText}), so it can't be launched again. This can happen when the game closes but doesn't fully shut down.\r\n\r\nDo you want Frosty to turn on Terminate Stuck Game and end {gameName} now? Anything not saved in that game will be lost. The option can be turned off again in Options.",
+                    "Frosty Toolsuite", System.Windows.MessageBoxButton.YesNo) != System.Windows.MessageBoxResult.Yes)
+                {
+                    DiagnosticLog.Log("Launch: cancelled, the game was left running (Terminate Stuck Game is off)");
+                    return false;
+                }
 
-            if (FrostyMessageBox.Show($"{gameName} is still running (process ID {idText}), so it can't be launched again yet. This can happen when the game closes but doesn't fully shut down.\r\n\r\nDo you want Frosty to end it now and then launch? Anything not saved in that game will be lost.",
+                Config.Add("TerminateStuckGame", true);
+                Config.Save();
+                DiagnosticLog.Log("Launch: Terminate Stuck Game turned on");
+            }
+            else if (FrostyMessageBox.Show($"{gameName} is still running (process ID {idText}), so it can't be launched again yet. This can happen when the game closes but doesn't fully shut down.\r\n\r\nDo you want Frosty to end it now and then launch? Anything not saved in that game will be lost.",
                 "Frosty Toolsuite", System.Windows.MessageBoxButton.YesNo) != System.Windows.MessageBoxResult.Yes)
             {
                 DiagnosticLog.Log("Launch: cancelled, the game was left running");
