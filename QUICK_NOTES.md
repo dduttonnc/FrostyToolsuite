@@ -6,13 +6,14 @@ DAI = Dragon Age: Inquisition, DAV = Dragon Age: The Veilguard, MEA = Mass Effec
 
 ## Not released yet
 
+- Options: ModData Build Log files now go in the Logs folder (one per build, with the date and time) instead of log.txt in the Frosty folder
 - Options: the Mod Manager Options page is sorted into groups (Launch, Mods & ModData, Logging, Interface, Performance, Updates); 'Print Log' is now 'ModData Build Log'. Saved settings are kept
 - Options: the extra 'Applying Thread Count' setting is gone; applying mods uses the Performance settings (CPU Threads, CPU Priority) like the cache
 - Launch Platform and DatapathFix no longer break the launch when both are turned on: Launch Platform is skipped while DatapathFix is on (Steam and Epic only, untested)
 - DAI: DAI Mod Manager's own Patch.daimod is no longer installed as a mod (Frosty doesn't need it)
 - Installation Report window: long messages wrap instead of being cut off
 - DAI: .daimod settings windows behave like DAI Mod Manager's: on/off options switch the right part, colour settings work, dropdowns pass the right value
-- Options: new Automatic Log Cleanup setting (off by default) deletes Diagnostic Logging files older than 14, 30, 60 or 90 days
+- Options: new Automatic Log Cleanup setting (off by default) deletes Diagnostic Logging and ModData Build Log files older than 14, 30, 60 or 90 days
 
 ## 1.7.5
 
