@@ -2638,6 +2638,12 @@ namespace Frosty.ModSupport
             string idText = string.Join(", ", ids);
             DiagnosticLog.Log($"Launch: {processName}.exe is already running (process ID {idText})");
 
+            if (!Config.Get<bool>("TerminateStuckGame", true))
+            {
+                FrostyMessageBox.Show($"{gameName} is already running (process ID {idText}), so it can't be launched again. Close it first, or turn on Terminate Stuck Game in Options to let Frosty end it.", "Frosty Toolsuite");
+                return false;
+            }
+
             if (FrostyMessageBox.Show($"{gameName} is still running (process ID {idText}), so it can't be launched again yet. This can happen when the game closes but doesn't fully shut down.\r\n\r\nDo you want Frosty to end it now and then launch? Anything not saved in that game will be lost.",
                 "Frosty Toolsuite", System.Windows.MessageBoxButton.YesNo) != System.Windows.MessageBoxResult.Yes)
             {
