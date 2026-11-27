@@ -15,6 +15,7 @@ One Frosty Mod Manager for Dragon Age: Inquisition, Dragon Age: The Veilguard an
 Not released yet
 --------
 Improvements:
+- All games: new 'Automatic Log Cleanup' option (Options, Mod Manager Options, Manager), off by default, with a 'Delete Logs Older Than' choice of 14, 30 (the default), 60 or 90 days. When it's on, Diagnostic Logging files in the Logs folder older than that are deleted each time the Mod Manager starts and when Options are saved. Only Frosty's own Diagnostics files are touched, and the Diagnostic Logging setting itself is never changed, so it can stay on as long as wanted. Diagnostic Logging no longer deletes files on its own (it kept the last 10); with the cleanup off, every file is kept
 - All games: the separate 'Applying Thread Count' option (Options, Mod Manager Options, General) is gone. Applying mods follows the Performance options, CPU Threads and CPU Priority, the same as building the cache. Dragon Age: Inquisition, Mass Effect: Andromeda and Veilguard already applied mods with those options: the old setting only capped Windows' shared thread pool, which can't be set below one thread per CPU core, so it had no real effect there. A value saved by an older version is ignored and removed the next time Options are saved
 
 Bug Fixes:

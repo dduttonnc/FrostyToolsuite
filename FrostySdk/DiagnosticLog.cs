@@ -11,7 +11,6 @@ namespace FrostySdk
         public static bool Enabled { get; private set; }
         public static string FilePath { get; private set; }
 
-        private const int KeptFiles = 10;
         private static readonly object s_lock = new object();
         private static ILogger s_logger;
         private static StreamWriter s_file;
@@ -29,11 +28,6 @@ namespace FrostySdk
                 try
                 {
                     Directory.CreateDirectory(folder);
-                    foreach (FileInfo old in new DirectoryInfo(folder).GetFiles("Diagnostics_*.txt").OrderByDescending(f => f.Name).Skip(KeptFiles - 1))
-                    {
-                        try { old.Delete(); } catch { }
-                    }
-
                     FilePath = Path.Combine(folder, $"Diagnostics_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.txt");
                     s_file = new StreamWriter(new FileStream(FilePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite)) { AutoFlush = true };
                     s_file.Write(existingText ?? "");
@@ -47,6 +41,25 @@ namespace FrostySdk
             }
 
             Log((error == null) ? "Diagnostic logging is on. The whole log is also saved to " + FilePath : "Diagnostic logging is on, but the log file could not be created: " + error);
+        }
+
+        // [DAI fix] Options > Manager > Automatic Log Cleanup; only Frosty's own diagnostics files
+        public static int DeleteOldFiles(string folder, int days)
+        {
+            if (!Directory.Exists(folder))
+                return 0;
+
+            DateTime cutoff = DateTime.Now.AddDays(-days);
+            int deleted = 0;
+            try
+            {
+                foreach (FileInfo old in new DirectoryInfo(folder).GetFiles("Diagnostics_*.txt").Where(f => f.LastWriteTime < cutoff))
+                {
+                    try { old.Delete(); deleted++; } catch { }
+                }
+            }
+            catch { }
+            return deleted;
         }
 
         public static void Stop()
