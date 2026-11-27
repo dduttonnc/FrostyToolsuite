@@ -2651,8 +2651,9 @@ namespace Frosty.ModSupport
             {
                 try
                 {
+                    // test build only: pretend ending the game did nothing
                     using (Process process = Process.GetProcessById(id))
-                        process.Kill();
+                        DiagnosticLog.Log($"Test build: not ending process {process.Id}");
                 }
                 catch (ArgumentException)
                 {
