@@ -158,7 +158,7 @@
                                             </Trigger>
                                             <Trigger Property="IsSelected" Value="True">
                                                 <Setter Property="Background" TargetName="Border" Value="{DynamicResource SubItemPressed}"/>
-                                                <Setter Property="Foreground" Value="White"/>
+                                                <Setter Property="Foreground" Value="{DynamicResource HeaderFontBrush}"/>
                                             </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
@@ -266,13 +266,13 @@
 
     <!-- Property Grid Item -->
     <ControlTemplate x:Key="itemToggleButton" TargetType="{x:Type ToggleButton}">
-        <Border Background="Transparent" Height="16" Padding="5" Width="16">
-            <Path x:Name="ExpandPath" Fill="{DynamicResource ControlPressed}" Stroke="{DynamicResource ControlPressed}">
+        <Border Background="Transparent" Height="16" Padding="4" Width="16">
+            <Path x:Name="ExpandPath" Stroke="{DynamicResource ButtonImage}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
                 <Path.Data>
-                    <PathGeometry Figures="M0,0 L0,6 L6,0 z"/>
+                    <PathGeometry Figures="M2,0 L6,4 L2,8"/>
                 </Path.Data>
                 <Path.RenderTransform>
-                    <RotateTransform Angle="135" CenterY="3" CenterX="3"/>
+                    <RotateTransform Angle="0" CenterY="4" CenterX="4"/>
                 </Path.RenderTransform>
             </Path>
         </Border>
@@ -280,22 +280,30 @@
             <Trigger Property="IsChecked" Value="True">
                 <Setter Property="RenderTransform" TargetName="ExpandPath">
                     <Setter.Value>
-                        <RotateTransform Angle="180" CenterY="3" CenterX="3"/>
+                        <RotateTransform Angle="90" CenterY="4" CenterX="4"/>
                     </Setter.Value>
                 </Setter>
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Stroke" TargetName="ExpandPath" Value="{DynamicResource FontColor}"/>
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
     <ControlTemplate x:Key="categoryToggleButton" TargetType="{x:Type ToggleButton}">
-        <Border Background="White" Height="9" Width="9" BorderThickness="1" BorderBrush="Black">
+        <Border Background="Transparent" Height="16" Width="16">
             <Grid>
-                <Path x:Name="expanded" Fill="Black" Height="7" Width="7" Data="M1 4 L1 4 6 4 6 3 1 3"/>
-                <Path x:Name="collapsed" Fill="Black" Height="7" Width="7" Data="M3 1 L3 1 3 6 4 6 4 1"/>
+                <Path x:Name="expanded" Stroke="{DynamicResource ButtonImage}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Data="M4,6 L8,10 L12,6" Opacity="0"/>
+                <Path x:Name="collapsed" Stroke="{DynamicResource ButtonImage}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Data="M6,4 L10,8 L6,12"/>
             </Grid>
         </Border>
         <ControlTemplate.Triggers>
             <Trigger Property="IsChecked" Value="True">
                 <Setter Property="Visibility" TargetName="collapsed" Value="Collapsed"/>
+                <Setter Property="Opacity" TargetName="expanded" Value="1"/>
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Stroke" TargetName="expanded" Value="{DynamicResource HeaderFontBrush}"/>
+                <Setter Property="Stroke" TargetName="collapsed" Value="{DynamicResource HeaderFontBrush}"/>
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
@@ -315,19 +323,35 @@
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Border x:Name="checkBoxBorder" Width="13" Height="13" BorderBrush="#868686" BorderThickness="1" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="1" VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                                <Border x:Name="checkBoxBorder" Width="14" Height="14" CornerRadius="3" Background="{DynamicResource InputBackgroundBrush}" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="1" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="1" VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
                                     <Grid x:Name="markGrid">
-                                        <Path x:Name="optionMark" Width="12" Height="12" Fill="#fafafa" Data="M1 8 L1 8 2 6 5 8 7 1 10 3 6 10" Opacity="0"/>
-                                        <Rectangle x:Name="indeterminateMark" Fill="{DynamicResource FontColor}" Margin="2" Opacity="0"/>
+                                        <Path x:Name="optionMark" Width="12" Height="12" Stroke="{DynamicResource AccentForegroundBrush}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Data="M2.5,6.2 L5,8.7 L9.5,3.5" Opacity="0"/>
+                                        <Rectangle x:Name="indeterminateMark" Fill="{DynamicResource AccentBrush}" Margin="3" RadiusX="1" RadiusY="1" Opacity="0"/>
                                     </Grid>
                                 </Border>
                                 <ContentPresenter x:Name="contentPresenter" Grid.Column="1" Focusable="False" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                             </Grid>
                             <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="BorderBrush" TargetName="checkBoxBorder" Value="{DynamicResource ControlBorderHoverBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter Property="BorderBrush" TargetName="checkBoxBorder" Value="{DynamicResource FocusBrush}"/>
+                                </Trigger>
                                 <Trigger Property="IsChecked" Value="True">
                                     <Setter Property="Opacity" TargetName="optionMark" Value="1"/>
                                     <Setter Property="Opacity" TargetName="indeterminateMark" Value="0"/>
+                                    <Setter Property="Background" TargetName="checkBoxBorder" Value="{DynamicResource AccentBrush}"/>
+                                    <Setter Property="BorderBrush" TargetName="checkBoxBorder" Value="{DynamicResource AccentBrush}"/>
                                 </Trigger>
+                                <MultiTrigger>
+                                    <MultiTrigger.Conditions>
+                                        <Condition Property="IsChecked" Value="True"/>
+                                        <Condition Property="IsMouseOver" Value="True"/>
+                                    </MultiTrigger.Conditions>
+                                    <Setter Property="Background" TargetName="checkBoxBorder" Value="{DynamicResource AccentHoverBrush}"/>
+                                    <Setter Property="BorderBrush" TargetName="checkBoxBorder" Value="{DynamicResource AccentHoverBrush}"/>
+                                </MultiTrigger>
                                 <Trigger Property="IsChecked" Value="{x:Null}">
                                     <Setter Property="Opacity" TargetName="optionMark" Value="0"/>
                                     <Setter Property="Opacity" TargetName="indeterminateMark" Value="1"/>
@@ -342,7 +366,7 @@
             </Style>
             <Style TargetType="{x:Type TextBoxBase}">
                 <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="Background" Value="{DynamicResource WindowBackground}"/>
+                <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}"/>
                 <Setter Property="Foreground" Value="{DynamicResource FontColor}"/>
                 <Setter Property="CaretBrush" Value="{DynamicResource FontColor}"/>
                 <Setter Property="ContextMenu">
@@ -361,7 +385,7 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="{x:Type TextBox}">
-                            <Border x:Name="border" BorderBrush="{DynamicResource ControlBackground}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                            <Border x:Name="border" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
                                 <Grid>
                                     <ScrollViewer x:Name="PART_ContentHost" Focusable="True" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden" Padding="0" Visibility="Hidden"/>
                                     <TextBlock x:Name="PART_EllipsedText" Margin="2,0,0,0" VerticalAlignment="Center" Text="{Binding Path=Text, RelativeSource={RelativeSource AncestorType={x:Type TextBox}}}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" Focusable="True" Cursor="IBeam"/>
@@ -371,6 +395,7 @@
                                 <Trigger Property="IsKeyboardFocused" Value="True">
                                     <Setter Property="Visibility" TargetName="PART_ContentHost" Value="Visible"/>
                                     <Setter Property="Visibility" TargetName="PART_EllipsedText" Value="Hidden"/>
+                                    <Setter Property="Background" TargetName="border" Value="{DynamicResource InputBackgroundBrush}"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -383,8 +408,16 @@
                 <Setter Property="Foreground" Value="{DynamicResource FontColor}"/>
                 <Setter Property="Margin" Value="-2 0"/>
                 <Setter Property="CaretBrush" Value="{DynamicResource FontColor}"/>
-                <Setter Property="SelectionBrush" Value="{DynamicResource ControlBackground}"/>
-                <Setter Property="SelectionOpacity" Value="0.5"/>
+                <Setter Property="SelectionBrush" Value="{DynamicResource SelectionBrush}"/>
+                <Setter Property="SelectionOpacity" Value="1"/>
+            </Style>
+            <Style TargetType="{x:Type ctrl:FrostyEllipsedTextBox}" BasedOn="{StaticResource {x:Type TextBoxBase}}">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Foreground" Value="{DynamicResource FontColor}"/>
+                <Setter Property="CaretBrush" Value="{DynamicResource FontColor}"/>
+                <Setter Property="SelectionBrush" Value="{DynamicResource SelectionBrush}"/>
+                <Setter Property="SelectionOpacity" Value="1"/>
             </Style>
             <Style TargetType="{x:Type ComboBox}">
                 <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
@@ -400,45 +433,54 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
-                            <Border BorderBrush="#868686" BorderThickness="{TemplateBinding BorderThickness}" Background="{DynamicResource WindowBackground}">
+                            <Border x:Name="comboBorder" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{DynamicResource ControlBackground}" CornerRadius="4" Margin="0,1">
                                 <Grid x:Name="templateRoot" SnapsToDevicePixels="True">
                                     <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="6"/>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="19"/>
                                     </Grid.ColumnDefinitions>
-                                    <Popup x:Name="PART_Popup" AllowsTransparency="true" Grid.ColumnSpan="2" IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" Margin="1" PopupAnimation="{DynamicResource {x:Static SystemParameters.ComboBoxPopupAnimationKey}}" Placement="Bottom" Focusable="False">
-                                        <Border x:Name="dropDownBorder" Width="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" MaxHeight="200">
-                                            <ScrollViewer x:Name="DropDownScrollViewer">
-                                                <Grid x:Name="grid" RenderOptions.ClearTypeHint="Enabled">
-                                                    <Canvas x:Name="canvas" HorizontalAlignment="Left" Height="0" VerticalAlignment="Top" Width="0">
-                                                        <Rectangle x:Name="opaqueRect" Fill="{DynamicResource ListBackground}" Height="{Binding ActualHeight, ElementName=dropDownBorder}" Width="{Binding ActualWidth, ElementName=dropDownBorder}"/>
-                                                    </Canvas>
-                                                    <ItemsPresenter x:Name="ItemsPresenter" KeyboardNavigation.DirectionalNavigation="Contained" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
-                                                </Grid>
-                                            </ScrollViewer>
-                                        </Border>
+                                    <Popup x:Name="PART_Popup" AllowsTransparency="true" Grid.ColumnSpan="3" IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" Margin="1" PopupAnimation="{DynamicResource {x:Static SystemParameters.ComboBoxPopupAnimationKey}}" Placement="Bottom" HorizontalOffset="-6" Focusable="False">
+                                        <!-- room for the shadow; the offset keeps the list under the box -->
+                                        <Grid Margin="6,2,6,10">
+                                            <Border CornerRadius="6" Background="{DynamicResource PopupBackgroundBrush}">
+                                                <Border.Effect>
+                                                    <DropShadowEffect Color="Black" BlurRadius="14" ShadowDepth="3" Direction="270" Opacity="0.35"/>
+                                                </Border.Effect>
+                                            </Border>
+                                            <Border x:Name="dropDownBorder" Width="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" MaxHeight="200" Background="{DynamicResource PopupBackgroundBrush}" BorderBrush="{DynamicResource PopupBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="0,4">
+                                                <ScrollViewer x:Name="DropDownScrollViewer">
+                                                    <Grid x:Name="grid" RenderOptions.ClearTypeHint="Enabled">
+                                                        <Canvas x:Name="canvas" HorizontalAlignment="Left" Height="0" VerticalAlignment="Top" Width="0">
+                                                            <Rectangle x:Name="opaqueRect" Fill="{DynamicResource PopupBackgroundBrush}" Height="{Binding ActualHeight, ElementName=dropDownBorder}" Width="{Binding ActualWidth, ElementName=dropDownBorder}"/>
+                                                        </Canvas>
+                                                        <ItemsPresenter x:Name="ItemsPresenter" KeyboardNavigation.DirectionalNavigation="Contained" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                                    </Grid>
+                                                </ScrollViewer>
+                                            </Border>
+                                        </Grid>
                                     </Popup>
-                                    <ToggleButton x:Name="toggleButton" Grid.Column="1" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" VerticalAlignment="Stretch">
+                                    <ToggleButton x:Name="toggleButton" Grid.Column="2" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" VerticalAlignment="Stretch">
                                         <ToggleButton.Template>
                                             <ControlTemplate TargetType="{x:Type ToggleButton}">
-                                                <Border x:Name="border" Background="{DynamicResource ControlBackground}" Margin="1">
-                                                    <Path Width="17" Height="17" Fill="White" Data="M5 6 L5 6 13 6 9 11 Z"/>
+                                                <Border x:Name="border" Background="Transparent">
+                                                    <Path x:Name="arrow" Width="10" Height="6" Stroke="{DynamicResource ButtonImage}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Data="M1,1 L5,5 L9,1"/>
                                                 </Border>
                                                 <ControlTemplate.Triggers>
                                                     <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter Property="Background" TargetName="border" Value="{DynamicResource ControlHighlight}"/>
+                                                        <Setter Property="Stroke" TargetName="arrow" Value="{DynamicResource FontColor}"/>
                                                     </Trigger>
-                                                    <Trigger Property="IsPressed" Value="True">
-                                                        <Setter Property="Background" TargetName="border" Value="{DynamicResource ControlPressed}"/>
+                                                    <Trigger Property="IsChecked" Value="True">
+                                                        <Setter Property="Stroke" TargetName="arrow" Value="{DynamicResource AccentBrush}"/>
                                                     </Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>
                                         </ToggleButton.Template>
                                     </ToggleButton>
 
-                                    <ContentPresenter x:Name="contentPresenter" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" Content="{TemplateBinding SelectionBoxItem}" ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" IsHitTestVisible="false" Margin="{TemplateBinding Padding}" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" Focusable="False"/>
+                                    <ContentPresenter x:Name="contentPresenter" Grid.Column="1" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" Content="{TemplateBinding SelectionBoxItem}" ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" IsHitTestVisible="false" Margin="{TemplateBinding Padding}" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" Focusable="False"/>
 
-                                    <ToggleButton x:Name="invisToggleButton" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" Focusable="False">
+                                    <ToggleButton x:Name="invisToggleButton" Grid.ColumnSpan="2" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" Focusable="False">
                                         <ToggleButton.Template>
                                             <ControlTemplate TargetType="{x:Type ToggleButton}">
                                                 <Border Background="Transparent"/>
@@ -447,6 +489,19 @@
                                     </ToggleButton>
                                 </Grid>
                             </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" TargetName="comboBorder" Value="{DynamicResource ControlHighlight}"/>
+                                    <Setter Property="BorderBrush" TargetName="comboBorder" Value="{DynamicResource ControlBorderHoverBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsDropDownOpen" Value="True">
+                                    <Setter Property="Background" TargetName="comboBorder" Value="{DynamicResource ControlHighlight}"/>
+                                    <Setter Property="BorderBrush" TargetName="comboBorder" Value="{DynamicResource FocusBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" TargetName="toggleButton" Value="0.5"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
@@ -458,15 +513,15 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="{x:Type Button}">
-                            <Border x:Name="buttonBorder" Background="{TemplateBinding Background}" BorderThickness="0">
+                            <Border x:Name="buttonBorder" Background="{TemplateBinding Background}" BorderThickness="0" CornerRadius="4">
                                 <ContentPresenter x:Name="content" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="buttonBorder" Property="Background" Value="#FF707070" />
+                                    <Setter TargetName="buttonBorder" Property="Background" Value="{DynamicResource ControlHighlight}" />
                                 </Trigger>
                                 <Trigger Property="IsPressed" Value="True">
-                                    <Setter TargetName="buttonBorder" Property="Background" Value="#FF585858" />
+                                    <Setter TargetName="buttonBorder" Property="Background" Value="{DynamicResource ControlPressed}" />
                                 </Trigger>
                                 <Trigger Property="IsEnabled" Value="False">
                                     <Setter TargetName="content" Property="Opacity" Value="0.5"/>
@@ -510,6 +565,19 @@
                                 <ColumnDefinition Width="{Binding ActualWidth, ElementName=NameBorder}"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
+                            <Grid.Style>
+                                <Style TargetType="{x:Type Grid}">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource SubItemHighlight}"/>
+                                        </Trigger>
+                                        <DataTrigger Binding="{Binding Path=IsSelected, RelativeSource={RelativeSource AncestorType={x:Type TreeViewItem}}}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource SubItemPressed}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
 
                             <Grid Grid.Column="0">
                                 <Grid.ColumnDefinitions>
@@ -522,23 +590,9 @@
 
                                 <Grid Grid.Column="2">
                                     <ContentControl x:Name="PART_Name" Margin="2,0,2,0" VerticalAlignment="Center" HorizontalAlignment="Stretch" Padding="{Binding Path=Padding, RelativeSource={RelativeSource AncestorType={x:Type ContentControl}}}" Focusable="False">
-                                        <local:FrostyHightlightTextBlock Text="{Binding Path=DisplayName}" HighlightText="{Binding Path=FilterText, RelativeSource={RelativeSource AncestorType={x:Type local:FrostyPropertyGrid}}}" FontFamily="Global User Interface" FontWeight="{Binding Path=IsModified, Converter={StaticResource FrostyValueModifiedConverter}}" Foreground="#DADADA"/>
+                                        <local:FrostyHightlightTextBlock Text="{Binding Path=DisplayName}" HighlightText="{Binding Path=FilterText, RelativeSource={RelativeSource AncestorType={x:Type local:FrostyPropertyGrid}}}" FontFamily="Global User Interface" FontWeight="{Binding Path=IsModified, Converter={StaticResource FrostyValueModifiedConverter}}" Foreground="{DynamicResource FontColor}"/>
                                     </ContentControl>
                                 </Grid>
-
-                                <Grid.Style>
-                                    <Style TargetType="{x:Type Grid}">
-                                        <Setter Property="Background" Value="Transparent"/>
-                                        <Style.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="{DynamicResource SubItemHighlight}"/>
-                                            </Trigger>
-                                            <DataTrigger Binding="{Binding Path=IsSelected, RelativeSource={RelativeSource AncestorType={x:Type TreeViewItem}}}" Value="True">
-                                                <Setter Property="Background" Value="{DynamicResource SubItemHighlight}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Grid.Style>
                             </Grid>
 
                             <Grid Grid.Column="1" VerticalAlignment="Top" Height="19">
@@ -547,35 +601,39 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition x:Name="arrayColumn" Width="0"/>
                                     </Grid.ColumnDefinitions>
-                                    <ContentControl x:Name="PART_Value" Margin="6,0,0,0" VerticalAlignment="Center" Focusable="False" Foreground="#f7f7f7"/>
+                                    <ContentControl x:Name="PART_Value" Margin="6,0,0,0" VerticalAlignment="Center" Focusable="False" Foreground="{DynamicResource FontColor}"/>
                                     <Button x:Name="PART_ArrayRemoveButton" Grid.Column="1" Width="17" Margin="1" Visibility="Collapsed" Padding="0" ToolTip="Remove item">
                                         <Button.Content>
-                                            <Path Width="10" Height="10" Fill="#f7f7f7" Stretch="Uniform" Data="{Binding Path=Data, Source={StaticResource RemoveButtonIcon}}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                            <Path Width="10" Height="10" Fill="{DynamicResource IconBrush}" Stretch="Uniform" Data="{Binding Path=Data, Source={StaticResource RemoveButtonIcon}}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                                         </Button.Content>
                                     </Button>
                                 </Grid>
                             </Grid>
 
+                            <Border Grid.Column="1" Width="1" HorizontalAlignment="Left" Background="{DynamicResource DividerBrush}" IsHitTestVisible="False"/>
+                            <Border x:Name="selectionBar" Grid.Column="0" Width="3" HorizontalAlignment="Left" Background="{DynamicResource AccentBrush}" Visibility="Collapsed" IsHitTestVisible="False"/>
                         </Grid>
 
                         <!-- Category -->
                         <Grid x:Name="g2" Visibility="Collapsed">
-                            <Grid Background="#3f3f3f">
+                            <Grid Background="{DynamicResource SurfaceAltBrush}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="{Binding Path=Padding.Left, RelativeSource={RelativeSource AncestorType={x:Type ContentControl}}}"/>
                                     <ColumnDefinition Width="24"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <ToggleButton Grid.Column="1" ClickMode="Press" Width="9" Height="9" VerticalAlignment="Center" HorizontalAlignment="Center" IsChecked="{Binding Path=IsExpanded, RelativeSource={RelativeSource TemplatedParent}}" Visibility="{Binding Path=HasItems, Converter={StaticResource FrostyArrayToVisibilityConverter}}" Focusable="False" Template="{StaticResource categoryToggleButton}"/>
+                                <ToggleButton Grid.Column="1" ClickMode="Press" Width="16" Height="16" VerticalAlignment="Center" HorizontalAlignment="Center" IsChecked="{Binding Path=IsExpanded, RelativeSource={RelativeSource TemplatedParent}}" Visibility="{Binding Path=HasItems, Converter={StaticResource FrostyArrayToVisibilityConverter}}" Focusable="False" Template="{StaticResource categoryToggleButton}"/>
 
                                 <Grid Grid.Column="2">
                                     <ContentControl Margin="2,0,2,0" VerticalAlignment="Center" HorizontalAlignment="Stretch" Padding="{Binding Path=Padding, RelativeSource={RelativeSource AncestorType={x:Type ContentControl}}}" Focusable="False">
-                                        <TextBlock Text="{Binding Path=DisplayName}" FontFamily="Global User Interface" Foreground="#DADADA" FontWeight="Bold"/>
+                                        <TextBlock Text="{Binding Path=DisplayName}" FontFamily="Global User Interface" Foreground="{DynamicResource HeaderFontBrush}" FontWeight="SemiBold"/>
                                     </ContentControl>
                                 </Grid>
                             </Grid>
                         </Grid>
+
+                        <Border Grid.Row="0" Height="1" VerticalAlignment="Bottom" Background="{DynamicResource DividerBrush}" IsHitTestVisible="False"/>
 
                         <!-- Children -->
                         <ContentControl Grid.ColumnSpan="2" Grid.Row="1" Grid.Column="0">
@@ -595,6 +653,9 @@
                         </DataTrigger>
                         <Trigger Property="IsExpanded" Value="True">
                             <Setter Property="Visibility" TargetName="ItemsHost" Value="Visible"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Visibility" TargetName="selectionBar" Value="Visible"/>
                         </Trigger>
                         <DataTrigger Binding="{Binding Path=IsCategory}" Value="True">
                             <Setter TargetName="g1" Property="Visibility" Value="Collapsed"/>
@@ -631,17 +692,17 @@
                         <local:FrostyObjectTypeConverter x:Key="FrostyObjectTypeConverter"/>
                         <local:FrostyClassNameConverter x:Key="FrostyClassNameConverter"/>
                     </ControlTemplate.Resources>
-                    <Border BorderBrush="{DynamicResource ControlBackground}" BorderThickness="0,2,0,0">
-                        <Grid Background="#141414">
+                    <Border BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0">
+                        <Grid Background="{DynamicResource ListBackground}">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="26"/>
+                                <RowDefinition Height="32"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition/>
                                 <RowDefinition x:Name="classViewRow" Height="80"/>
                             </Grid.RowDefinitions>
 
                             <DockPanel Grid.Row="0" LastChildFill="True">
-                                <Border Background="Transparent" Margin="1,1,1,1">
+                                <Border Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1" Padding="4,3,4,4">
                                     <ctrl:FrostyWatermarkTextBox x:Name="PART_FilterTextBox" WatermarkText="Filter" BorderThickness="1" Height="24" HorizontalAlignment="Stretch" VerticalContentAlignment="Center" Padding="4,0,0,0"/>
                                 </Border>
                             </DockPanel>
@@ -660,24 +721,41 @@
                                                         <ColumnDefinition Width="{Binding Path=InitialWidth, RelativeSource={RelativeSource AncestorType={x:Type local:FrostyPropertyGrid}}}" x:Name="resizeColumn"/>
                                                         <ColumnDefinition Width="*"/>
                                                     </Grid.ColumnDefinitions>
-                                                    <Border x:Name="NameBorder" Background="#292929" />
-                                                    <Border Grid.Column="1" Background="#141414"/>
+                                                    <Border x:Name="NameBorder" Background="{DynamicResource ListBackground}" />
+                                                    <Border Grid.Column="1" Background="{DynamicResource ListBackground}"/>
                                                     <Grid Grid.ColumnSpan="2">
                                                         <Grid.RowDefinitions>
                                                             <RowDefinition Height="*"/>
-                                                            <RowDefinition Height="2"/>
+                                                            <RowDefinition Height="1"/>
                                                         </Grid.RowDefinitions>
                                                         <ScrollViewer x:Name="_tv_scrollviewer_" Background="{TemplateBinding Background}" CanContentScroll="False" Focusable="False" HorizontalScrollBarVisibility="Disabled" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
                                                             <ItemsPresenter/>
                                                         </ScrollViewer>
-                                                        <Border Grid.Row="1" Height="2" HorizontalAlignment="Stretch" Background="#3f3f3f"/>
+                                                        <Border Grid.Row="1" Height="1" HorizontalAlignment="Stretch" Background="{DynamicResource DividerBrush}"/>
                                                     </Grid>
-                                                    <GridSplitter HorizontalAlignment="Left" Grid.Column="1" VerticalAlignment="Stretch" Width="2" Background="#3f3f3f"/>
+                                                    <!-- the visible column line is drawn per row so it stops at category headers -->
+                                                    <GridSplitter HorizontalAlignment="Left" Grid.Column="1" VerticalAlignment="Stretch" Width="4" Background="Transparent">
+                                                        <GridSplitter.Template>
+                                                            <ControlTemplate TargetType="{x:Type GridSplitter}">
+                                                                <Border Background="{TemplateBinding Background}">
+                                                                    <Border x:Name="splitterLine" Width="1" HorizontalAlignment="Left" Background="Transparent"/>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter Property="Background" TargetName="splitterLine" Value="{DynamicResource AccentBrush}"/>
+                                                                    </Trigger>
+                                                                    <Trigger Property="IsDragging" Value="True">
+                                                                        <Setter Property="Background" TargetName="splitterLine" Value="{DynamicResource AccentBrush}"/>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </GridSplitter.Template>
+                                                    </GridSplitter>
                                                 </Grid>
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsEnabled" Value="False">
-                                                    <Setter Property="Background" TargetName="Bd" Value="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"/>
+                                                    <Setter Property="Background" TargetName="Bd" Value="{DynamicResource ControlBackground}"/>
                                                 </Trigger>
                                                 <Trigger Property="VirtualizingPanel.IsVirtualizing" Value="True">
                                                     <Setter Property="CanContentScroll" TargetName="_tv_scrollviewer_" Value="True"/>
@@ -699,14 +777,14 @@
                                     <RowDefinition/>
                                 </Grid.RowDefinitions>
 
-                                <Border Background="#454545">
+                                <Border Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="18"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <TextBlock FontWeight="Bold" Margin="7 0 0 0" VerticalAlignment="Top">
+                                        <TextBlock FontWeight="SemiBold" Margin="8 0 0 0" VerticalAlignment="Center" Foreground="{DynamicResource HeaderFontBrush}" TextTrimming="CharacterEllipsis">
                                             <TextBlock.Text>
                                                 <MultiBinding Converter="{StaticResource FrostyObjectTypeConverter}" ConverterParameter="Name">
                                                     <Binding Path="Object" RelativeSource="{RelativeSource TemplatedParent}"/>
@@ -714,12 +792,12 @@
                                                 </MultiBinding>
                                             </TextBlock.Text>
                                         </TextBlock>
-                                        <Path Grid.Column="1" Fill="White" Width="11" Height="11" Data="m 4 9 h 2 v 2 H 4 Z M 1 4 V 1 H 2 V 0 H 8 V 1 H 9 V 6 H 8 V 7 H 6 V 8 H 4 V 6 H 5 V 5 H 7 V 2 H 3 v 2 z"/>
+                                        <Path Grid.Column="1" Fill="{DynamicResource SecondaryFontBrush}" Width="11" Height="11" Data="m 4 9 h 2 v 2 H 4 Z M 1 4 V 1 H 2 V 0 H 8 V 1 H 9 V 6 H 8 V 7 H 6 V 8 H 4 V 6 H 5 V 5 H 7 V 2 H 3 v 2 z"/>
                                     </Grid>
                                 </Border>
 
-                                <Grid Grid.Row="1">
-                                    <TextBox Padding="4" IsReadOnly="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap">
+                                <Grid Grid.Row="1" Background="{DynamicResource SurfaceBrush}">
+                                    <TextBox Padding="8,4" IsReadOnly="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource SecondaryFontBrush}">
                                         <TextBox.Text>
                                             <MultiBinding Converter="{StaticResource FrostyObjectTypeConverter}" ConverterParameter="Description">
                                                 <Binding Path="Object" RelativeSource="{RelativeSource TemplatedParent}" Mode="OneWay"/>
@@ -765,10 +843,10 @@
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="buttonBorder" Property="Background" Value="#FF707070" />
+                                                <Setter TargetName="buttonBorder" Property="Background" Value="{DynamicResource ControlHighlight}" />
                                             </Trigger>
                                             <Trigger Property="IsPressed" Value="True">
-                                                <Setter TargetName="buttonBorder" Property="Background" Value="#FF585858" />
+                                                <Setter TargetName="buttonBorder" Property="Background" Value="{DynamicResource ControlPressed}" />
                                             </Trigger>
                                             <Trigger Property="IsEnabled" Value="False">
                                                 <Setter TargetName="content" Property="Opacity" Value="0.5"/>
@@ -864,7 +942,7 @@
 
                             <Button Grid.Column="0" x:Name="PART_AssignButton" Width="12" Height="12" Padding="0" VerticalAlignment="Center" Background="Transparent" BorderBrush="Transparent" BorderThickness="0" HorizontalAlignment="Left" Margin="0 0 4 0" ToolTip="Assign from selected asset" IsEnabled="{Binding Path=IsEnabled, RelativeSource={RelativeSource TemplatedParent}}">
                                 <Button.Content>
-                                    <Path Margin="0 0 0 0" Width="10" Height="10" Fill="#f7f7f7" Stretch="Uniform" Data="{Binding Path=Data, Source={StaticResource AssignIcon}}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                    <Path Margin="0 0 0 0" Width="10" Height="10" Fill="{DynamicResource IconBrush}" Stretch="Uniform" Data="{Binding Path=Data, Source={StaticResource AssignIcon}}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                                 </Button.Content>
                             </Button>
 
@@ -912,7 +990,7 @@
                             <ColumnDefinition Width="19"/>
                         </Grid.ColumnDefinitions>
 
-                        <Path x:Name="path" Grid.Column="0" Width="14" Height="16" HorizontalAlignment="Left" VerticalAlignment="Center" Stretch="None" Fill="#f7f7f7" Data="
+                        <Path x:Name="path" Grid.Column="0" Width="14" Height="16" HorizontalAlignment="Left" VerticalAlignment="Center" Stretch="None" Fill="{DynamicResource IconBrush}" Data="
                               M0 0 L0 0 12 0 12 2 0 2 Z
                               M0 4 L0 4 12 4 12 6 0 6 Z
                               M0 8 L0 8 12 8 12 10 0 10 Z
@@ -928,19 +1006,19 @@
 
                         <Button x:Name="PART_RemoveButton" Grid.Column="2" Margin="1" IsEnabled="True" ToolTip="Remove all items" Width="17" Padding="0">
                             <Button.Content>
-                                <Path Width="10" Height="10" Fill="#f7f7f7" Stretch="Uniform" Data="{Binding Path=Data, Source={StaticResource RemoveButtonIcon}}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                <Path Width="10" Height="10" Fill="{DynamicResource IconBrush}" Stretch="Uniform" Data="{Binding Path=Data, Source={StaticResource RemoveButtonIcon}}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                             </Button.Content>
                         </Button>
                         <Button x:Name="PART_AddButton" Grid.Column="3" Margin="1" ToolTip="Add new item" Width="17">
                             <Button.Content>
-                                <Path Width="10" Height="10" Fill="#f7f7f7" Stretch="Uniform" Data="{Binding Path=Data, Source={StaticResource AddButtonIcon}}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                <Path Width="10" Height="10" Fill="{DynamicResource IconBrush}" Stretch="Uniform" Data="{Binding Path=Data, Source={StaticResource AddButtonIcon}}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                             </Button.Content>
                         </Button>
 
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Fill" TargetName="path" Value="#595959"/>
+                            <Setter Property="Fill" TargetName="path" Value="{DynamicResource DisabledFontBrush}"/>
                         </Trigger>
                         <Trigger Property="Value" Value="0">
                             <Setter TargetName="PART_RemoveButton" Property="IsEnabled" Value="False"/>
@@ -989,8 +1067,8 @@
                         </Grid.ColumnDefinitions>
 
                         <DockPanel x:Name="blockX" Grid.Column="0" HorizontalAlignment="Stretch">
-                            <Border Background="#802020" BorderThickness="1,1,0,1" BorderBrush="{DynamicResource ControlBackground}">
-                                <TextBlock Text="{Binding Path=XLabel, RelativeSource={RelativeSource TemplatedParent}}" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,5,0" Foreground="{DynamicResource FontColor}"/>
+                            <Border Background="{DynamicResource ErrorBrush}" BorderThickness="1,1,0,1" BorderBrush="{DynamicResource ControlBackground}">
+                                <TextBlock Text="{Binding Path=XLabel, RelativeSource={RelativeSource TemplatedParent}}" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,5,0" Foreground="{DynamicResource AccentForegroundBrush}"/>
                             </Border>
                             <Border BorderThickness="1" BorderBrush="{DynamicResource ControlBackground}">
                                 <TextBox x:Name="PART_X" Text="{Binding Path=X, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="3 0 0 0" />
@@ -998,8 +1076,8 @@
                         </DockPanel>
 
                         <DockPanel x:Name="blockY" Grid.Column="1" HorizontalAlignment="Stretch" Margin="1,0,0,0">
-                            <Border Background="#208020" BorderThickness="1,1,0,1" BorderBrush="{DynamicResource ControlBackground}">
-                                <TextBlock Text="{Binding Path=YLabel, RelativeSource={RelativeSource TemplatedParent}}" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,5,0" Foreground="{DynamicResource FontColor}"/>
+                            <Border Background="{DynamicResource SuccessBrush}" BorderThickness="1,1,0,1" BorderBrush="{DynamicResource ControlBackground}">
+                                <TextBlock Text="{Binding Path=YLabel, RelativeSource={RelativeSource TemplatedParent}}" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,5,0" Foreground="{DynamicResource AccentForegroundBrush}"/>
                             </Border>
                             <Border BorderThickness="1" BorderBrush="{DynamicResource ControlBackground}">
                                 <TextBox x:Name="PART_Y" Text="{Binding Path=Y, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="3 0 0 0" />
@@ -1007,8 +1085,8 @@
                         </DockPanel>
 
                         <DockPanel x:Name="blockZ" Grid.Column="2" HorizontalAlignment="Stretch" Margin="1,0,0,0">
-                            <Border Background="#005080" BorderThickness="1,1,0,1" BorderBrush="{DynamicResource ControlBackground}">
-                                <TextBlock Text="{Binding Path=ZLabel, RelativeSource={RelativeSource TemplatedParent}}" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,5,0" Foreground="{DynamicResource FontColor}"/>
+                            <Border Background="{DynamicResource InfoBrush}" BorderThickness="1,1,0,1" BorderBrush="{DynamicResource ControlBackground}">
+                                <TextBlock Text="{Binding Path=ZLabel, RelativeSource={RelativeSource TemplatedParent}}" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,5,0" Foreground="{DynamicResource AccentForegroundBrush}"/>
                             </Border>
                             <Border BorderThickness="1" BorderBrush="{DynamicResource ControlBackground}">
                                 <TextBox x:Name="PART_Z" Text="{Binding Path=Z, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="3 0 0 0" />
@@ -1016,8 +1094,8 @@
                         </DockPanel>
 
                         <DockPanel x:Name="blockW" Grid.Column="3" HorizontalAlignment="Stretch" Margin="1,0,0,0">
-                            <Border Background="#808080" BorderThickness="1,1,0,1" BorderBrush="{DynamicResource ControlBackground}">
-                                <TextBlock Text="{Binding Path=WLabel, RelativeSource={RelativeSource TemplatedParent}}" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,5,0" Foreground="{DynamicResource FontColor}"/>
+                            <Border Background="{DynamicResource SecondaryFontBrush}" BorderThickness="1,1,0,1" BorderBrush="{DynamicResource ControlBackground}">
+                                <TextBlock Text="{Binding Path=WLabel, RelativeSource={RelativeSource TemplatedParent}}" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,5,0" Foreground="{DynamicResource AccentForegroundBrush}"/>
                             </Border>
                             <Border BorderThickness="1" BorderBrush="{DynamicResource ControlBackground}">
                                 <TextBox x:Name="PART_W" Text="{Binding Path=W, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="3 0 0 0" />
@@ -1096,19 +1174,19 @@
                         <ctrl:FrostyEllipsedTextBox IsReadOnly="True" Text="{Binding Path=Text, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWay}" Foreground="{DynamicResource FontColor}" ToolTip="{Binding Path=Text, RelativeSource={RelativeSource TemplatedParent}}"/>
 
                         <StackPanel Grid.Column="1" Orientation="Horizontal">
-                            <Button x:Name="PART_BrowseButton" Width="17" Margin="1" ToolTip="Select Folder">
+                            <Button x:Name="PART_BrowseButton" Width="17" Margin="1" Padding="0" ToolTip="Select Folder">
                                 <Button.Content>
-                                    <Image Source="/FrostyCore;component/Images/More.png" Width="14"/>
+                                    <TextBlock Text="&#xE712;" FontFamily="{DynamicResource IconFontFamily}" FontSize="12" Foreground="{DynamicResource IconBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Button.Content>
                             </Button>
-                            <Button x:Name="PART_OpenButton" Width="17" Margin="1" ToolTip="Open Folder">
+                            <Button x:Name="PART_OpenButton" Width="17" Margin="1" Padding="0" ToolTip="Open Folder">
                                 <Button.Content>
-                                    <Image Source="/FrostyCore;component/Images/Open.png" Width="14"/>
+                                    <TextBlock Text="&#xE838;" FontFamily="{DynamicResource IconFontFamily}" FontSize="12" Foreground="{DynamicResource IconBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Button.Content>
                             </Button>
                             <Button x:Name="PART_ClearButton" Width="17" Margin="1" ToolTip="Clear Path">
                                 <Button.Content>
-                                    <Path Width="10" Height="10" Fill="#f7f7f7" Stretch="Uniform" Data="{Binding Path=Data, Source={StaticResource RemoveButtonIcon}}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                    <Path Width="10" Height="10" Fill="{DynamicResource IconBrush}" Stretch="Uniform" Data="{Binding Path=Data, Source={StaticResource RemoveButtonIcon}}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                                 </Button.Content>
                             </Button>
                         </StackPanel>
@@ -1148,7 +1226,7 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <Path x:Name="path" Grid.Column="0" Width="14" Height="16" HorizontalAlignment="Left" VerticalAlignment="Center" Stretch="None" Fill="#f7f7f7" Data="
+                        <Path x:Name="path" Grid.Column="0" Width="14" Height="16" HorizontalAlignment="Left" VerticalAlignment="Center" Stretch="None" Fill="{DynamicResource IconBrush}" Data="
                               M0 0 L0 0 12 0 12 2 0 2 Z
                               M5 4 L5 4 12 4 12 6 5 6 Z
                               M5 8 L5 8 12 8 12 10 5 10 Z
@@ -1160,7 +1238,7 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Fill" TargetName="path" Value="#595959"/>
+                            <Setter Property="Fill" TargetName="path" Value="{DynamicResource DisabledFontBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1428,7 +1506,7 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="GridVisible" Value="False">
-                            <Setter Property="Background" TargetName="bkgnd" Value="Black"/>
+                            <Setter Property="Background" TargetName="bkgnd" Value="{DynamicResource WindowBackground}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1440,7 +1518,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type editors:BaseCustomComboDataControl}">
-                    <ComboBox x:Name="PART_ComboBox" BorderThickness="0" Padding="0,2,2,2" ItemsSource="{Binding Path=Value.Names}" MaxDropDownHeight="350"/>
+                    <ComboBox x:Name="PART_ComboBox" BorderThickness="0" Padding="0,0,2,0" ItemsSource="{Binding Path=Value.Names}" MaxDropDownHeight="350"/>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -1456,7 +1534,7 @@
                         <local:ExceptionBoxClickCommand x:Key="exceptionBoxClickCommand" />
                     </DataTemplate.Resources>
 
-                    <Grid Background="{DynamicResource ListBackground}">
+                    <Grid Background="{DynamicResource SurfaceBrush}">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
@@ -1465,8 +1543,8 @@
 
                         <!-- Header -->
                         <StackPanel Grid.Row="0" Margin="5,5,5,0">
-                            <TextBlock Margin="2" Text="An unhandled exception has occurred" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{DynamicResource FontColor}" FontFamily="Global User Interface" FontSize="16"/>
-                            <TextBlock Margin="2,0,2,2" Text="{Binding ExceptionMessageText, RelativeSource={RelativeSource AncestorType={x:Type local:FrostyExceptionBox}}}" TextWrapping="WrapWithOverflow" TextTrimming="None" TextAlignment="Center" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{DynamicResource FontColor}" FontFamily="Global User Interface"/>
+                            <TextBlock Margin="2" Text="An unhandled exception has occurred" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{DynamicResource HeaderFontBrush}" FontFamily="Global User Interface" FontSize="16" FontWeight="SemiBold"/>
+                            <TextBlock Margin="2,0,2,2" Text="{Binding ExceptionMessageText, RelativeSource={RelativeSource AncestorType={x:Type local:FrostyExceptionBox}}}" TextWrapping="WrapWithOverflow" TextTrimming="None" TextAlignment="Center" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{DynamicResource SecondaryFontBrush}" FontFamily="Global User Interface"/>
                         </StackPanel>
                         
                         <!-- Text -->
@@ -1479,10 +1557,10 @@
                             </TabItem>
                         </TabControl>
 
-                        <Border Grid.Row="2"/>
+                        <Border Grid.Row="2" Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0"/>
                         <!-- Buttons -->
                         <StackPanel Grid.Row="2" Margin="8" FlowDirection="RightToLeft" Orientation="Horizontal">
-                            <Button Content="OK" Width="75" Command="{StaticResource CloseCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"/>
+                            <Button Content="OK" Width="75" Style="{StaticResource AccentButtonStyle}" Command="{StaticResource CloseCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"/>
                             <!--<Button x:Name="PART_ReportCrashButton" Content="Report Crash" Width="100" Margin="5,0,0,0"/>-->
                         </StackPanel>
                         <StackPanel Grid.Row="2" Margin="8" FlowDirection="LeftToRight" Orientation="Horizontal">

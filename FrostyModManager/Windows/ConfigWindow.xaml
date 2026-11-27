@@ -6,7 +6,7 @@
         xmlns:ctrl="clr-namespace:Frosty.Controls;assembly=FrostyControls"
         mc:Ignorable="d"
         Title="Mod Configuration" Height="408" Width="500">
-    <Grid>
+    <Grid Background="{DynamicResource SurfaceBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="36"/>
@@ -21,16 +21,16 @@
 
                 <GridSplitter HorizontalAlignment="Right" Width="3" Background="Transparent"/>
 
-                <StackPanel x:Name="namesStackPanel" Margin="0,0,3,0" Background="{DynamicResource ListBackground}"/>
-                <StackPanel x:Name="valuesStackPanel" Grid.Column="1" Margin="0" Background="{DynamicResource ListBackground}"/>
+                <StackPanel x:Name="namesStackPanel" Margin="0,0,3,0" Background="{DynamicResource SurfaceAltBrush}"/>
+                <StackPanel x:Name="valuesStackPanel" Grid.Column="1" Margin="0" Background="{DynamicResource SurfaceBrush}"/>
 
             </Grid>
         </ScrollViewer>
 
-        <Border Grid.Row="1" Background="{DynamicResource ListBackground}">
-            <Grid Margin="8">
+        <Border Grid.Row="1" Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0">
+            <Grid Margin="8,7,8,8">
                 <DockPanel LastChildFill="False">
-                    <Button x:Name="saveButton" Content="Save" DockPanel.Dock="Right" Width="75" Click="Button_Click"/>
+                    <Button x:Name="saveButton" Content="Save" DockPanel.Dock="Right" Width="75" Click="Button_Click" Style="{StaticResource AccentButtonStyle}"/>
                 </DockPanel>
             </Grid>
         </Border>

@@ -8,24 +8,26 @@
         mc:Ignorable="d"
         Title="Launch Options" Height="115" Width="300"
         ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
-    <Grid Background="{DynamicResource ListBackground}">
+    <Grid Background="{DynamicResource SurfaceBrush}">
         <Grid.RowDefinitions>
             <RowDefinition/>
             <RowDefinition Height="30"/>
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Orientation="Vertical" Margin="4,7,4,4">
-            <TextBlock Grid.Column="0" Text="Command Line Arguments:" Foreground="{DynamicResource FontColor}" VerticalAlignment="Center" Height="16" Margin="2,1"/>
+            <TextBlock Grid.Column="0" Text="Command Line Arguments:" Foreground="{DynamicResource SecondaryFontBrush}" VerticalAlignment="Center" Height="16" Margin="2,1"/>
             <TextBox Grid.Column="1" x:Name="cmdArgsTextBox" BorderThickness="1" VerticalContentAlignment="Center" Height="22"/>
         </StackPanel>
 
-        <Grid Grid.Row="1" Margin="4">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
-            </Grid.ColumnDefinitions>
+        <Border Grid.Row="1" Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0">
+            <Grid Margin="4,3,4,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
 
-            <Button Grid.Column="0" x:Name="cancelButton" Content="Cancel" Width="50" Height="22" HorizontalAlignment="Left" Click="cancelButton_Click"/>
-            <Button Grid.Column="1" x:Name="saveButton" Content="Save" Width="50" Height="22" HorizontalAlignment="Right" Click="saveButton_Click"/>
-        </Grid>
+                <Button Grid.Column="0" x:Name="cancelButton" Content="Cancel" Width="50" Height="22" HorizontalAlignment="Left" Click="cancelButton_Click"/>
+                <Button Grid.Column="1" x:Name="saveButton" Content="Save" Width="50" Height="22" HorizontalAlignment="Right" Click="saveButton_Click" Style="{StaticResource AccentButtonStyle}"/>
+            </Grid>
+        </Border>
     </Grid>
 </ctrl:FrostyDockableWindow>

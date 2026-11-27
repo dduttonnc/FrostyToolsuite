@@ -24,31 +24,20 @@
                             <Expander.Template>
                                 <ControlTemplate TargetType="{x:Type Expander}">
                                     <DockPanel>
-                                        <ToggleButton x:Name="HeaderSite" HorizontalAlignment="Left" ContentTemplate="{TemplateBinding HeaderTemplate}" Content="{TemplateBinding Header}" DockPanel.Dock="Top" Foreground="{TemplateBinding Foreground}" FontWeight="Bold" FontStyle="{TemplateBinding FontStyle}" FontStretch="{TemplateBinding FontStretch}" FontSize="{TemplateBinding FontSize}" FontFamily="{TemplateBinding FontFamily}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" Margin="1" MinWidth="0" MinHeight="0" Padding="{TemplateBinding Padding}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}">
+                                        <ToggleButton x:Name="HeaderSite" HorizontalAlignment="Left" ContentTemplate="{TemplateBinding HeaderTemplate}" Content="{TemplateBinding Header}" DockPanel.Dock="Top" Foreground="{TemplateBinding Foreground}" FontWeight="SemiBold" FontStyle="{TemplateBinding FontStyle}" FontStretch="{TemplateBinding FontStretch}" FontSize="{TemplateBinding FontSize}" FontFamily="{TemplateBinding FontFamily}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" Margin="6,5,0,3" MinWidth="0" MinHeight="0" Padding="{TemplateBinding Padding}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}">
                                             <ToggleButton.Template>
                                                 <ControlTemplate TargetType="{x:Type ToggleButton}">
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <Border Background="Transparent" Height="16" Padding="5" Width="16">
-                                                            <Path x:Name="ExpandPath" Fill="White" Stroke="White">
-                                                                <Path.Data>
-                                                                    <PathGeometry Figures="M0,0 L0,6 L6,0 z"/>
-                                                                </Path.Data>
-                                                                <Path.RenderTransform>
-                                                                    <RotateTransform Angle="135" CenterY="3" CenterX="3"/>
-                                                                </Path.RenderTransform>
-                                                            </Path>
+                                                    <StackPanel Orientation="Horizontal" Background="Transparent">
+                                                        <Border Background="Transparent" Height="16" Width="16">
+                                                            <TextBlock x:Name="ExpandPath" Text="&#xE76C;" FontFamily="{DynamicResource IconFontFamily}" FontSize="9" FontWeight="Normal" Foreground="{DynamicResource ButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                         </Border>
 
-                                                        <ContentPresenter Margin="4 0 0 0"/>
+                                                        <ContentPresenter Margin="4 0 0 0" VerticalAlignment="Center" TextElement.Foreground="{DynamicResource SecondaryFontBrush}"/>
                                                     </StackPanel>
 
                                                     <ControlTemplate.Triggers>
                                                         <Trigger Property="IsChecked" Value="True">
-                                                            <Setter Property="RenderTransform" TargetName="ExpandPath">
-                                                                <Setter.Value>
-                                                                    <RotateTransform Angle="180" CenterY="3" CenterX="3"/>
-                                                                </Setter.Value>
-                                                            </Setter>
+                                                            <Setter Property="Text" TargetName="ExpandPath" Value="&#xE70D;"/>
                                                         </Trigger>
                                                     </ControlTemplate.Triggers>
                                                 </ControlTemplate>
@@ -63,7 +52,7 @@
                                             <Setter Property="Visibility" TargetName="ExpandSite" Value="Visible"/>
                                         </Trigger>
                                         <Trigger Property="IsEnabled" Value="False">
-                                            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource DisabledFontBrush}"/>
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -86,18 +75,18 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ToggleButton}">
                         <Border Padding="{TemplateBinding Padding}">
-                            <Grid Background="Transparent" SnapsToDevicePixels="False">
+                            <Grid Background="Transparent" SnapsToDevicePixels="False" MinHeight="36">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="16"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Image x:Name="icon" Source="/FrostyModManager;component/Images/Plus.png" Margin="-2,10,0,14" Width="12" Cursor="Hand"/>
+                                <TextBlock x:Name="icon" Text="&#xE76C;" FontFamily="{DynamicResource IconFontFamily}" FontSize="10" Foreground="{DynamicResource ButtonImage}" Margin="-2,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand"/>
                                 <ContentPresenter Grid.Column="1" HorizontalAlignment="Left" Margin="4,0,0,0" RecognizesAccessKey="True" SnapsToDevicePixels="True" VerticalAlignment="Center"/>
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="true">
-                                <Setter Property="Source" TargetName="icon" Value="/FrostyModManager;component/Images/Minus.png"/>
+                                <Setter Property="Text" TargetName="icon" Value="&#xE70D;"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -106,7 +95,7 @@
         </Style>
 
         <Style TargetType="{x:Type Expander}">
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource FontColor}"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="VerticalContentAlignment" Value="Stretch"/>
@@ -126,7 +115,7 @@
                                 <Setter Property="Visibility" TargetName="ExpandSite" Value="Visible"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="false">
-                                <Setter Property="Foreground" Value="Gray"/>
+                                <Setter Property="Foreground" Value="{DynamicResource DisabledFontBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -136,20 +125,29 @@
 
         <Style x:Key="ModHyperLink" TargetType="{x:Type Hyperlink}">
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-            <Setter Property="Foreground" Value="DarkGray" />
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
             <Setter Property="TextBlock.TextDecorations" Value="{x:Null}" />
             <Setter Property="TextBlock.FontWeight" Value="SemiBold"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Foreground" Value="White" />
+                    <Setter Property="Foreground" Value="{DynamicResource AccentHoverBrush}" />
                     <Setter Property="TextBlock.TextDecorations" Value="{x:Null}" />
                 </Trigger>
             </Style.Triggers>
         </Style>
-        
+
+        <Style x:Key="FilterGlyphStyle" TargetType="{x:Type TextBlock}" BasedOn="{StaticResource GlyphTextStyle}">
+            <Setter Property="Foreground" Value="{DynamicResource IconBrush}"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType={x:Type ToggleButton}}}" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
     </ctrl:FrostyWindow.Resources>
 
-    <Grid Background="{DynamicResource ListBackground}">
+    <Grid Background="{DynamicResource WindowBackground}">
         <Grid.RowDefinitions>
             <RowDefinition Height="112*"/>
             <RowDefinition Height="557*"/>
@@ -157,15 +155,15 @@
 
         <Grid Grid.RowSpan="2">
             <Grid.RowDefinitions>
-                <RowDefinition Height="22"/>
                 <RowDefinition Height="26"/>
+                <RowDefinition Height="40"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="0"/>
             </Grid.RowDefinitions>
 
             <!-- Menu -->
-            <Menu x:Name="menu" Grid.Row="0">
-                <MenuItem Header="File" Height="22">
+            <Menu x:Name="menu" Grid.Row="0" Background="{DynamicResource MenuItemBackground}">
+                <MenuItem Header="File" Height="26">
                     <MenuItem Header="Pack">
                         <MenuItem x:Name="packRename" Header="Rename" Click="packRename_Click"/>
                         <MenuItem x:Name="packDuplicate" Header="Duplicate" Click="packDuplicate_Click"/>
@@ -176,16 +174,16 @@
                     <Separator/>
                     <MenuItem x:Name="launchConfigurationWindow" Header="Select Game" Click="launchConfigurationWindow_Click">
                         <MenuItem.Icon>
-                            <Image Source="/FrostyModManager;component/Images/Change.png" RenderOptions.BitmapScalingMode="Fant"/>
+                            <TextBlock Text="&#xE8AB;" Style="{StaticResource GlyphTextStyle}" Foreground="{DynamicResource IconBrush}"/>
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem x:Name="exitMenuItem" Header="Exit" Click="exitMenuItem_Click">
                         <MenuItem.Icon>
-                            <Image Source="/FrostyModManager;component/Images/Exit.png" RenderOptions.BitmapScalingMode="Fant"/>
+                            <TextBlock Text="&#xE7E8;" Style="{StaticResource GlyphTextStyle}" Foreground="{DynamicResource IconBrush}"/>
                         </MenuItem.Icon>
                     </MenuItem>
                 </MenuItem>
-                <MenuItem x:Name="toolsMenuItem" Header="Tools" Height="22">
+                <MenuItem x:Name="toolsMenuItem" Header="Tools" Height="26">
                     <MenuItem x:Name="manageModData" Header="Manage ModData" Click="modDataMenuItem_Click"/>
                     <MenuItem x:Name="dexHeader" Header="DAVExtender(Dex)" Visibility="Collapsed">
                         <MenuItem x:Name="dexInstall" Header="Install" Click="dexInstall_Click"/>
@@ -196,27 +194,27 @@
                         <MenuItem x:Name="openSettingsEditor" Header="Editor" Click="openSettingsEditor_Click"/>
                     </MenuItem>
                 </MenuItem>
-                <MenuItem Header="Help" Height="22">
+                <MenuItem Header="Help" Height="26">
                     <MenuItem x:Name="aboutMenuItem" Header="About Frosty Mod Manager" Click="aboutMenuItem_Click"/>
                 </MenuItem>
             </Menu>
 
             <!-- Toolbar -->
-            <Grid Grid.Row="1" Background="{DynamicResource ListBackground}">
+            <Grid Grid.Row="1" Background="{DynamicResource MenuItemBackground}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <Border BorderBrush="{DynamicResource ControlBackground}" BorderThickness="2,0,2,0">
-                    <DockPanel Margin="1">
+                <Border BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
+                    <DockPanel Margin="8,0,8,0">
                         <!-- Profile Selection -->
-                        <Border Background="{DynamicResource ControlBackground}" HorizontalAlignment="Left" DockPanel.Dock="Left" RenderOptions.EdgeMode="Aliased">
-                            <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
+                        <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1" CornerRadius="6" Height="32" HorizontalAlignment="Left" VerticalAlignment="Center" DockPanel.Dock="Left">
+                            <StackPanel Orientation="Horizontal" Margin="10,0,3,0">
                                 <!-- Deco -->
-                                <TextBlock Text="Pack: " VerticalAlignment="Center" Foreground="{DynamicResource FontColor}"/>
+                                <TextBlock Text="Pack: " VerticalAlignment="Center" Foreground="{DynamicResource SecondaryFontBrush}"/>
                                 <!-- Profiles ComboBox -->
-                                <ComboBox x:Name="packsComboBox" Width="150" Height="22" Margin="4,0,0,0" SelectionChanged="packsComboBox_SelectionChanged" Padding="4,2,4,2">
+                                <ComboBox x:Name="packsComboBox" Width="150" Height="24" Margin="2,0,4,0" SelectionChanged="packsComboBox_SelectionChanged" Padding="4,2,4,2">
                                     <ComboBox.ItemTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding Name}"/>
@@ -224,30 +222,30 @@
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
                                 <!-- Add Pack Button -->
-                                <Button x:Name="addProfileButton" Width="20" Height="20" Margin="4,0,0,0" ToolTip="Add Pack" Click="addProfileButton_Click">
-                                    <Image Source="/FrostyModManager;component/Images/Plus.png"/>
+                                <Button x:Name="addProfileButton" Style="{StaticResource GhostButtonStyle}" Width="26" Height="24" Margin="2,0,0,0" ToolTip="Add Pack" Click="addProfileButton_Click">
+                                    <TextBlock Text="&#xE710;" Style="{StaticResource GlyphTextStyle}" Foreground="{DynamicResource IconBrush}"/>
                                 </Button>
                                 <!-- Remove Pack Button -->
-                                <Button x:Name="removeProfileButton" Width="20" Height="20" Margin="4,0,0,0" ToolTip="Remove Pack" Click="removeProfileButton_Click">
-                                    <Image Source="/FrostyModManager;component/Images/Minus.png"/>
+                                <Button x:Name="removeProfileButton" Style="{StaticResource GhostButtonStyle}" Width="26" Height="24" Margin="2,0,0,0" ToolTip="Remove Pack" Click="removeProfileButton_Click">
+                                    <TextBlock Text="&#xE738;" Style="{StaticResource GlyphTextStyle}" Foreground="{DynamicResource IconBrush}"/>
                                 </Button>
                                 <!-- Import Button -->
-                                <Button x:Name="importPackButton" Width="20" Height="20" Margin="4,0,0,0" ToolTip="Import Pack" Click="packImport_Click">
-                                    <Image Source="/FrostyModManager;component/Images/Import.png"/>
+                                <Button x:Name="importPackButton" Style="{StaticResource GhostButtonStyle}" Width="26" Height="24" Margin="2,0,0,0" ToolTip="Import Pack" Click="packImport_Click">
+                                    <TextBlock Text="&#xE8B5;" Style="{StaticResource GlyphTextStyle}" Foreground="{DynamicResource IconBrush}"/>
                                 </Button>
                                 <!-- Export Button -->
-                                <Button x:Name="exportPackButton" Width="20" Height="20" Margin="4,0,0,0" ToolTip="Export Pack" Click="packExport_Click">
-                                    <Image Source="/FrostyModManager;component/Images/Export.png"/>
+                                <Button x:Name="exportPackButton" Style="{StaticResource GhostButtonStyle}" Width="26" Height="24" Margin="2,0,0,0" ToolTip="Export Pack" Click="packExport_Click">
+                                    <TextBlock Text="&#xEDE1;" Style="{StaticResource GlyphTextStyle}" Foreground="{DynamicResource IconBrush}"/>
                                 </Button>
                             </StackPanel>
                         </Border>
                         <!-- Launch -->
-                        <Border Background="{DynamicResource ControlBackground}" Margin="1 0 0 0" DockPanel.Dock="Left" RenderOptions.EdgeMode="Aliased">
-                            <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Margin="6,0,6,0">
-                                <Button x:Name="launchButton" Height="20" ToolTip="Launch game with selected mods applied" Click="launchButton_Click">
+                        <Border Margin="10,0,0,0" DockPanel.Dock="Left" VerticalAlignment="Center">
+                            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                <Button x:Name="launchButton" Style="{StaticResource AccentButtonStyle}" Height="32" Padding="14,0,18,0" ToolTip="Launch game with selected mods applied" Click="launchButton_Click">
                                     <StackPanel Orientation="Horizontal">
-                                        <Image Source="/FrostyModManager;component/Images/Play.png"/>
-                                        <TextBlock Margin="2,0,3,2" Text="Launch" VerticalAlignment="Center"/>
+                                        <TextBlock Text="&#xE768;" Style="{StaticResource GlyphTextStyle}" Margin="0,0,8,0"/>
+                                        <TextBlock Text="Launch" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
                             </StackPanel>
@@ -259,18 +257,18 @@
             </Grid>
 
             <!-- Main Content -->
-            <Grid Grid.Row="2">
+            <Grid Grid.Row="2" Margin="6">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Available Mods / Plugins -->
-                <ctrl:FrostyDockablePanel Title="Available Mods" Grid.Column="0" TitleBarVisible="False">
+                <ctrl:FrostyDockablePanel Title="Available Mods" Grid.Column="0" TitleBarVisible="False" Margin="0,0,3,0">
                     <Grid Background="{DynamicResource ListBackground}">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="33"/>
-                            <RowDefinition Height="2"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="1"/>
                             <RowDefinition Height="3*"/>
                         </Grid.RowDefinitions>
 
@@ -280,7 +278,7 @@
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate TargetType="{x:Type ctrl:FrostyTabControl}">
-                                                <Grid x:Name="templateRoot" ClipToBounds="true" SnapsToDevicePixels="true" KeyboardNavigation.TabNavigation="Local">
+                                                <Grid x:Name="templateRoot" ClipToBounds="true" SnapsToDevicePixels="true" KeyboardNavigation.TabNavigation="Local" Background="{DynamicResource SurfaceAltBrush}">
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition x:Name="ColumnDefinition0"/>
                                                         <ColumnDefinition x:Name="ColumnDefinition1" Width="0"/>
@@ -292,23 +290,23 @@
 
                                                     <StackPanel>
                                                         <!-- Dockable Window Deco -->
-                                                        <StackPanel x:Name="DockableBar" Height="13">
-                                                            <Border Background="#232323" Height="11"/>
-                                                            <Border Background="#1a1a1a" Height="1"/>
-                                                            <Border Background="#2f2f2f" Height="1"/>
+                                                        <StackPanel x:Name="DockableBar" Height="13" Visibility="Collapsed">
+                                                            <Border Background="{DynamicResource SurfaceAltBrush}" Height="11"/>
+                                                            <Border Background="{DynamicResource DividerBrush}" Height="1"/>
+                                                            <Border Background="{DynamicResource DividerBrush}" Height="1"/>
                                                         </StackPanel>
 
-                                                        <Grid>
+                                                        <Grid MinHeight="30">
                                                             <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="2"/>
+                                                                <ColumnDefinition Width="6"/>
                                                                 <ColumnDefinition Width="*"/>
                                                                 <ColumnDefinition Width="Auto"/>
                                                                 <ColumnDefinition Width="Auto"/>
                                                             </Grid.ColumnDefinitions>
 
-                                                            <Grid Width="14" Height="20">
-                                                                <Border Background="#292929"/>
-                                                                <Path x:Name="dockingDeco" Data="{Binding Source={StaticResource DockingDeco}, Path=Data}" Height="20" Width="14" Fill="#454545" Margin="0,0,0,0" RenderTransformOrigin="0.5,0.5">
+                                                            <Grid Width="14" Height="20" Visibility="Collapsed">
+                                                                <Border Background="{DynamicResource SurfaceAltBrush}"/>
+                                                                <Path x:Name="dockingDeco" Data="{Binding Source={StaticResource DockingDeco}, Path=Data}" Height="20" Width="14" Fill="{DynamicResource DividerBrush}" Margin="0,0,0,0" RenderTransformOrigin="0.5,0.5">
                                                                     <Path.RenderTransform>
                                                                         <TransformGroup>
                                                                             <ScaleTransform/>
@@ -320,18 +318,16 @@
                                                                 </Path>
                                                             </Grid>
 
-                                                            <ScrollViewer x:Name="PART_ScrollViewer" Grid.Column="1" IsTabStop="False" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Hidden" BorderThickness="0" Padding="0" Margin="0,0,0,-1">
-                                                                <TabPanel x:Name="headerPanel" Background="Transparent" Grid.Column="0" IsItemsHost="true" Margin="-1,0,0,0" Grid.Row="0" KeyboardNavigation.TabIndex="1" Panel.ZIndex="1"/>
+                                                            <ScrollViewer x:Name="PART_ScrollViewer" Grid.Column="1" IsTabStop="False" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Hidden" BorderThickness="0" Padding="0" Margin="0">
+                                                                <TabPanel x:Name="headerPanel" Background="Transparent" Grid.Column="0" IsItemsHost="true" Margin="0" VerticalAlignment="Bottom" Grid.Row="0" KeyboardNavigation.TabIndex="1" Panel.ZIndex="1"/>
                                                             </ScrollViewer>
 
                                                             <Border Grid.Column="2">
                                                                 <RepeatButton Content="&lt;" x:Name="PART_ScrollLeft" Width="21">
                                                                     <RepeatButton.Template>
                                                                         <ControlTemplate TargetType="{x:Type RepeatButton}">
-                                                                            <Border Background="{DynamicResource ScrollbarBackground}">
-                                                                                <Border x:Name="border" Background="{DynamicResource ControlBackground}" Margin="1">
-                                                                                    <Polygon Points="0,0 3.5,3.5 3.5,-3.5" Stroke="{DynamicResource ButtonImage}" Fill="{DynamicResource ButtonImage}" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="7,10,0,0"/>
-                                                                                </Border>
+                                                                            <Border x:Name="border" Background="Transparent">
+                                                                                <TextBlock x:Name="glyph" Text="&#xE76B;" FontFamily="{DynamicResource IconFontFamily}" FontSize="9" Foreground="{DynamicResource ButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                                             </Border>
                                                                             <ControlTemplate.Triggers>
                                                                                 <Trigger Property="IsMouseOver" Value="True">
@@ -339,6 +335,9 @@
                                                                                 </Trigger>
                                                                                 <Trigger Property="IsPressed" Value="True">
                                                                                     <Setter Property="Background" TargetName="border" Value="{DynamicResource ControlPressed}"/>
+                                                                                </Trigger>
+                                                                                <Trigger Property="IsEnabled" Value="False">
+                                                                                    <Setter Property="Opacity" TargetName="glyph" Value="0.35"/>
                                                                                 </Trigger>
                                                                             </ControlTemplate.Triggers>
                                                                         </ControlTemplate>
@@ -350,10 +349,8 @@
                                                                 <RepeatButton Content="&gt;" x:Name="PART_ScrollRight" Width="21">
                                                                     <RepeatButton.Template>
                                                                         <ControlTemplate TargetType="{x:Type RepeatButton}">
-                                                                            <Border Background="{DynamicResource ScrollbarBackground}">
-                                                                                <Border x:Name="border" Background="{DynamicResource ControlBackground}" Margin="1">
-                                                                                    <Polygon Points="0,0 -3.5,3.5 -3.5,-3.5" Stroke="{DynamicResource ButtonImage}" Fill="{DynamicResource ButtonImage}" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="12,10,0,0"/>
-                                                                                </Border>
+                                                                            <Border x:Name="border" Background="Transparent">
+                                                                                <TextBlock x:Name="glyph" Text="&#xE76C;" FontFamily="{DynamicResource IconFontFamily}" FontSize="9" Foreground="{DynamicResource ButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                                             </Border>
                                                                             <ControlTemplate.Triggers>
                                                                                 <Trigger Property="IsMouseOver" Value="True">
@@ -361,6 +358,9 @@
                                                                                 </Trigger>
                                                                                 <Trigger Property="IsPressed" Value="True">
                                                                                     <Setter Property="Background" TargetName="border" Value="{DynamicResource ControlPressed}"/>
+                                                                                </Trigger>
+                                                                                <Trigger Property="IsEnabled" Value="False">
+                                                                                    <Setter Property="Opacity" TargetName="glyph" Value="0.35"/>
                                                                                 </Trigger>
                                                                             </ControlTemplate.Triggers>
                                                                         </ControlTemplate>
@@ -397,7 +397,7 @@
                                                         <Setter Property="Margin" TargetName="headerPanel" Value="0,2,2,2"/>
                                                     </Trigger>
                                                     <Trigger Property="IsEnabled" Value="false">
-                                                        <Setter Property="TextElement.Foreground" TargetName="templateRoot" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
+                                                        <Setter Property="TextElement.Foreground" TargetName="templateRoot" Value="{DynamicResource DisabledFontBrush}"/>
                                                     </Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>
@@ -410,45 +410,45 @@
                             <ctrl:FrostyTabItem Header="Available Mods">
                                 <Grid>
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="26"/>
-                                        <RowDefinition Height="26"/>
+                                        <RowDefinition Height="38"/>
+                                        <RowDefinition Height="36"/>
                                         <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
 
                                     <!-- Add/Remove/Apply Mods -->
-                                    <Border Grid.Row="0" BorderBrush="{DynamicResource ControlBackground}" BorderThickness="0,0,0,2">
-                                        <DockPanel Margin="1">
+                                    <Border Grid.Row="0" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
+                                        <DockPanel Margin="8,0,8,0">
                                             <!-- Add/Remove/Apply List -->
-                                            <Border Background="{DynamicResource ControlBackground}" DockPanel.Dock="Left" RenderOptions.EdgeMode="Aliased">
-                                                <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Margin="6,0,6,0">
+                                            <Border DockPanel.Dock="Left">
+                                                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
                                                     <!-- Install Mod Button -->
-                                                    <Button x:Name="installModButton" Height="20" IsEnabled="True" ToolTip="Import mod(s) from file" Click="installModButton_Click">
+                                                    <Button x:Name="installModButton" Height="26" Padding="8,0,10,0" IsEnabled="True" ToolTip="Import mod(s) from file" Click="installModButton_Click">
                                                         <StackPanel Orientation="Horizontal">
-                                                            <Image Source="/FrostyModManager;component/Images/AddMod.png" Margin="0,0,2,0"/>
-                                                            <TextBlock Margin="2,0,3,2" Text="Add Mod(s)" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="&#xE8E5;" Style="{StaticResource GlyphTextStyle}" Foreground="{DynamicResource IconBrush}" Margin="0,0,6,0"/>
+                                                            <TextBlock Text="Add Mod(s)" VerticalAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
                                                     <!-- Uninstall Mod Button -->
-                                                    <Button x:Name="uninstallModButton" Height="20" Click="uninstallModButton_Click" IsEnabled="False" ToolTip="Remove selected mod(s)" Margin="4,0,0,0">
+                                                    <Button x:Name="uninstallModButton" Height="26" Padding="8,0,10,0" Click="uninstallModButton_Click" IsEnabled="False" ToolTip="Remove selected mod(s)" Margin="6,0,0,0">
                                                         <StackPanel Orientation="Horizontal">
-                                                            <Image Source="/FrostyModManager;component/Images/RemoveMod.png" Margin="0,0,2,0"/>
-                                                            <TextBlock Text="Remove Mod(s)" Margin="2,0,3,2" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="&#xE74D;" Style="{StaticResource GlyphTextStyle}" Foreground="{DynamicResource IconBrush}" Margin="0,0,6,0"/>
+                                                            <TextBlock Text="Remove Mod(s)" VerticalAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
                                                 </StackPanel>
                                             </Border>
                                             <!-- Apply List -->
-                                            <Border Background="{DynamicResource ControlBackground}" DockPanel.Dock="Right" RenderOptions.EdgeMode="Aliased">
-                                                <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Margin="6,0,6,0">
+                                            <Border DockPanel.Dock="Right">
+                                                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
                                                     <!-- Apply Mod Button -->
-                                                    <Button x:Name="addModButton" Height="20" Click="addModButton_Click" IsEnabled="False" ToolTip="Add mod(s) to applied list">
+                                                    <Button x:Name="addModButton" Style="{StaticResource AccentButtonStyle}" Height="26" Padding="10,0,12,0" Click="addModButton_Click" IsEnabled="False" ToolTip="Add mod(s) to applied list">
                                                         <StackPanel Orientation="Horizontal">
-                                                            <Image Source="/FrostyModManager;component/Images/Up.png" Margin="0,0,4,0">
-                                                                <Image.RenderTransform>
-                                                                    <RotateTransform Angle="90" CenterX="10" CenterY="10"/>
-                                                                </Image.RenderTransform>
-                                                            </Image>
-                                                            <TextBlock Text="Apply Mod(s)" Margin="2,0,3,2" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="&#xE74A;" Style="{StaticResource GlyphTextStyle}" Margin="0,0,6,0">
+                                                                <TextBlock.LayoutTransform>
+                                                                    <RotateTransform Angle="90"/>
+                                                                </TextBlock.LayoutTransform>
+                                                            </TextBlock>
+                                                            <TextBlock Text="Apply Mod(s)" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
                                                 </StackPanel>
@@ -461,30 +461,33 @@
                                     <DockPanel Grid.Row="1"
                                                 VerticalAlignment="Center"
                                                 Width="Auto"
-                                                HorizontalAlignment="Stretch">
+                                                HorizontalAlignment="Stretch"
+                                                Margin="8,0,8,0">
                                         <!-- J-Lyt | Changed ToolTip Text -->
                                         <ToggleButton x:Name="appliedModsFilterButton"
+                                                      Width="28"
+                                                      Height="26"
+                                                      Margin="0,0,4,0"
                                                       Click="appliedModsFilterButton_Click"
                                                       ToolTip="Show Applied Mod(s)">
-                                            <Image Source="/FrostyModManager;component/Images/CircleCheck.png"
-                                                   Height="16"
-                                                   Width="16"
-                                                   Margin="0,0,2,0" />
+                                            <TextBlock Text="&#xE73E;"
+                                                       Style="{StaticResource FilterGlyphStyle}" />
                                         </ToggleButton>
                                         <!-- J-Lyt | Changed ToolTip Text -->
                                         <ToggleButton x:Name="notAppliedModsFilterButton"
+                                                      Width="28"
+                                                      Height="26"
+                                                      Margin="0,0,6,0"
                                                       Click="notAppliedModsFilterButton_Click"
                                                       ToolTip="Hide Applied Mod(s)">
-                                            <Image Source="/FrostyModManager;component/Images/CircleX.png"
-                                                   Height="16"
-                                                   Width="16"
-                                                   Margin="0,0,2,0" />
+                                            <TextBlock Text="&#xE711;"
+                                                       Style="{StaticResource FilterGlyphStyle}" />
                                         </ToggleButton>
                                         <ctrl:FrostyWatermarkTextBox x:Name="availableModsFilterTextBox"
                                                                      WatermarkText="Filter"
                                                                      BorderThickness="1"
-                                                                     Height="25"
-                                                                     Margin="1,1,1,0"
+                                                                     Height="26"
+                                                                     Margin="0"
                                                                      VerticalContentAlignment="Center"
                                                                      KeyUp="availableModsFilter_KeyUp"
                                                                      LostFocus="availableModsFilter_LostFocus"/>
@@ -507,7 +510,7 @@
                                                             <DataTemplate>
                                                                 <Grid Margin="0,0,16,0">
                                                                     <Expander x:Name="modsExpander" IsExpanded="False">
-                                                                        <Border BorderThickness="1" BorderBrush="#454545" Margin="16, 0, -97, 2">
+                                                                        <Border BorderThickness="1" BorderBrush="{DynamicResource DividerBrush}" Margin="16, 0, -97, 2">
                                                                             <ListView x:Name="collectionModsList" ItemsSource="{Binding Path=Mods}" MouseDoubleClick="collectionModsList_MouseDoubleClick" ScrollViewer.HorizontalScrollBarVisibility="Disabled" PreviewMouseWheel="ScrollViewer_PreviewMouseWheel" LostFocus="collectionModsList_LostFocus">
                                                                                 <ListView.View>
                                                                                     <GridView ScrollViewer.CanContentScroll="False">
@@ -536,8 +539,8 @@
                                                                                                                     <RowDefinition Height="16"/>
                                                                                                                 </Grid.RowDefinitions>
 
-                                                                                                                <TextBlock Grid.Row="0" Text="{Binding Path=ModDetails.Title}" VerticalAlignment="Center" Foreground="{DynamicResource FontColor}" Margin="8,0,0,0"/>
-                                                                                                                <TextBlock Grid.Row="1" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#808080">
+                                                                                                                <TextBlock Grid.Row="0" Text="{Binding Path=ModDetails.Title}" VerticalAlignment="Center" Foreground="{DynamicResource FontColor}" FontWeight="SemiBold" Margin="8,0,0,0"/>
+                                                                                                                <TextBlock Grid.Row="1" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource SecondaryFontBrush}">
                                                                                                                     <TextBlock.Text>
                                                                                                                         <Binding Path="ModDetails.Author" StringFormat="by {0}"/>
                                                                                                                     </TextBlock.Text>
@@ -587,8 +590,8 @@
                                                                                 <RowDefinition Height="16"/>
                                                                             </Grid.RowDefinitions>
 
-                                                                            <TextBlock Grid.Row="0" Text="{Binding Path=ModDetails.Title}" VerticalAlignment="Center" Foreground="{DynamicResource FontColor}" Margin="8,0,0,0"/>
-                                                                            <TextBlock Grid.Row="1" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#808080">
+                                                                            <TextBlock Grid.Row="0" Text="{Binding Path=ModDetails.Title}" VerticalAlignment="Center" Foreground="{DynamicResource FontColor}" FontWeight="SemiBold" Margin="8,0,0,0"/>
+                                                                            <TextBlock Grid.Row="1" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource SecondaryFontBrush}">
                                                                                 <TextBlock.Text>
                                                                                     <Binding Path="ModDetails.Author" StringFormat="by {0}"/>
                                                                                 </TextBlock.Text>
@@ -624,7 +627,7 @@
                                                         <GridViewColumn.CellTemplate>
                                                             <DataTemplate>
                                                                 <Grid Height="32">
-                                                                    <Image Source="/FrostyModManager;component/Images/CircleCheck.png" Width="16" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,4,0,0" Visibility="{Binding Path=ModDetails.Title, Converter={StaticResource ModAppliedConverter}, Mode=OneWay}"/>
+                                                                    <TextBlock Text="&#xE73E;" Style="{StaticResource GlyphTextStyle}" Foreground="{DynamicResource SuccessBrush}" Width="16" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,4,0,0" Visibility="{Binding Path=ModDetails.Title, Converter={StaticResource ModAppliedConverter}, Mode=OneWay}"/>
                                                                 </Grid>
                                                             </DataTemplate>
                                                         </GridViewColumn.CellTemplate>
@@ -639,10 +642,18 @@
                                                                     </Grid.ColumnDefinitions>
 
                                                                     <Grid Grid.Column="0" Margin="0,6,0,0" Visibility="{Binding Path=ModDetails.HasDexResource, Converter={StaticResource booleanToVisibilityConverter}}">
-                                                                        <Image Source="/FrostyCore;component/Images/Assets/ArchiveFileType.png" Width="14" HorizontalAlignment="Left" VerticalAlignment="Top" Opacity="0.75" ToolTip="Has DAVExtender(Dex) Archive"/>
+                                                                        <Rectangle Width="14" Height="14" HorizontalAlignment="Left" VerticalAlignment="Top" Opacity="0.75" Fill="{DynamicResource IconBrush}" ToolTip="Has DAVExtender(Dex) Archive">
+                                                                            <Rectangle.OpacityMask>
+                                                                                <ImageBrush ImageSource="/FrostyCore;component/Images/Assets/ArchiveFileType.png" Stretch="Uniform"/>
+                                                                            </Rectangle.OpacityMask>
+                                                                        </Rectangle>
                                                                     </Grid>
                                                                     <Grid Grid.Column="{Binding Path=ModDetails.GridColumn}" Margin="0,6,0,0" Visibility="{Binding Path=ModDetails.HasRootResource, Converter={StaticResource booleanToVisibilityConverter}}">
-                                                                        <Image Source="/FrostyCore;component/Images/Assets/BlankFileType.png" Width="14" HorizontalAlignment="Left" VerticalAlignment="Top" Opacity="0.75" ToolTip="Has Root Description File"/>
+                                                                        <Rectangle Width="14" Height="14" HorizontalAlignment="Left" VerticalAlignment="Top" Opacity="0.75" Fill="{DynamicResource IconBrush}" ToolTip="Has Root Description File">
+                                                                            <Rectangle.OpacityMask>
+                                                                                <ImageBrush ImageSource="/FrostyCore;component/Images/Assets/BlankFileType.png" Stretch="Uniform"/>
+                                                                            </Rectangle.OpacityMask>
+                                                                        </Rectangle>
                                                                     </Grid>
                                                                 </Grid>
                                                             </DataTemplate>
@@ -773,14 +784,14 @@
                             <!-- Log -->
                             <ctrl:FrostyTabItem Header="Log">
                                 <Grid>
-                                    <Border BorderBrush="{DynamicResource ControlBackground}" RenderOptions.EdgeMode="Aliased" BorderThickness="0,2,0,0">
-                                        <TextBox x:Name="tb" FontFamily="Consolas" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Background="{DynamicResource ListBackground}" TextChanged="logTextBox_TextChanged"/>
+                                    <Border BorderBrush="{DynamicResource DividerBrush}" RenderOptions.EdgeMode="Aliased" BorderThickness="0">
+                                        <TextBox x:Name="tb" FontFamily="Consolas" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Background="{DynamicResource ListBackground}" Foreground="{DynamicResource FontColor}" BorderThickness="0" Padding="8,6,8,6" TextChanged="logTextBox_TextChanged"/>
                                     </Border>
                                 </Grid>
                             </ctrl:FrostyTabItem>
                         </ctrl:FrostyTabControl>
 
-                        <Grid Grid.Row="1" Height="2" Background="{DynamicResource ControlBackground}"/>
+                        <Grid Grid.Row="1" Height="1" Background="{DynamicResource DividerBrush}"/>
 
                         <ctrl:FrostyDetachedTabControl Grid.Row="2" x:Name="availableModsTabContent" Foreground="{DynamicResource FontColor}" Margin="0,0,0,26" />
 
@@ -789,22 +800,25 @@
                                                      x:Name="availableModsStatusBar"
                                                      WatermarkText=""
                                                      IsEnabled="False"
-                                                     BorderThickness="1"
-                                                     Margin="0,1,0,0"
+                                                     BorderThickness="0,1,0,0"
+                                                     Height="26"
+                                                     Margin="0"
+                                                     Padding="6,0,6,0"
                                                      VerticalAlignment="Bottom"
                                                      VerticalContentAlignment="Center"
-                                                     Background="{DynamicResource ControlBackground}" />
+                                                     Foreground="{DynamicResource SecondaryFontBrush}"
+                                                     Background="{DynamicResource SurfaceAltBrush}" />
                     </Grid>
                 </ctrl:FrostyDockablePanel>
 
                 <GridSplitter Background="Transparent" VerticalAlignment="Stretch" Width="3" ResizeDirection="Columns"/>
 
                 <!-- Applied Mods / Mod Description / Conflicts -->
-                <ctrl:FrostyDockablePanel Grid.Column="1" TitleBarVisible="False">
+                <ctrl:FrostyDockablePanel Grid.Column="1" TitleBarVisible="False" Margin="3,0,0,0">
                     <Grid Background="{DynamicResource ListBackground}">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="33"/>
-                            <RowDefinition Height="2"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="1"/>
                             <RowDefinition Height="3*"/>
                         </Grid.RowDefinitions>
 
@@ -814,7 +828,7 @@
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate TargetType="{x:Type ctrl:FrostyTabControl}">
-                                                <Grid x:Name="templateRoot" ClipToBounds="true" SnapsToDevicePixels="true" KeyboardNavigation.TabNavigation="Local">
+                                                <Grid x:Name="templateRoot" ClipToBounds="true" SnapsToDevicePixels="true" KeyboardNavigation.TabNavigation="Local" Background="{DynamicResource SurfaceAltBrush}">
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition x:Name="ColumnDefinition0"/>
                                                         <ColumnDefinition x:Name="ColumnDefinition1" Width="0"/>
@@ -826,23 +840,23 @@
 
                                                     <StackPanel>
                                                         <!-- Dockable Window Deco -->
-                                                        <StackPanel x:Name="DockableBar" Height="13">
-                                                            <Border Background="#232323" Height="11"/>
-                                                            <Border Background="#1a1a1a" Height="1"/>
-                                                            <Border Background="#2f2f2f" Height="1"/>
+                                                        <StackPanel x:Name="DockableBar" Height="13" Visibility="Collapsed">
+                                                            <Border Background="{DynamicResource SurfaceAltBrush}" Height="11"/>
+                                                            <Border Background="{DynamicResource DividerBrush}" Height="1"/>
+                                                            <Border Background="{DynamicResource DividerBrush}" Height="1"/>
                                                         </StackPanel>
 
-                                                        <Grid>
+                                                        <Grid MinHeight="30">
                                                             <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="2"/>
+                                                                <ColumnDefinition Width="6"/>
                                                                 <ColumnDefinition Width="*"/>
                                                                 <ColumnDefinition Width="Auto"/>
                                                                 <ColumnDefinition Width="Auto"/>
                                                             </Grid.ColumnDefinitions>
 
-                                                            <Grid Width="14" Height="20">
-                                                                <Border Background="#292929"/>
-                                                                <Path x:Name="dockingDeco" Data="{Binding Source={StaticResource DockingDeco}, Path=Data}" Height="20" Width="14" Fill="#454545" Margin="0,0,0,0" RenderTransformOrigin="0.5,0.5">
+                                                            <Grid Width="14" Height="20" Visibility="Collapsed">
+                                                                <Border Background="{DynamicResource SurfaceAltBrush}"/>
+                                                                <Path x:Name="dockingDeco" Data="{Binding Source={StaticResource DockingDeco}, Path=Data}" Height="20" Width="14" Fill="{DynamicResource DividerBrush}" Margin="0,0,0,0" RenderTransformOrigin="0.5,0.5">
                                                                     <Path.RenderTransform>
                                                                         <TransformGroup>
                                                                             <ScaleTransform/>
@@ -854,18 +868,16 @@
                                                                 </Path>
                                                             </Grid>
 
-                                                            <ScrollViewer x:Name="PART_ScrollViewer" Grid.Column="1" IsTabStop="False" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Hidden" BorderThickness="0" Padding="0" Margin="0,0,0,-1">
-                                                                <TabPanel x:Name="headerPanel" Background="Transparent" Grid.Column="0" IsItemsHost="true" Margin="-1,0,0,0" Grid.Row="0" KeyboardNavigation.TabIndex="1" Panel.ZIndex="1"/>
+                                                            <ScrollViewer x:Name="PART_ScrollViewer" Grid.Column="1" IsTabStop="False" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Hidden" BorderThickness="0" Padding="0" Margin="0">
+                                                                <TabPanel x:Name="headerPanel" Background="Transparent" Grid.Column="0" IsItemsHost="true" Margin="0" VerticalAlignment="Bottom" Grid.Row="0" KeyboardNavigation.TabIndex="1" Panel.ZIndex="1"/>
                                                             </ScrollViewer>
 
                                                             <Border Grid.Column="2">
                                                                 <RepeatButton Content="&lt;" x:Name="PART_ScrollLeft" Width="21">
                                                                     <RepeatButton.Template>
                                                                         <ControlTemplate TargetType="{x:Type RepeatButton}">
-                                                                            <Border Background="{DynamicResource ScrollbarBackground}">
-                                                                                <Border x:Name="border" Background="{DynamicResource ControlBackground}" Margin="1">
-                                                                                    <Polygon Points="0,0 3.5,3.5 3.5,-3.5" Stroke="{DynamicResource ButtonImage}" Fill="{DynamicResource ButtonImage}" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="7,10,0,0"/>
-                                                                                </Border>
+                                                                            <Border x:Name="border" Background="Transparent">
+                                                                                <TextBlock x:Name="glyph" Text="&#xE76B;" FontFamily="{DynamicResource IconFontFamily}" FontSize="9" Foreground="{DynamicResource ButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                                             </Border>
                                                                             <ControlTemplate.Triggers>
                                                                                 <Trigger Property="IsMouseOver" Value="True">
@@ -873,6 +885,9 @@
                                                                                 </Trigger>
                                                                                 <Trigger Property="IsPressed" Value="True">
                                                                                     <Setter Property="Background" TargetName="border" Value="{DynamicResource ControlPressed}"/>
+                                                                                </Trigger>
+                                                                                <Trigger Property="IsEnabled" Value="False">
+                                                                                    <Setter Property="Opacity" TargetName="glyph" Value="0.35"/>
                                                                                 </Trigger>
                                                                             </ControlTemplate.Triggers>
                                                                         </ControlTemplate>
@@ -884,10 +899,8 @@
                                                                 <RepeatButton Content="&gt;" x:Name="PART_ScrollRight" Width="21">
                                                                     <RepeatButton.Template>
                                                                         <ControlTemplate TargetType="{x:Type RepeatButton}">
-                                                                            <Border Background="{DynamicResource ScrollbarBackground}">
-                                                                                <Border x:Name="border" Background="{DynamicResource ControlBackground}" Margin="1">
-                                                                                    <Polygon Points="0,0 -3.5,3.5 -3.5,-3.5" Stroke="{DynamicResource ButtonImage}" Fill="{DynamicResource ButtonImage}" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="12,10,0,0"/>
-                                                                                </Border>
+                                                                            <Border x:Name="border" Background="Transparent">
+                                                                                <TextBlock x:Name="glyph" Text="&#xE76C;" FontFamily="{DynamicResource IconFontFamily}" FontSize="9" Foreground="{DynamicResource ButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                                             </Border>
                                                                             <ControlTemplate.Triggers>
                                                                                 <Trigger Property="IsMouseOver" Value="True">
@@ -895,6 +908,9 @@
                                                                                 </Trigger>
                                                                                 <Trigger Property="IsPressed" Value="True">
                                                                                     <Setter Property="Background" TargetName="border" Value="{DynamicResource ControlPressed}"/>
+                                                                                </Trigger>
+                                                                                <Trigger Property="IsEnabled" Value="False">
+                                                                                    <Setter Property="Opacity" TargetName="glyph" Value="0.35"/>
                                                                                 </Trigger>
                                                                             </ControlTemplate.Triggers>
                                                                         </ControlTemplate>
@@ -931,7 +947,7 @@
                                                         <Setter Property="Margin" TargetName="headerPanel" Value="0,2,2,2"/>
                                                     </Trigger>
                                                     <Trigger Property="IsEnabled" Value="false">
-                                                        <Setter Property="TextElement.Foreground" TargetName="templateRoot" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
+                                                        <Setter Property="TextElement.Foreground" TargetName="templateRoot" Value="{DynamicResource DisabledFontBrush}"/>
                                                     </Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>
@@ -944,39 +960,39 @@
                             <ctrl:FrostyTabItem x:Name="appliedModsTabItem" Header="Applied Mods">
                                 <Grid>
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="26"/>
+                                        <RowDefinition Height="38"/>
                                         <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
 
-                                    <Border Grid.Row="0" BorderBrush="{DynamicResource ControlBackground}" BorderThickness="0,0,0,2">
-                                        <DockPanel Margin="1">
-                                            <Border Background="{DynamicResource ControlBackground}" DockPanel.Dock="Left" RenderOptions.EdgeMode="Aliased">
-                                                <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Margin="4,0,4,0">
+                                    <Border Grid.Row="0" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
+                                        <DockPanel Margin="8,0,8,0">
+                                            <Border DockPanel.Dock="Left">
+                                                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
                                                     <!-- Down Button -->
-                                                    <Button x:Name="downButton" IsEnabled="False" Click="downButton_Click" ToolTip="Move mod down in list &#x0a;Shift click to move down 5 spaces &#x0a;Ctrl Shift click to move to bottom">
-                                                        <Image Source="/FrostyModManager;component/Images/Down.png" Margin="0,0,2,0"/>
+                                                    <Button x:Name="downButton" Width="28" Height="26" IsEnabled="False" Click="downButton_Click" ToolTip="Move mod down in list &#x0a;Shift click to move down 5 spaces &#x0a;Ctrl Shift click to move to bottom">
+                                                        <TextBlock Text="&#xE74B;" Style="{StaticResource GlyphTextStyle}" Foreground="{DynamicResource IconBrush}"/>
                                                     </Button>
                                                     <!-- Up Button -->
-                                                    <Button x:Name="upButton" IsEnabled="False" Click="upButton_Click" ToolTip="Move mod up in list &#x0a;Shift click to move up 5 spaces &#x0a;Ctrl Shift click to move to top">
-                                                        <Image Source="/FrostyModManager;component/Images/Up.png" Margin="0,0,2,0"/>
+                                                    <Button x:Name="upButton" Width="28" Height="26" Margin="4,0,0,0" IsEnabled="False" Click="upButton_Click" ToolTip="Move mod up in list &#x0a;Shift click to move up 5 spaces &#x0a;Ctrl Shift click to move to top">
+                                                        <TextBlock Text="&#xE74A;" Style="{StaticResource GlyphTextStyle}" Foreground="{DynamicResource IconBrush}"/>
                                                     </Button>
                                                     <!-- Remove Button -->
-                                                    <Button x:Name="removeButton" IsEnabled="False" Click="removeButton_Click" ToolTip="Remove mod from list">
-                                                        <Image Source="/FrostyModManager;component/Images/Remove.png" Margin="0,0,2,0"/>
+                                                    <Button x:Name="removeButton" Width="28" Height="26" Margin="4,0,0,0" IsEnabled="False" Click="removeButton_Click" ToolTip="Remove mod from list">
+                                                        <TextBlock Text="&#xE711;" Style="{StaticResource GlyphTextStyle}" Foreground="{DynamicResource IconBrush}"/>
                                                     </Button>
                                                     <!-- Separator Button -->
-                                                    <Button x:Name="separatorButton" IsEnabled="True" Click="separatorButton_Click" ToolTip="Add separator to list">
-                                                        <Image Source="/FrostyModManager;component/Images/ModifyAction.png" Margin="0,0,2,0"/>
+                                                    <Button x:Name="separatorButton" Width="28" Height="26" Margin="4,0,0,0" IsEnabled="True" Click="separatorButton_Click" ToolTip="Add separator to list">
+                                                        <TextBlock Text="&#xE70F;" Style="{StaticResource GlyphTextStyle}" Foreground="{DynamicResource IconBrush}"/>
                                                     </Button>
                                                 </StackPanel>
                                             </Border>
 
                                             <!-- Loading Order -->
-                                            <Border Background="{DynamicResource ControlBackground}" DockPanel.Dock="Right" RenderOptions.EdgeMode="Aliased">
+                                            <Border DockPanel.Dock="Right">
                                                 <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
-                                                    <TextBlock Margin="6,0,0,0" Text="Load Order:" VerticalAlignment="Center"/>
+                                                    <TextBlock Margin="6,0,0,0" Text="Load Order:" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryFontBrush}"/>
                                                     <!-- [DAI fix] was List/Priority; still saved by index -->
-                                                    <ComboBox x:Name="orderComboBox" Width="100" Height="22" Margin="4,0,0,0" Padding="4,2,4,2" SelectionChanged="orderComboBox_SelectionChanged" ToolTip="{Binding Path=SelectedItem.ToolTip, RelativeSource={RelativeSource Self}}">
+                                                    <ComboBox x:Name="orderComboBox" Width="100" Height="24" Margin="6,0,0,0" Padding="4,2,4,2" SelectionChanged="orderComboBox_SelectionChanged" ToolTip="{Binding Path=SelectedItem.ToolTip, RelativeSource={RelativeSource Self}}">
                                                         <ComboBoxItem Content="Bottom wins" ToolTip="Bottom Overrides Top"/>
                                                         <ComboBoxItem Content="Top wins" ToolTip="Top Overrides Bottom"/>
                                                     </ComboBox>
@@ -1008,12 +1024,17 @@
 
                                                     <CheckBox x:Name="enabledCheckBox" Grid.Column="0" VerticalAlignment="Center" IsChecked="{Binding Path=IsEnabled}" IsEnabled="{Binding Path=IsFound}" Checked="enabledCheckBox_Checked" Unchecked="enabledCheckBox_Checked" Visibility="{Binding Path=ModVisibility}"/>
                                                     <Image Grid.Column="1" Source="{Binding Path=ModIcon}" Margin="8,0,0,0" Width="16" RenderOptions.BitmapScalingMode="Fant" ToolTip="{Binding Path=ModTooltip}"/>
-                                                    <TextBlock Grid.Column="2" FontWeight="{Binding Path=ModFontWeight}" Text="{Binding Path=ModName}" Margin="8,0,0,0" VerticalAlignment="Center" HorizontalAlignment="{Binding Path=ModHorizontalAlignment}" ToolTip="{Binding Path=ModTooltip}"/>
-                                                    <TextBlock Grid.Column="3" Text="{Binding Path=ModPriority}" Margin="8,0,40,0" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                                                    <Border Grid.Column="4" BorderThickness="1" BorderBrush="{DynamicResource FontColor}" VerticalAlignment="Center" HorizontalAlignment="Right" Width="30">
-                                                        <TextBlock Text="{Binding Path=ModIndex}" HorizontalAlignment="Center" />
+                                                    <TextBlock x:Name="modNameText" Grid.Column="2" FontWeight="{Binding Path=ModFontWeight}" Text="{Binding Path=ModName}" Margin="8,0,0,0" VerticalAlignment="Center" HorizontalAlignment="{Binding Path=ModHorizontalAlignment}" ToolTip="{Binding Path=ModTooltip}"/>
+                                                    <TextBlock Grid.Column="3" Text="{Binding Path=ModPriority}" Margin="8,0,40,0" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{DynamicResource SecondaryFontBrush}"/>
+                                                    <Border Grid.Column="4" BorderThickness="0" Padding="0,1,0,1" CornerRadius="3" Background="{DynamicResource BadgeBackgroundBrush}" VerticalAlignment="Center" HorizontalAlignment="Right" Width="30">
+                                                        <TextBlock Text="{Binding Path=ModIndex}" HorizontalAlignment="Center" Foreground="{DynamicResource BadgeForegroundBrush}" />
                                                     </Border>
                                                 </Grid>
+                                                <DataTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding Path=ModVisibility}" Value="Collapsed">
+                                                        <Setter TargetName="modNameText" Property="Foreground" Value="{DynamicResource SecondaryFontBrush}"/>
+                                                    </DataTrigger>
+                                                </DataTemplate.Triggers>
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>
                                         <ListBox.ItemContainerStyle>
@@ -1035,14 +1056,14 @@
                             <ctrl:FrostyTabItem x:Name="conflictsTabItem" Header="Resources" Visibility="Collapsed">
                                 <Grid>
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="26"/>
+                                        <RowDefinition Height="38"/>
                                         <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
 
-                                    <Border Grid.Row="0" BorderBrush="{DynamicResource ControlBackground}" BorderThickness="0,0,0,2">
-                                        <DockPanel Margin="1">
-                                            <Border Background="{DynamicResource ControlBackground}" DockPanel.Dock="Left" RenderOptions.EdgeMode="Aliased">
-                                                <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Margin="6,0,6,0">
+                                    <Border Grid.Row="0" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
+                                        <DockPanel Margin="8,0,8,0">
+                                            <Border DockPanel.Dock="Left">
+                                                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
                                                     <CheckBox x:Name="showOnlyReplacementsCheckBox" VerticalAlignment="Center" Margin="0,0,0,0" Checked="PART_ShowOnlyReplacementsCheckBox_Checked" Unchecked="PART_ShowOnlyReplacementsCheckBox_Unchecked" IsChecked="False" ToolTip="Filter the list so only resources with conflicts are shown." Foreground="{DynamicResource FontColor}">
                                                         <TextBlock Text="Show conflicts only" Margin="4,-1,0,0" VerticalAlignment="Center" Foreground="{DynamicResource FontColor}"/>
                                                     </CheckBox>
@@ -1053,7 +1074,7 @@
                                         </DockPanel>
                                     </Border>
 
-                                    <Border Grid.Row="1" Background="{DynamicResource ListBackground}" Margin="2">
+                                    <Border Grid.Row="1" Background="{DynamicResource ListBackground}" Margin="0">
                                         <ListView x:Name="conflictsListView">
                                             <ListView.Resources>
                                                 <local:ModPrimaryActionConverter x:Key="ModPrimaryActionConverter"/>
@@ -1066,8 +1087,8 @@
                                                 <DataTemplate x:Key="conflictsNameTemplate">
                                                     <StackPanel Height="22" Orientation="Horizontal">
                                                         <Grid Height="18" Margin="0,0,4,2">
-                                                            <Rectangle Width="35" Height="15" RadiusY="3" RadiusX="3" Fill="#FFFFFFFF" />
-                                                            <TextBlock x:Name="typeName" Text="{Binding Path=Type}" Foreground="Black" FontFamily="Segoe UI" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="9"/>
+                                                            <Rectangle Width="35" Height="15" RadiusY="3" RadiusX="3" Fill="{DynamicResource BadgeBackgroundBrush}" />
+                                                            <TextBlock x:Name="typeName" Text="{Binding Path=Type}" Foreground="{DynamicResource BadgeForegroundBrush}" FontFamily="Segoe UI" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="9"/>
                                                         </Grid>
                                                         <TextBlock Text="{Binding Path=Name}" FontFamily="Consolas" VerticalAlignment="Center"/>
                                                     </StackPanel>
@@ -1095,7 +1116,7 @@
                             </ctrl:FrostyTabItem>
                         </ctrl:FrostyTabControl>
 
-                        <Grid Grid.Row="1" Height="2" Background="{DynamicResource ControlBackground}"/>
+                        <Grid Grid.Row="1" Height="1" Background="{DynamicResource DividerBrush}"/>
 
                         <ctrl:FrostyDetachedTabControl Grid.Row="2" x:Name="tabContent" Foreground="{DynamicResource FontColor}" Grid.ColumnSpan="2"/>
                     </Grid>
@@ -1104,15 +1125,15 @@
 
             <!-- Deco -->
             <Grid Grid.Row="4">
-                <Border BorderThickness="2,0,2,2" BorderBrush="{DynamicResource ControlBackground}" Background="#FF141414"/>
+                <Border BorderThickness="2,0,2,2" BorderBrush="{DynamicResource DividerBrush}" Background="{DynamicResource WindowBackground}"/>
             </Grid>
         </Grid>
 
         <Grid x:Name="imagePanel" Visibility="Collapsed" Grid.RowSpan="2">
-            <Border Background="#40373737"/>
-            <Border Background="Black" Margin="50">
+            <Border Background="#A6000000"/>
+            <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource PopupBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="6" Margin="50">
                 <Border.Effect>
-                    <DropShadowEffect BlurRadius="20" ShadowDepth="1"/>
+                    <DropShadowEffect Color="Black" BlurRadius="18" ShadowDepth="4" Opacity="0.4"/>
                 </Border.Effect>
                 <Image x:Name="screenshotImage" Source="/FrostyModManager;component/Images/DefaultModIcon.png" Cursor="Hand" MouseDown="largeScreenshot_MouseDown"/>
             </Border>

@@ -1,5 +1,4 @@
-﻿using System.Windows.Media;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 
@@ -16,9 +15,6 @@ namespace Frosty.Core.Controls
             get => (string)GetValue(HighlightTextProperty);
             set => SetValue(HighlightTextProperty, value);
         }
-
-        private static readonly SolidColorBrush HighlightBackgroundColor = new SolidColorBrush(Color.FromArgb(0xff, 12, 60, 98));
-        private static readonly SolidColorBrush HighlightForegroundColor = new SolidColorBrush(Color.FromArgb(0xff, 149, 197, 235));
 
         private static void OnDataChanged(DependencyObject source,
                                           DependencyPropertyChangedEventArgs e)
@@ -42,12 +38,9 @@ namespace Frosty.Core.Controls
                 tb.Inlines.Clear();
                 var run = new Run {Text = firstStr};
                 tb.Inlines.Add(run);
-                run = new Run
-                {
-                    Background = HighlightBackgroundColor,
-                    Foreground = HighlightForegroundColor,
-                    Text = foundStr
-                };
+                run = new Run {Text = foundStr};
+                run.SetResourceReference(TextElement.BackgroundProperty, "SelectionBrush");
+                run.SetResourceReference(TextElement.ForegroundProperty, "HeaderFontBrush");
                 tb.Inlines.Add(run);
                 run = new Run {Text = endStr};
                 tb.Inlines.Add(run);

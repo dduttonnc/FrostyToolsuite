@@ -5,7 +5,6 @@ using System.Globalization;
 using System.Reflection;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Media;
 
 namespace Frosty.Core.Controls.Editors
 {
@@ -46,7 +45,7 @@ namespace Frosty.Core.Controls.Editors
         protected override void CustomizeEditor(TextBlock editor, FrostyPropertyGridItemData item)
         {
             base.CustomizeEditor(editor, item);
-            editor.Foreground = new SolidColorBrush(Color.FromArgb(0xff, 0xf7, 0xf7, 0xf7));
+            editor.SetResourceReference(TextBlock.ForegroundProperty, "FontColor");
         }
     }
 }

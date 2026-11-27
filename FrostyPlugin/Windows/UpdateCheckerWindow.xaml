@@ -14,7 +14,7 @@
             <RowDefinition Height="38"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="{DynamicResource ListBackground}">
+        <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="10"/>
@@ -23,23 +23,25 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel Grid.Row="1" Orientation="Vertical" Margin="10,0">
-                    <TextBlock x:Name="infoTextBox" Foreground="{DynamicResource FontColor}" Margin="2,2,2,8" FontFamily="Global User Interface" FontSize="12"/>
+                    <TextBlock x:Name="infoTextBox" Foreground="{DynamicResource HeaderFontBrush}" Margin="2,2,2,8" FontFamily="Global User Interface" FontSize="12" FontWeight="SemiBold"/>
 
-                    <Border Background="{DynamicResource ControlBackground}" Margin="0,5,0,0">
+                    <Border Margin="0,5,0,0">
                         <TextBox x:Name="changelogTextBox" Height="248" IsReadOnly="True" Padding="4" Margin="2" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" FontFamily="Consolas"/>
                     </Border>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <Grid Grid.Row="1" Margin="8">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
-            </Grid.ColumnDefinitions>
+        <Border Grid.Row="1" Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0">
+            <Grid Margin="8,7,8,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
 
-            <Button Grid.Column="0" x:Name="noButton" Content="No" HorizontalAlignment="Left" Width="75" Click="noButton_Click" Margin="8,0,8,0"/>
-            <Button Grid.Column="1" x:Name="yesButton" Content="Yes" HorizontalAlignment="Right" Width="75" Click="yesButton_Click" Margin="8,0,0,0"/>
-        </Grid>
+                <Button Grid.Column="0" x:Name="noButton" Content="No" HorizontalAlignment="Left" Width="75" Click="noButton_Click" Margin="8,0,8,0"/>
+                <Button Grid.Column="1" x:Name="yesButton" Content="Yes" HorizontalAlignment="Right" Width="75" Click="yesButton_Click" Margin="8,0,0,0" Style="{StaticResource AccentButtonStyle}"/>
+            </Grid>
+        </Border>
     </Grid>
 </ctrl:FrostyDockableWindow>

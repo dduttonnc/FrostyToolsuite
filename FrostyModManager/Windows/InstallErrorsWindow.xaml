@@ -26,7 +26,7 @@
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <Grid MinHeight="22" Margin="0,2">
-                                        <TextBlock Text="{Binding Path=Filename}" FontFamily="Global User Interface" VerticalAlignment="Top" Margin="0,3,10,0" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding Path=Filename}" FontFamily="Global User Interface" FontWeight="SemiBold" Foreground="{DynamicResource HeaderFontBrush}" VerticalAlignment="Top" Margin="0,3,10,0" TextWrapping="Wrap"/>
                                     </Grid>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
@@ -36,7 +36,7 @@
                                 <DataTemplate>
                                     <Grid MinHeight="22" Margin="0,2">
                                         <DockPanel>
-                                            <Image DockPanel.Dock="Left" Height="20" Margin="4,0,8,0" VerticalAlignment="Top" Source="{Binding Path=IsWarning, Converter={StaticResource modStatusToBitmapSourceConverter}}" Opacity="0.5"/>
+                                            <Image DockPanel.Dock="Left" Height="20" Margin="4,0,8,0" VerticalAlignment="Top" Source="{Binding Path=IsWarning, Converter={StaticResource modStatusToBitmapSourceConverter}}" Opacity="0.9"/>
                                             <TextBlock Text="{Binding Path=Error}" FontFamily="Global User Interface" VerticalAlignment="Top" Margin="0,3,0,0" TextWrapping="Wrap"/>
                                         </DockPanel>
                                     </Grid>
@@ -48,8 +48,8 @@
             </ListView.View>
         </ListView>
 
-        <Grid Grid.Row="1">
-            <Button Content="Ok" HorizontalAlignment="Right" Width="75" Margin="8" Click="Button_Click"/>
-        </Grid>
+        <Border Grid.Row="1" Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0">
+            <Button Content="Ok" HorizontalAlignment="Right" Width="75" Margin="8,7,8,8" Click="Button_Click" Style="{StaticResource AccentButtonStyle}"/>
+        </Border>
     </Grid>
 </ctrl:FrostyDockableWindow>

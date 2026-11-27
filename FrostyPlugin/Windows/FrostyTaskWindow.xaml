@@ -19,15 +19,16 @@
           Visibility="Visible"
           SnapsToDevicePixels="True">
         <Border Background="Transparent" />
-        <Border Background="{DynamicResource ControlBackground}"
+        <Border Background="{DynamicResource SurfaceBrush}"
                 VerticalAlignment="Center"
                 HorizontalAlignment="Center"
                 Margin="25,12,25,13"
-                BorderBrush="{DynamicResource ListBackground}"
+                BorderBrush="{DynamicResource PopupBorderBrush}"
                 BorderThickness="1">
             <Border.Effect>
-                <DropShadowEffect BlurRadius="20"
-                                  ShadowDepth="1" />
+                <DropShadowEffect BlurRadius="16"
+                                  ShadowDepth="3"
+                                  Opacity="0.35" />
             </Border.Effect>
             <!-- [DAI fix] splash width with a banner or while the Detailed progress view has lines to show -->
             <Border.Style>
@@ -58,15 +59,23 @@
                 <Grid x:Name="titlePanel"
                       Grid.Row="0"
                       Height="100">
-                    <TextBlock x:Name="taskTextBlock"
-                               Text="Header Text"
-                               Foreground="{DynamicResource FontColor}"
-                               Margin="0,0,0,0"
-                               FontFamily="Global User Interface"
-                               FontSize="18"
-                               FontWeight="Bold"
-                               VerticalAlignment="Center"
-                               HorizontalAlignment="Center" />
+                    <StackPanel VerticalAlignment="Center"
+                                HorizontalAlignment="Center">
+                        <TextBlock x:Name="taskTextBlock"
+                                   Text="Header Text"
+                                   Foreground="{DynamicResource HeaderFontBrush}"
+                                   Margin="0,0,0,0"
+                                   FontFamily="Global User Interface"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center" />
+                        <Border Width="36"
+                                Height="2"
+                                Margin="0,8,0,0"
+                                HorizontalAlignment="Center"
+                                Background="{DynamicResource AccentGradientBrush}" />
+                    </StackPanel>
                 </Grid>
                 <ContentControl x:Name="headerPresenter"
                                 Grid.Row="0"
@@ -79,7 +88,7 @@
                            Background="{DynamicResource WindowBackground}"
                            Padding="30,4,4,4"
                            FontSize="11"
-                           Foreground="#C0C0C0"
+                           Foreground="{DynamicResource SecondaryFontBrush}"
                            FontFamily="Global User Interface"
                            TextTrimming="CharacterEllipsis">
                     <TextBlock.Style>
@@ -96,7 +105,7 @@
                 </TextBlock>
 
                 <Grid Grid.Row="2"
-                      Background="{DynamicResource WindowBackground}">
+                      Background="{DynamicResource SurfaceAltBrush}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="26" />
                         <ColumnDefinition />
@@ -106,12 +115,15 @@
                     <ProgressBar Grid.Column="0"
                                  Grid.ColumnSpan="3"
                                  x:Name="taskProgressBar"
-                                 Background="Transparent"
+                                 Height="3"
+                                 VerticalAlignment="Top"
+                                 Background="{DynamicResource ControlBackground}"
                                  BorderBrush="Transparent"
-                                 Foreground="{DynamicResource ListBackground}"
+                                 Foreground="{DynamicResource AccentGradientBrush}"
                                  Value="{Binding Path=Progress, RelativeSource={RelativeSource AncestorType={x:Type local:FrostyTaskWindow}, Mode=FindAncestor}}" />
                     <ctrl2:FrostySpinner Width="20"
-                                         Height="20" />
+                                         Height="20"
+                                         Margin="0,3,0,0" />
 
                     <TextBlock x:Name="statusTextBox"
                                Grid.Column="1"
@@ -124,27 +136,31 @@
 
                     <Button x:Name="cancelButton"
                             Grid.Column="2"
-                            Margin="0"
+                            Margin="0,3,0,0"
+                            Width="30"
                             Visibility="Collapsed"
                             Cursor="Hand"
                             ToolTip="Cancel the task. (Esc)">
-                        <Image Source="/FrostyControls;component/Images/CloseWindow.png" />
+                        <TextBlock Text="&#xE711;"
+                                   Style="{StaticResource GlyphTextStyle}" />
                         <Button.Style>
                             <Style TargetType="{x:Type Button}">
                                 <Setter Property="Background"
                                         Value="Transparent" />
                                 <Setter Property="Foreground"
-                                        Value="{DynamicResource FontColor}" />
+                                        Value="{DynamicResource IconBrush}" />
                                 <Style.Triggers>
                                     <Trigger Property="IsMouseOver"
                                              Value="True">
-                                        <Setter Property="Opacity"
-                                                Value="0.6" />
+                                        <Setter Property="Background"
+                                                Value="{DynamicResource CaptionCloseHoverBrush}" />
+                                        <Setter Property="Foreground"
+                                                Value="{DynamicResource CaptionCloseHoverForegroundBrush}" />
                                     </Trigger>
                                     <Trigger Property="IsPressed"
                                              Value="True">
                                         <Setter Property="Opacity"
-                                                Value="0.4" />
+                                                Value="0.8" />
                                     </Trigger>
                                     <Trigger Property="IsEnabled"
                                              Value="False">
