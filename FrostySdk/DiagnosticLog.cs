@@ -9,6 +9,7 @@ namespace FrostySdk
     public static class DiagnosticLog
     {
         public static bool Enabled { get; private set; }
+        public static string LogsFolder => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs");
         public static string FilePath { get; private set; }
 
         private static readonly object s_lock = new object();
@@ -43,7 +44,7 @@ namespace FrostySdk
             Log((error == null) ? "Diagnostic logging is on. The whole log is also saved to " + FilePath : "Diagnostic logging is on, but the log file could not be created: " + error);
         }
 
-        // [DAI fix] Options > Logging > Automatic Log Cleanup; only Frosty's own diagnostics files
+        // [DAI fix] Options > Logging > Automatic Log Cleanup; only Frosty's own Diagnostics and ModData Build Log files
         public static int DeleteOldFiles(string folder, int days)
         {
             if (!Directory.Exists(folder))
@@ -53,7 +54,8 @@ namespace FrostySdk
             int deleted = 0;
             try
             {
-                foreach (FileInfo old in new DirectoryInfo(folder).GetFiles("Diagnostics_*.txt").Where(f => f.LastWriteTime < cutoff))
+                DirectoryInfo dir = new DirectoryInfo(folder);
+                foreach (FileInfo old in dir.GetFiles("Diagnostics_*.txt").Concat(dir.GetFiles("ModDataBuild_*.txt")).Where(f => f.LastWriteTime < cutoff))
                 {
                     try { old.Delete(); deleted++; } catch { }
                 }

@@ -221,12 +221,31 @@ namespace Frosty.ModSupport
 
         public ILogger Logger { get => m_logger; set => m_logger = value; }
 
-        private void PrintLog()
+        private void PrintLog(string modPackName)
         {
-            using (NativeWriter writer = new NativeWriter(new FileStream("log.txt", FileMode.Create, FileAccess.Write)))
+            // [DAI fix] dated file in Logs (was log.txt next to the exe), so Automatic Log Cleanup can delete old ones
+            string path;
+            FileStream stream;
+            try
+            {
+                string folder = DiagnosticLog.LogsFolder;
+                Directory.CreateDirectory(folder);
+                path = Path.Combine(folder, $"ModDataBuild_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.txt");
+                stream = new FileStream(path, FileMode.Create, FileAccess.Write);
+            }
+            catch (Exception ex)
+            {
+                App.Logger.LogWarning("ModData Build Log could not be written: {0}", ex.Message);
+                return;
+            }
+
+            using (NativeWriter writer = new NativeWriter(stream))
             {
                 try
                 {
+                    writer.WriteLine($"{ProfilesLibrary.DisplayName}, pack '{modPackName}', {DateTime.Now}");
+                    writer.WriteLine(string.Empty);
+
                     if (m_addedSuperBundles.Count > 0)
                     {
                         writer.WriteLine("Added SuperBundles:");
@@ -361,6 +380,7 @@ namespace Frosty.ModSupport
                     writer.WriteLine($"Failed: {ex.Message}");
                 }
             }
+            App.Logger.Log("ModData Build Log saved to {0}", path);
         }
 
         // [DAI fix] the Detailed progress window: finished steps with their times, the current step and each running task
@@ -1637,11 +1657,11 @@ namespace Frosty.ModSupport
                     ReconcileTextureChunks();
 
 #if FROSTY_DEVELOPER
-                PrintLog();
+                PrintLog(modPackName);
 #elif !FROSTY_DEVELOPER
                 if (Config.Get<bool>("PrintLog", false))
                 {
-                    PrintLog();
+                    PrintLog(modPackName);
                 }
 #endif
 

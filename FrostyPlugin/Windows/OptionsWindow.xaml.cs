@@ -86,7 +86,7 @@ namespace Frosty.Core.Windows
 
         [Category("General")]
         [DisplayName("ModData Build Log")]
-        [Description("Each time ModData is built, writes a 'log.txt' file to the Frosty folder listing the superbundles, bundles and chunks the mods added or changed, by name and ID.\r\n\r\nMeant for mod authors. Diagnostic Logging covers troubleshooting.")]
+        [Description("Each time ModData is built, saves a file to the Logs folder next to the exe (ModDataBuild_ with the date and time) listing the superbundles, bundles and chunks the mods added or changed, by name and ID.\r\n\r\nMeant for mod authors. Diagnostic Logging covers troubleshooting. Automatic Log Cleanup deletes old files.")]
         [EbxFieldMeta(EbxFieldType.Boolean)]
         public bool PrintLog { get; set; } = false;
         
@@ -452,13 +452,13 @@ namespace Frosty.Core.Windows
 
         [Category("Logging")]
         [DisplayName("Automatic Log Cleanup")]
-        [Description("Deletes Diagnostic Logging files in the Logs folder that are older than the age chosen below, each time the Mod Manager starts and when these options are saved. Only Frosty's own Diagnostics files are deleted.\r\n\r\nWhen off, every file is kept.")]
+        [Description("Deletes Diagnostic Logging and ModData Build Log files in the Logs folder that are older than the age chosen below, each time the Mod Manager starts and when these options are saved. Only those Frosty files are deleted.\r\n\r\nWhen off, every file is kept.")]
         [EbxFieldMeta(EbxFieldType.Boolean)]
         public bool AutoLogCleanup { get; set; } = false;
 
         [Category("Logging")]
         [DisplayName("Delete Logs Older Than")]
-        [Description("How old a Diagnostic Logging file must be before Automatic Log Cleanup deletes it.")]
+        [Description("How old a Diagnostic Logging or ModData Build Log file must be before Automatic Log Cleanup deletes it.")]
         [EbxFieldMeta(EbxFieldType.Struct)]
         [Editor(typeof(FrostyLocalizationLanguageDataEditor))]
         [DependsOn("AutoLogCleanup")]
@@ -476,9 +476,9 @@ namespace Frosty.Core.Windows
             if (!logCleanupDayValues.Contains(days))
                 days = DefaultLogCleanupDays;
 
-            int deleted = DiagnosticLog.DeleteOldFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs"), int.Parse(days));
+            int deleted = DiagnosticLog.DeleteOldFiles(DiagnosticLog.LogsFolder, int.Parse(days));
             if (deleted > 0)
-                App.Logger?.Log("Automatic Log Cleanup deleted {0} Diagnostics log file(s) older than {1} days.", deleted, days);
+                App.Logger?.Log("Automatic Log Cleanup deleted {0} log file(s) older than {1} days.", deleted, days);
         }
 
         public static void ApplyDiagnosticSetting()
@@ -491,7 +491,7 @@ namespace Frosty.Core.Windows
             if (DiagnosticLog.Enabled)
                 return;
 
-            DiagnosticLog.Start(App.Logger, Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs"), (App.Logger as FrostyCore.FrostyLogger)?.LogText);
+            DiagnosticLog.Start(App.Logger, DiagnosticLog.LogsFolder, (App.Logger as FrostyCore.FrostyLogger)?.LogText);
             DiagnosticReport.LogProfile();
         }
 
