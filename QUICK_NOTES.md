@@ -10,7 +10,7 @@ DAI = Dragon Age: Inquisition, DAV = Dragon Age: The Veilguard, MEA = Mass Effec
 - Options: the Mod Manager Options page is sorted into groups (Launch, Mods & ModData, Logging, Interface, Performance, Updates); 'Print Log' is now 'ModData Build Log'. Saved settings are kept
 - Options: the extra 'Applying Thread Count' setting is gone; applying mods uses the Performance settings (CPU Threads, CPU Priority) like the cache
 - Launch Platform and DatapathFix no longer break the launch when both are turned on: Launch Platform is skipped while DatapathFix is on (Steam and Epic only, untested)
-- Launch Platform no longer closes Steam and the EA app a few seconds after the game starts, which also cut off the Steam overlay (Steam and Epic untested)
+- Launch Platform waits until the game has really closed before closing Steam and the EA app. It closed them a few seconds after launch, the likely cause of a missing Steam overlay (Steam and Epic untested)
 - DAI: DAI Mod Manager's own Patch.daimod is no longer installed as a mod (Frosty doesn't need it)
 - Installation Report window: long messages wrap instead of being cut off
 - DAI: .daimod settings windows behave like DAI Mod Manager's: on/off options switch the right part, colour settings work, dropdowns pass the right value
