@@ -6,6 +6,7 @@ DAI = Dragon Age: Inquisition, DAV = Dragon Age: The Veilguard, MEA = Mass Effec
 
 ## Not released yet
 
+- Options: the Mod Manager Options page is sorted into groups (Launch, Mods & ModData, Logging, Interface, Performance, Updates); 'Print Log' is now 'ModData Build Log'. Saved settings are kept
 - Options: the extra 'Applying Thread Count' setting is gone; applying mods uses the Performance settings (CPU Threads, CPU Priority) like the cache
 - Launch Platform and DatapathFix no longer break the launch when both are turned on: Launch Platform is skipped while DatapathFix is on (Steam and Epic only, untested)
 - DAI: DAI Mod Manager's own Patch.daimod is no longer installed as a mod (Frosty doesn't need it)

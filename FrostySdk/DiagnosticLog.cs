@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace FrostySdk
 {
-    // [DAI fix] Options > Manager > Diagnostic Logging: extra lines in the log, and the whole log copied to a file in Logs
+    // [DAI fix] Options > Logging > Diagnostic Logging: extra lines in the log, and the whole log copied to a file in Logs
     public static class DiagnosticLog
     {
         public static bool Enabled { get; private set; }
@@ -43,7 +43,7 @@ namespace FrostySdk
             Log((error == null) ? "Diagnostic logging is on. The whole log is also saved to " + FilePath : "Diagnostic logging is on, but the log file could not be created: " + error);
         }
 
-        // [DAI fix] Options > Manager > Automatic Log Cleanup; only Frosty's own diagnostics files
+        // [DAI fix] Options > Logging > Automatic Log Cleanup; only Frosty's own diagnostics files
         public static int DeleteOldFiles(string folder, int days)
         {
             if (!Directory.Exists(folder))
