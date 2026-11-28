@@ -5,7 +5,11 @@ One Frosty Mod Manager for Dragon Age: Inquisition, Dragon Age: The Veilguard an
 
 Not released yet
 --------
+Improvements:
+- Dead Space (2023): the Mod Manager no longer shows the "hasn't been tested with this version of Frosty" message when you pick the Dead Space profile, and Dead Space is listed with the tested games
+
 Bug Fixes:
+- Dead Space (2023): Frosty no longer asks to rebuild the Dead Space SDK. The SDK that came with Frosty was made for an early 2023 version of the game, so Frosty saw a different game version and asked for a rebuild, and every Frosty update put the old SDK back. It now comes with an SDK for the current game version (made from the Steam copy; EA app copies are untested)
 - Dead Space (2023): applying mods now writes them into ModData. Before, Frosty treated Dead Space like a game with a Patch folder, which it doesn't have, so it built ModData with links to the game's own files only and none of the mods' changes (the mods showed as applied but the game was unchanged). Changed files now go into ModData's Data folder, the way Need for Speed Unbound and Veilguard work, and new archive files are numbered after the highest one the game has. Frosty rebuilds Dead Space ModData once. Based on how HarGabt's Frosty 1.0.7 fork (github.com/HarGabt/FrostyToolsuite) handles Dead Space.
 - Dead Space (2023): mods now load in game. The game never reads its command line, so it ignored -dataPath and always loaded its normal Data folder. It does load the Data folder next to the exe it was started from, so Frosty now puts hard links to the game's exe and DLLs into ModData (no extra disk space, renewed on every launch) and starts the game from there. No loader DLL is added to the game folder, and starting the game from Steam as usual stays unmodded. Tested with Steam. EA app copies are untested
 - All games: if ModData was made by a build that laid it out differently and the folder where changed files go is a link to the game's own folder, ModData is now rebuilt from scratch, removing only the links. Before, cleaning it up followed the link and deleted the game's archive files (seen with Dead Space ModData from 1.7.6, whose Data folder was a link to the game's Data). Cleanup also no longer goes into any linked folder
