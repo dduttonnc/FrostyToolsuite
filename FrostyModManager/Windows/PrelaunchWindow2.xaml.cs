@@ -328,15 +328,15 @@ namespace FrostyModManager.Windows
             {
                 string version = Frosty.Core.App.Version;
 
-                // [DAI fix] DAI is supported again; [MEA fix] so is MEA
-                if (configuration.ProfileName == "Dragon Age The Veilguard" || configuration.ProfileName == "DragonAgeInquisition" || configuration.ProfileName == "MassEffectAndromeda")
+                // [DAI fix] DAI is supported again; [MEA fix] so is MEA; [DS fix] and Dead Space
+                if (configuration.ProfileName == "Dragon Age The Veilguard" || configuration.ProfileName == "DragonAgeInquisition" || configuration.ProfileName == "MassEffectAndromeda" || configuration.ProfileName == "Dead Space")
                 {
                     LaunchConfiguration(configuration.ProfileName);
                     Close();
                 }
                 else
                 {
-                    if (FrostyMessageBox.Show($"{configuration.GameName} hasn't been tested with this version of Frosty.\n\nTested games: Dragon Age\u2122: Inquisition, Dragon Age\u2122: The Veilguard and Mass Effect\u2122: Andromeda\n\nDo you wish to continue anyway?", "Untested Profile", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                    if (FrostyMessageBox.Show($"{configuration.GameName} hasn't been tested with this version of Frosty.\n\nTested games: Dragon Age\u2122: Inquisition, Dragon Age\u2122: The Veilguard, Mass Effect\u2122: Andromeda and Dead Space\u2122\n\nDo you wish to continue anyway?", "Untested Profile", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
                     {
                         LaunchConfiguration(configuration.ProfileName);
                         Close();
