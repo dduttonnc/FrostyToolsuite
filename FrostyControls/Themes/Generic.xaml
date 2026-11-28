@@ -3639,10 +3639,14 @@
                     <Grid x:Name="templateRoot"
                           SnapsToDevicePixels="True"
                           UseLayoutRounding="True"
-                          Height="20">
+                          Height="22">
                         <StackPanel Orientation="Horizontal">
                             <Border x:Name="mainBorder"
-                                    Background="Transparent">
+                                    Background="{DynamicResource ControlBackground}"
+                                    BorderBrush="{DynamicResource ControlBorderBrush}"
+                                    BorderThickness="1,1,1,0"
+                                    CornerRadius="4,4,0,0"
+                                    Margin="0,0,3,0">
                                 <Grid>
                                     <Grid Margin="{TemplateBinding Padding}">
                                         <Grid.ColumnDefinitions>
@@ -3697,6 +3701,7 @@
                             </Border>
 
                             <Border x:Name="TabSeparatorDeco"
+                                    Visibility="Collapsed"
                                     Width="1"
                                     Height="12"
                                     VerticalAlignment="Center"
@@ -3740,7 +3745,7 @@
                             </MultiDataTrigger.Conditions>
                             <Setter Property="Background"
                                     TargetName="mainBorder"
-                                    Value="{DynamicResource SubItemHighlight}" />
+                                    Value="{DynamicResource ControlHighlight}" />
                             <Setter Property="Foreground"
                                     Value="{DynamicResource FontColor}" />
                             <Setter Property="Opacity"
@@ -3753,6 +3758,12 @@
                                     Value="{DynamicResource FontColor}" />
                             <Setter Property="FontWeight"
                                     Value="SemiBold" />
+                            <Setter Property="Background"
+                                    TargetName="mainBorder"
+                                    Value="{DynamicResource AccentSubtleBrush}" />
+                            <Setter Property="BorderBrush"
+                                    TargetName="mainBorder"
+                                    Value="{DynamicResource AccentBrush}" />
                             <Setter Property="Visibility"
                                     TargetName="underline"
                                     Value="Visible" />
