@@ -4,15 +4,15 @@ The short version of what changed. Full notes: [PATCH_NOTES.md](PATCH_NOTES.md).
 
 DAI = Dragon Age: Inquisition, DAV = Dragon Age: The Veilguard, MEA = Mass Effect: Andromeda.
 
-## Not released yet
+## 1.7.6
 
 - Options: ModData Build Log files now go in the Logs folder (one per build, with the date and time) instead of log.txt in the Frosty folder
 - Options: the Mod Manager Options page is sorted into groups (Launch, Mods & ModData, Logging, Interface, Performance, Updates); 'Print Log' is now 'ModData Build Log'. Saved settings are kept
 - Options: the extra 'Applying Thread Count' setting is gone; applying mods uses the Performance settings (CPU Threads, CPU Priority) like the cache
-- Launch Platform and DatapathFix no longer break the launch when both are turned on: Launch Platform is skipped while DatapathFix is on (Steam and Epic only, untested)
+- Launch Platform and DatapathFix no longer break the launch when both are turned on: DatapathFix wins and Launch Platform skips its restart (Steam and Epic only, untested)
 - Launch Platform waits until the game has really closed before closing Steam and the EA app. It closed them a few seconds after launch, the likely cause of a missing Steam overlay (tested with the EA app; Steam and Epic untested)
 - DAI and MEA Steam copies no longer get asked to turn on DatapathFix: they launch through Steam with mods, and DatapathFix cost them the Steam overlay. Turn it off in Options if it's on (untested)
-- DAI: DAI Mod Manager's own Patch.daimod is no longer installed as a mod (Frosty doesn't need it)
+- DAI: DAI Mod Manager's own Patch.daimod is no longer installed as a mod (Frosty doesn't need it). If you added it before ('Official Patch' by Bioware), remove it and apply again
 - Installation Report window: long messages wrap instead of being cut off
 - DAI: .daimod settings windows behave like DAI Mod Manager's: on/off options switch the right part, colour settings work, dropdowns pass the right value
 - Options: new Automatic Log Cleanup setting (off by default) deletes Diagnostic Logging and ModData Build Log files older than 14, 30, 60 or 90 days
