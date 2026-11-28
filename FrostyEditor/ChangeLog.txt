@@ -3,6 +3,11 @@
 ============================================================
 One Frosty Mod Manager for Dragon Age: Inquisition, Dragon Age: The Veilguard and Mass Effect: Andromeda. https://github.com/dduttonnc/FrostyToolsuite
 
+Not released yet
+--------
+Bug Fixes:
+- Dead Space (2023): applying mods now writes them into ModData. Before, Frosty treated Dead Space like a game with a Patch folder, which it doesn't have, so it built ModData with links to the game's own files only and none of the mods' changes (the mods showed as applied but the game was unchanged). Changed files now go into ModData's Data folder, the way Need for Speed Unbound and Veilguard work, and new archive files are numbered after the highest one the game has. Frosty rebuilds Dead Space ModData once. Based on how HarGabt's Frosty 1.0.7 fork (github.com/HarGabt/FrostyToolsuite) handles Dead Space. Whether the game then loads ModData when started with -dataPath is still being looked into
+
 v1.7.6 - 2026.11.27.1
 --------
 No need to delete Caches or ModData after updating: nothing Frosty writes for the games changed in this version. Dragon Age: Inquisition: if DAI Mod Manager's Patch.daimod was ever added as a mod (it shows as 'Official Patch' by Bioware), remove it from the mod list and apply mods again; Frosty doesn't need it and it gives thousands of game files the wrong data. Full details: docs/CHANGELOG.md

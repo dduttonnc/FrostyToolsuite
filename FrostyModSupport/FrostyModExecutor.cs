@@ -1403,14 +1403,15 @@ namespace Frosty.ModSupport
                 // old fb3 games use an update folder
                 m_patchPath = "Update\\Patch\\Data";
             }
-            else if (ProfilesLibrary.IsLoaded(ProfileVersion.Battlefield5, ProfileVersion.NeedForSpeedUnbound, ProfileVersion.DragonAgeTheVeilguard))
+            else if (ProfilesLibrary.IsLoaded(ProfileVersion.Battlefield5, ProfileVersion.NeedForSpeedUnbound, ProfileVersion.DragonAgeTheVeilguard, ProfileVersion.DeadSpace))
             {
                 // bfv doesnt have a patch directory
                 m_patchPath = "Data";
                 m_hasPatchFolder = false;
             }
 
-            if (ProfilesLibrary.IsLoaded(ProfileVersion.Fifa17, ProfileVersion.DragonAgeTheVeilguard))
+            // [DS fix] Dead Space has no Patch or Update folder: changed files go into ModData's Data folder
+            if (ProfilesLibrary.IsLoaded(ProfileVersion.Fifa17, ProfileVersion.DragonAgeTheVeilguard, ProfileVersion.DeadSpace))
             {
                 m_hasUpdateFolder = false;
             }
@@ -1688,7 +1689,7 @@ namespace Frosty.ModSupport
                                 cmdArgs.Add(new SymLinkStruct(modDataPath + "Data/Win32", m_fs.BasePath + "Data/Win32", true));
                             }
                         }
-                        else if (ProfilesLibrary.IsLoaded(ProfileVersion.Battlefield5, ProfileVersion.NeedForSpeedUnbound, ProfileVersion.DragonAgeTheVeilguard))
+                        else if (ProfilesLibrary.IsLoaded(ProfileVersion.Battlefield5, ProfileVersion.NeedForSpeedUnbound, ProfileVersion.DragonAgeTheVeilguard, ProfileVersion.DeadSpace))
                         {
                             // bfv and unbound dont have a patch directory so we need to rebuild the data folder structure instead
                             if (!Directory.Exists(modDataPath + "Data"))
@@ -1906,7 +1907,7 @@ namespace Frosty.ModSupport
                 if (ProfilesLibrary.IsLoaded(ProfileVersion.Anthem, ProfileVersion.NeedForSpeedHeat,
                     ProfileVersion.PlantsVsZombiesBattleforNeighborville, ProfileVersion.Fifa21,
                     ProfileVersion.Madden22, ProfileVersion.Fifa22,
-                    ProfileVersion.Madden23, ProfileVersion.NeedForSpeedUnbound, ProfileVersion.DragonAgeTheVeilguard))
+                    ProfileVersion.Madden23, ProfileVersion.NeedForSpeedUnbound, ProfileVersion.DragonAgeTheVeilguard, ProfileVersion.DeadSpace))
                 {
                     CasBundleAction.CasFiles.Clear();
                     foreach (string catalog in m_fs.Catalogs)
@@ -1919,6 +1920,10 @@ namespace Frosty.ModSupport
                             casIndex++;
                             path = m_fs.BasePath + m_patchPath + "\\" + catalog + "\\cas_" + casIndex.ToString("D2") + ".cas";
                         }
+
+                        // [DS fix] Dead Space cas numbering can have gaps: new cas files go after the highest one
+                        if (ProfilesLibrary.IsLoaded(ProfileVersion.DeadSpace))
+                            casIndex = Math.Max(casIndex, HighestCasIndex(m_fs.BasePath + m_patchPath + "\\" + catalog) + 1);
 
                         CasBundleAction.CasFiles.Add(catalog, casIndex);
                     }
@@ -2736,6 +2741,21 @@ namespace Frosty.ModSupport
                 process.Dispose();
             }
             return ids;
+        }
+
+        private static int HighestCasIndex(string catalogPath)
+        {
+            int highest = 0;
+            if (!Directory.Exists(catalogPath))
+                return highest;
+
+            foreach (string casPath in Directory.EnumerateFiles(catalogPath, "cas_*.cas"))
+            {
+                string number = Path.GetFileNameWithoutExtension(casPath).Substring(4);
+                if (int.TryParse(number, out int index) && index > highest)
+                    highest = index;
+            }
+            return highest;
         }
 
         public static void LaunchGame(string basePath, string modDirName, string modDataPath, string additionalArgs)

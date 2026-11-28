@@ -11,6 +11,14 @@ because each has its own version numbers:
 
 Every code change in this section is marked with a `[DAI fix]` comment.
 
+## Not released yet
+
+Data numbers: Dead Space ModData 1 -> 2 (its old ModData had no mod changes in it).
+
+| Change | Files |
+|---|---|
+| Dead Space: mod apply follows the no-Patch-folder layout. `DeadSpace` added to the `m_patchPath = "Data"` / `m_hasPatchFolder = false` branch, to `m_hasUpdateFolder = false` (no Update folder; the Update link failed), to the branch that rebuilds `ModData\Data` with links to each cas file, and to the `CasBundleAction` branch that writes changed bundles. Before, DS used the default `Patch` path and the superbundle path for games with a Patch folder, which found nothing to change, so ModData held only `layout.toc`, `mods.json` and links. New cas files start after the highest existing `cas_NN.cas` in each catalog (`HighestCasIndex`, DS only), since DS numbering can have gaps. `WriteInitFs` decrypts DS's encrypted initfs (loading already did), and the zstd dictionary functions are loaded for DS. Marked `[DS fix]`. Based on HarGabt's 1.0.7 fork (github.com/HarGabt/FrostyToolsuite), which lists `DeadSpace` in the same places | `FrostyModSupport/FrostyModExecutor.cs`, `FrostySdk/Managers/FileSystemManager.cs`, `FrostySdk/Utils.cs`, `FrostySdk/DataVersions.cs` |
+
 ## 1.7.6
 
 Shows as **1.7.6 - 2026.11.27.1**. Release tag: `2026.11.27.1`. No data numbers raised: nothing in this release changes the cache or ModData for any game (the .daimod changes only affect import), so nothing is rebuilt.

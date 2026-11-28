@@ -26,6 +26,7 @@
                     case ProfileVersion.DragonAgeInquisition: return 4;
                     case ProfileVersion.MassEffectAndromeda: return 2;
                     case ProfileVersion.DragonAgeTheVeilguard: return 1;
+                    case ProfileVersion.DeadSpace: return 2;
                     default: return 1;
                 }
             }

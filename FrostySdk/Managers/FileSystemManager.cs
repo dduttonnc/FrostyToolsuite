@@ -372,6 +372,7 @@ namespace FrostySdk
                     DbObject initfs = reader.ReadDbObject();
                     if (ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa18 || ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa19 || ProfilesLibrary.DataVersion == (int)ProfileVersion.Anthem || ProfilesLibrary.DataVersion == (int)ProfileVersion.Anthem || ProfilesLibrary.DataVersion == (int)ProfileVersion.Fifa20
                      || ProfilesLibrary.DataVersion == (int)ProfileVersion.PlantsVsZombiesBattleforNeighborville || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedHeat || ProfilesLibrary.DataVersion == (int)ProfileVersion.DragonAgeTheVeilguard
+                     || ProfilesLibrary.DataVersion == (int)ProfileVersion.DeadSpace // [DS fix] its initfs is encrypted too
                         )
                     {
                         encrypted = true;
