@@ -16,6 +16,7 @@ Not released yet
 --------
 Bug Fixes:
 - Dead Space (2023): applying mods now writes them into ModData. Before, Frosty treated Dead Space like a game with a Patch folder, which it doesn't have, so it built ModData with links to the game's own files only and none of the mods' changes (the mods showed as applied but the game was unchanged). Changed files now go into ModData's Data folder, the way Need for Speed Unbound and Veilguard work, and new archive files are numbered after the highest one the game has. Frosty rebuilds Dead Space ModData once. Based on how HarGabt's Frosty 1.0.7 fork (github.com/HarGabt/FrostyToolsuite) handles Dead Space. Whether the game then loads ModData when started with -dataPath is still being looked into
+- All games: if ModData was made by a build that laid it out differently and the folder where changed files go is a link to the game's own folder, ModData is now rebuilt from scratch, removing only the links. Before, cleaning it up followed the link and deleted the game's archive files (seen with Dead Space ModData from 1.7.6, whose Data folder was a link to the game's Data). Cleanup also no longer goes into any linked folder
 
 v1.7.6 - 2026.11.27.1
 --------

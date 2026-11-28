@@ -1664,6 +1664,13 @@ namespace Frosty.ModSupport
                 List<SymLinkStruct> cmdArgs = new List<SymLinkStruct>();
                 bool newInstallation = false;
 
+                // [DS fix] ModData made with another folder layout can link straight into the game's folders: start it over so nothing in the game is changed
+                if (PathGoesThroughLink(modDataPath, m_patchPath))
+                {
+                    App.Logger.Log("ModData was made with a different folder layout and is rebuilt from scratch");
+                    DeleteWithoutFollowingLinks(new DirectoryInfo(modDataPath));
+                }
+
                 m_fs.ResetManifest();
                 if (!DeleteSelectFiles(modDataPath + m_patchPath))
                 {
@@ -3302,7 +3309,8 @@ namespace Frosty.ModSupport
 
                     string modDataCatalog = $"{modPath}/{catalog}";
 
-                    if (Directory.Exists(modDataCatalog))
+                    // [DS fix] skip a catalog folder that is a link into the game
+                    if (Directory.Exists(modDataCatalog) && !new DirectoryInfo(modDataCatalog).Attributes.HasFlag(FileAttributes.ReparsePoint))
                     {
                         foreach (string filename in Directory.EnumerateFiles(modDataCatalog))
                         {
@@ -3373,9 +3381,59 @@ namespace Frosty.ModSupport
             return true;
         }
 
+        private static bool PathGoesThroughLink(string modDataPath, string relativePath)
+        {
+            string path = modDataPath.TrimEnd('\\', '/');
+            foreach (string part in relativePath.Split(new[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                path = Path.Combine(path, part);
+                DirectoryInfo di = new DirectoryInfo(path);
+                if (!di.Exists)
+                    return false;
+                if (di.Attributes.HasFlag(FileAttributes.ReparsePoint))
+                    return true;
+            }
+            return false;
+        }
+
+        // links are removed, never what they point to
+        private static void DeleteWithoutFollowingLinks(DirectoryInfo folder)
+        {
+            if (!folder.Exists)
+                return;
+
+            if (folder.Attributes.HasFlag(FileAttributes.ReparsePoint))
+            {
+                Directory.Delete(folder.FullName, false);
+                return;
+            }
+
+            foreach (FileSystemInfo item in folder.EnumerateFileSystemInfos())
+            {
+                bool isLink = item.Attributes.HasFlag(FileAttributes.ReparsePoint);
+                if (item is DirectoryInfo subFolder)
+                {
+                    if (!isLink)
+                        DeleteWithoutFollowingLinks(subFolder);
+                    else
+                        Directory.Delete(subFolder.FullName, false);
+                }
+                else
+                {
+                    item.Delete();
+                }
+            }
+
+            Directory.Delete(folder.FullName, false);
+        }
+
         private void RecursiveDeleteFiles(string path)
         {
             DirectoryInfo di = new DirectoryInfo(path);
+
+            // [DS fix] never clean up inside a link to the game's own folders
+            if (di.Attributes.HasFlag(FileAttributes.ReparsePoint))
+                return;
 
             DirectoryInfo[] paths = di.GetDirectories();
             FileInfo[] files = di.GetFiles();
