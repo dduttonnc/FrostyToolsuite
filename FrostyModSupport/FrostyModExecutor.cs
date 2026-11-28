@@ -17,6 +17,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Media;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -2750,6 +2751,52 @@ namespace Frosty.ModSupport
             return ids;
         }
 
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern bool CreateHardLink(string fileName, string existingFileName, IntPtr securityAttributes);
+
+        // [DS fix] hard links to the exe and its DLLs (same drive, no extra space), made fresh each launch so a game update is picked up
+        private static string PrepareExeInModData(string basePath, string modDataPath)
+        {
+            List<string> files = new List<string> { $"{ProfilesLibrary.ProfileName}.exe" };
+            files.AddRange(Directory.EnumerateFiles(basePath, "*.dll").Select(Path.GetFileName));
+            if (Directory.Exists(Path.Combine(basePath, "x64")))
+                files.AddRange(Directory.EnumerateFiles(Path.Combine(basePath, "x64"), "*.dll").Select(f => Path.Combine("x64", Path.GetFileName(f))));
+
+            // a folder link here (left by a manual test) would put the DLLs into the game's own x64 folder
+            DirectoryInfo x64Folder = new DirectoryInfo(Path.Combine(modDataPath, "x64"));
+            if (x64Folder.Exists && x64Folder.Attributes.HasFlag(FileAttributes.ReparsePoint))
+                x64Folder.Delete(false);
+
+            foreach (string file in files)
+            {
+                string source = Path.Combine(basePath, file);
+                string link = Path.Combine(modDataPath, file);
+                Directory.CreateDirectory(Path.GetDirectoryName(link));
+
+                FileInfo existing = new FileInfo(link);
+                if (existing.Exists)
+                {
+                    if (existing.Attributes.HasFlag(FileAttributes.ReadOnly))
+                        existing.Attributes &= ~FileAttributes.ReadOnly;
+                    existing.Delete();
+                }
+
+                if (!CreateHardLink(link, source, IntPtr.Zero))
+                {
+                    DiagnosticLog.Log($"Could not link {file} into ModData (error {Marshal.GetLastWin32Error()}), copying it instead");
+                    File.Copy(source, link, true);
+                }
+            }
+
+            // stops the Steam API from restarting the game from its normal folder
+            if (File.Exists(Path.Combine(basePath, "steam_api64.dll")))
+                File.WriteAllText(Path.Combine(modDataPath, "steam_appid.txt"), DeadSpaceSteamAppId);
+
+            return Path.Combine(modDataPath, $"{ProfilesLibrary.ProfileName}.exe");
+        }
+
+        private const string DeadSpaceSteamAppId = "1693980";
+
         private static int HighestCasIndex(string catalogPath)
         {
             int highest = 0;
@@ -2769,6 +2816,15 @@ namespace Frosty.ModSupport
         {
             string gameExecutable = Path.Combine(basePath, $"{ProfilesLibrary.ProfileName}.exe");
             string dataPathArgument = $"-dataPath \"{modDataPath.Trim('\\')}\" {additionalArgs}";
+
+            // [DS fix] Dead Space never splits its command line, so -dataPath is never seen; with no dataPath it uses the exe's own folder as the data root
+            if (ProfilesLibrary.IsLoaded(ProfileVersion.DeadSpace))
+            {
+                string moddedExecutable = PrepareExeInModData(basePath, modDataPath);
+                DiagnosticLog.Log($"Starting Dead Space from its ModData folder: \"{moddedExecutable}\" {additionalArgs}");
+                ExecuteProcess(moddedExecutable, additionalArgs);
+                return;
+            }
 
             // [DAI fix] DAI and MEA Steam copies launch through Steam, as in 1.0.6.3
             bool steamCopy = (ProfilesLibrary.IsLoaded(ProfileVersion.DragonAgeInquisition) || ProfilesLibrary.IsLoaded(ProfileVersion.MassEffectAndromeda))
